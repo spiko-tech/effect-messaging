@@ -6,5 +6,7 @@ tmp/
 dist/
 build/
 docs/
+scratchpad/
 .direnv/
-.idea
+.idea/
+.env

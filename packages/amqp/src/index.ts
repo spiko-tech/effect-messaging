@@ -1,4 +1,10 @@
 /**
- * @since 0.0.1
+ * @category type ids
+ * @since 0.2.0
  */
-export * as Amqp from "./Amqp.js"
+export * as AMQPConnection from "./AMQPConnection.js"
+
+/**
+ * @since 0.2.0
+ */
+export * as AMQPError from "./AMQPError.js"

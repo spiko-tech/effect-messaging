@@ -40,7 +40,7 @@
     },
     "devDependencies": {
         "@effect/platform": "^0.80.6",
-        "@types/amqplib": "^0.10.7",
+        "@types/amqplib": "0.10.6",
         "amqplib": "^0.10.5",
         "effect": "^3.14.6"
     },

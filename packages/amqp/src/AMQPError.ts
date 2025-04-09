@@ -25,3 +25,19 @@ export class AMQPConnectionError extends Schema.TaggedError<AMQPConnectionError>
    */
   readonly [TypeId] = TypeId
 }
+
+/**
+ * Represents an AMQP Channel Error
+ *
+ * @since 0.2.0
+ * @category errors
+ */
+export class AMQPChannelError extends Schema.TaggedError<AMQPChannelError>()(
+  "AMQPChannelError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.2.0
+   */
+  readonly [TypeId] = TypeId
+}

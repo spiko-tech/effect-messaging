@@ -10,7 +10,7 @@ export const ConnectionRef = {
   make: (): Effect.Effect<ConnectionRef> => SubscriptionRef.make(Option.none<Connection>())
 }
 
-export const getConnection = (connectionRef: ConnectionRef) =>
+const getConnection = (connectionRef: ConnectionRef) =>
   SubscriptionRef.get(connectionRef).pipe(
     Effect.flatten,
     Effect.catchTag("NoSuchElementException", () => new AMQPConnectionError({ reason: "Connection is not available" }))
@@ -43,7 +43,7 @@ export const closeConnection = (connectionRef: ConnectionRef) =>
       Effect.withSpan("AMQPConnection.closeConnection")
     )
 
-export const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
+const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
   Effect.gen(function*() {
     yield* closeConnection(connectionRef)
     yield* initiateConnection(connectionRef, url).pipe(

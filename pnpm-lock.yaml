@@ -36,11 +36,11 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
       '@effect/platform':
-        specifier: ^0.80.6
-        version: 0.80.6(effect@3.14.6)
+        specifier: ^0.80.7
+        version: 0.80.7(effect@3.14.7)
       '@effect/vitest':
-        specifier: ^0.20.6
-        version: 0.20.6(effect@3.14.6)(vitest@3.1.1(@types/node@22.14.0)(tsx@4.19.3))
+        specifier: ^0.20.7
+        version: 0.20.7(effect@3.14.7)(vitest@3.1.1(@types/node@22.14.0)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -60,8 +60,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.14.6
-        version: 3.14.6
+        specifier: ^3.14.7
+        version: 3.14.7
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -312,10 +312,15 @@ packages:
     peerDependencies:
       effect: ^3.14.6
 
-  '@effect/vitest@0.20.6':
-    resolution: {integrity: sha512-tlpKzaiPYy0CyTS4vyttVJZhlUHHnfj19izN0iTTV7eF/egv90TjSbCDZUFV+vd77tr9PeEUgoQ7Vph0c6XPsA==}
+  '@effect/platform@0.80.7':
+    resolution: {integrity: sha512-hWgZJz4rWn6y/HgR91gtGUIXr0oqICDV5NlAdp6MjR20y805U1DeiI3ZkDkzgmEbIR/5ciz8nmPf+a08PVyLPg==}
     peerDependencies:
-      effect: ^3.14.6
+      effect: ^3.14.7
+
+  '@effect/vitest@0.20.7':
+    resolution: {integrity: sha512-mu2HIObTJwnErJsCXuRb8K2VOMCWfIdEbV8OpJYHj57UkQLdIahKQsl+dwZ0VBTEWSVVOvm9R4cdy4l+fcc6Nw==}
+    peerDependencies:
+      effect: ^3.14.7
       vitest: ^3.0.0
 
   '@emnapi/core@1.4.0':
@@ -1334,6 +1339,9 @@ packages:
 
   effect@3.14.6:
     resolution: {integrity: sha512-/QMsBfMw2Gt10x3y2jVqDanLpKFrhc4L/3vqjrD36GWeuOcjN+1mvsvw9+RseAq9hmmkc3MFvLznfiEopqcPuw==}
+
+  effect@3.14.7:
+    resolution: {integrity: sha512-vAev6B05EYMhh1fpCKsiUdVKmT0ph3TjTTfPno384dLL39tI88OIV2QNkNby506NY1L/w1NIaxcaKGfEw3rPhw==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -3367,9 +3375,16 @@ snapshots:
       msgpackr: 1.11.2
       multipasta: 0.2.5
 
-  '@effect/vitest@0.20.6(effect@3.14.6)(vitest@3.1.1(@types/node@22.14.0)(tsx@4.19.3))':
+  '@effect/platform@0.80.7(effect@3.14.7)':
     dependencies:
-      effect: 3.14.6
+      effect: 3.14.7
+      find-my-way-ts: 0.1.5
+      msgpackr: 1.11.2
+      multipasta: 0.2.5
+
+  '@effect/vitest@0.20.7(effect@3.14.7)(vitest@3.1.1(@types/node@22.14.0)(tsx@4.19.3))':
+    dependencies:
+      effect: 3.14.7
       vitest: 3.1.1(@types/node@22.14.0)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -4354,6 +4369,11 @@ snapshots:
   eastasianwidth@0.2.0: {}
 
   effect@3.14.6:
+    dependencies:
+      '@standard-schema/spec': 1.0.0
+      fast-check: 3.23.2
+
+  effect@3.14.7:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

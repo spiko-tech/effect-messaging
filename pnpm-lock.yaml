@@ -115,6 +115,13 @@ importers:
         version: 3.14.6
     publishDirectory: dist
 
+  packages/publisher:
+    devDependencies:
+      effect:
+        specifier: ^3.14.6
+        version: 3.14.7
+    publishDirectory: dist
+
 packages:
 
   '@ampproject/remapping@2.3.0':

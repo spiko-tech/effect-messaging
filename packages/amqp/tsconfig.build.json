@@ -1,5 +1,6 @@
 {
   "extends": "./tsconfig.src.json",
+  "references": [{ "path": "../publisher" }],
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/build.tsbuildinfo",
     "outDir": "build/esm",

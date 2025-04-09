@@ -101,9 +101,12 @@ importers:
 
   packages/amqp:
     devDependencies:
+      '@effect-messaging/publisher':
+        specifier: workspace:^
+        version: link:../publisher/dist
       '@effect/platform':
-        specifier: ^0.80.6
-        version: 0.80.6(effect@3.14.6)
+        specifier: ^0.80.7
+        version: 0.80.7(effect@3.14.7)
       '@types/amqplib':
         specifier: 0.10.6
         version: 0.10.6
@@ -111,14 +114,14 @@ importers:
         specifier: ^0.10.5
         version: 0.10.7
       effect:
-        specifier: ^3.14.6
-        version: 3.14.6
+        specifier: ^3.14.7
+        version: 3.14.7
     publishDirectory: dist
 
   packages/publisher:
     devDependencies:
       effect:
-        specifier: ^3.14.6
+        specifier: ^3.14.7
         version: 3.14.7
     publishDirectory: dist
 
@@ -313,11 +316,6 @@ packages:
     resolution: {integrity: sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A==}
     engines: {node: '>=0.10.0'}
     hasBin: true
-
-  '@effect/platform@0.80.6':
-    resolution: {integrity: sha512-Q40WOVDCyZynWvXeIvp2Na1h2bEs6o7esODvJhSkPZhWRPiVdkW1j5hPR7No9q2KuOLbNtrqV/pEZeP2BnIoKg==}
-    peerDependencies:
-      effect: ^3.14.6
 
   '@effect/platform@0.80.7':
     resolution: {integrity: sha512-hWgZJz4rWn6y/HgR91gtGUIXr0oqICDV5NlAdp6MjR20y805U1DeiI3ZkDkzgmEbIR/5ciz8nmPf+a08PVyLPg==}
@@ -1343,9 +1341,6 @@ packages:
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
-
-  effect@3.14.6:
-    resolution: {integrity: sha512-/QMsBfMw2Gt10x3y2jVqDanLpKFrhc4L/3vqjrD36GWeuOcjN+1mvsvw9+RseAq9hmmkc3MFvLznfiEopqcPuw==}
 
   effect@3.14.7:
     resolution: {integrity: sha512-vAev6B05EYMhh1fpCKsiUdVKmT0ph3TjTTfPno384dLL39tI88OIV2QNkNby506NY1L/w1NIaxcaKGfEw3rPhw==}
@@ -3375,13 +3370,6 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.80.6(effect@3.14.6)':
-    dependencies:
-      effect: 3.14.6
-      find-my-way-ts: 0.1.5
-      msgpackr: 1.11.2
-      multipasta: 0.2.5
-
   '@effect/platform@0.80.7(effect@3.14.7)':
     dependencies:
       effect: 3.14.7
@@ -4374,11 +4362,6 @@ snapshots:
     optional: true
 
   eastasianwidth@0.2.0: {}
-
-  effect@3.14.6:
-    dependencies:
-      '@standard-schema/spec': 1.0.0
-      fast-check: 3.23.2
 
   effect@3.14.7:
     dependencies:

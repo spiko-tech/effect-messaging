@@ -1,21 +1,29 @@
 import { connect, type Connection, type Options } from "amqplib"
-import { Effect, Option, Schedule, Stream, SubscriptionRef } from "effect"
+import * as Effect from "effect/Effect"
+import * as Option from "Effect/Option"
+import * as Schedule from "Effect/Schedule"
+import * as Stream from "effect/Stream"
+import * as SubscriptionRef from "effect/SubscriptionRef"
 import { AMQPConnectionError } from "../AMQPError.js"
 import { errorStream } from "./errorStream.js"
 
+/** @internal */
 export type ConnectionUrl = string | Options.Connect
 
+/** @internal */
 export type ConnectionRef = SubscriptionRef.SubscriptionRef<Option.Option<Connection>>
 export const ConnectionRef = {
   make: (): Effect.Effect<ConnectionRef> => SubscriptionRef.make(Option.none<Connection>())
 }
 
+/** @internal */
 const getConnection = (connectionRef: ConnectionRef) =>
   SubscriptionRef.get(connectionRef).pipe(
     Effect.flatten,
     Effect.catchTag("NoSuchElementException", () => new AMQPConnectionError({ reason: "Connection is not available" }))
   )
 
+/** @internal */
 export const initiateConnection = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
   SubscriptionRef.updateEffect(connectionRef, () =>
     Effect.gen(function*() {
@@ -30,6 +38,7 @@ export const initiateConnection = (connectionRef: ConnectionRef, url: Connection
       Effect.withSpan("AMQPConnection.initiateConnection")
     )
 
+/** @internal */
 export const closeConnection = (connectionRef: ConnectionRef) =>
   SubscriptionRef.updateEffect(connectionRef, (connection) =>
     Effect.gen(function*() {
@@ -43,6 +52,7 @@ export const closeConnection = (connectionRef: ConnectionRef) =>
       Effect.withSpan("AMQPConnection.closeConnection")
     )
 
+/** @internal */
 const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
   Effect.gen(function*() {
     yield* closeConnection(connectionRef)
@@ -51,6 +61,7 @@ const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
     )
   })
 
+/** @internal */
 export const watchConnection = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
   Stream.runForEach(errorStream(connectionRef), (error) =>
     Effect.gen(function*() {
@@ -58,6 +69,7 @@ export const watchConnection = (connectionRef: ConnectionRef, url: ConnectionUrl
       yield* reconnect(connectionRef, url)
     }))
 
+/** @internal */
 export const createChannel = (connectionRef: ConnectionRef) =>
   Effect.gen(function*() {
     const conn = yield* getConnection(connectionRef)

@@ -1,20 +1,29 @@
 import type { Channel, ConsumeMessage } from "amqplib"
-import { Effect, identity, Option, Schedule, Stream, SubscriptionRef } from "effect"
+import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Option from "Effect/Option"
+import * as Schedule from "Effect/Schedule"
+import * as Stream from "effect/Stream"
+import * as SubscriptionRef from "effect/SubscriptionRef"
 import { AMQPConnection } from "../AMQPConnection.js"
 import { AMQPChannelError } from "../AMQPError.js"
 import { errorStream } from "./errorStream.js"
 
+/** @internal */
 export type ChannelRef = SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
+/** @internal */
 export const ChannelRef = {
   make: (): Effect.Effect<ChannelRef> => SubscriptionRef.make(Option.none<Channel>())
 }
 
+/** @internal */
 export const getChannel = (channelRef: ChannelRef) =>
   SubscriptionRef.get(channelRef).pipe(
     Effect.flatten,
     Effect.catchTag("NoSuchElementException", () => new AMQPChannelError({ reason: "Channel is not available" }))
   )
 
+/** @internal */
 export const initiateChannel = (channelRef: ChannelRef) =>
   SubscriptionRef.updateEffect(channelRef, () =>
     Effect.gen(function*() {
@@ -27,6 +36,7 @@ export const initiateChannel = (channelRef: ChannelRef) =>
       Effect.withSpan("AMQPChannel.initiateChannel")
     )
 
+/** @internal */
 export const closeChannel = (channelRef: ChannelRef) =>
   SubscriptionRef.updateEffect(channelRef, (channel) =>
     Effect.gen(function*() {
@@ -40,6 +50,7 @@ export const closeChannel = (channelRef: ChannelRef) =>
       Effect.withSpan("AMQPChannel.closeChannel")
     )
 
+/** @internal */
 const reconnect = (channelRef: ChannelRef) =>
   Effect.gen(function*() {
     yield* closeChannel(channelRef)
@@ -48,6 +59,7 @@ const reconnect = (channelRef: ChannelRef) =>
     )
   })
 
+/** @internal */
 export const watchChannel = (channelRef: ChannelRef) =>
   Stream.runForEach(errorStream(channelRef), (error) =>
     Effect.gen(function*() {
@@ -55,6 +67,7 @@ export const watchChannel = (channelRef: ChannelRef) =>
       yield* reconnect(channelRef)
     }))
 
+/** @internal */
 export const wrapChannelMethod = <A>(
   channelRef: ChannelRef,
   methodName: string,
@@ -68,6 +81,7 @@ export const wrapChannelMethod = <A>(
     })
   })
 
+/** @internal */
 const initiateConsumption = (channel: Channel, queueName: string) =>
   Stream.asyncPush<ConsumeMessage, AMQPChannelError>((emit) =>
     Effect.gen(function*() {
@@ -87,8 +101,9 @@ const initiateConsumption = (channel: Channel, queueName: string) =>
     )
   )
 
+/** @internal */
 export const consume = (channelRef: ChannelRef, queueName: string) =>
   channelRef.changes.pipe(
-    Stream.filterMap(identity),
+    Stream.filterMap(Function.identity),
     Stream.flatMap((channel) => initiateConsumption(channel, queueName), { concurrency: "unbounded" })
   )

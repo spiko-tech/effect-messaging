@@ -1,7 +1,9 @@
 import type { Channel } from "amqplib"
-import type { Scope } from "effect"
-import { Context, Effect, Layer } from "effect"
-import type { AMQPConnectionError } from "./AMQPError.js"
+import * as Context from "effect/Context"
+import * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
+import type * as Scope from "effect/Scope"
+import type * as AMQPError from "./AMQPError.js"
 import * as internal from "./internal/AMQPConnection.js"
 
 /**
@@ -22,7 +24,7 @@ export type TypeId = typeof TypeId
  */
 export interface AMQPConnection {
   readonly [TypeId]: TypeId
-  readonly createChannel: Effect.Effect<Channel, AMQPConnectionError, never>
+  readonly createChannel: Effect.Effect<Channel, AMQPError.AMQPConnectionError, never>
 }
 
 /**
@@ -35,7 +37,9 @@ export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messag
  * @category constructors
  * @since 0.1.0
  */
-export const make = (url: internal.ConnectionUrl): Effect.Effect<AMQPConnection, AMQPConnectionError, Scope.Scope> =>
+export const make = (
+  url: internal.ConnectionUrl
+): Effect.Effect<AMQPConnection, AMQPError.AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
     const connection = yield* Effect.acquireRelease(
       Effect.gen(function*() {
@@ -60,5 +64,5 @@ export const make = (url: internal.ConnectionUrl): Effect.Effect<AMQPConnection,
  */
 export const layer = (url: internal.ConnectionUrl): Layer.Layer<
   AMQPConnection,
-  AMQPConnectionError
+  AMQPError.AMQPConnectionError
 > => Layer.scoped(AMQPConnection, make(url))

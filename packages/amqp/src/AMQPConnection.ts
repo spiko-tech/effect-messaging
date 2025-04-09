@@ -6,19 +6,19 @@ import * as internal from "./internal/AMQPConnection.js"
 
 /**
  * @category type ids
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPConnection")
 
 /**
  * @category type ids
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type TypeId = typeof TypeId
 
 /**
  * @category models
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AMQPConnection {
   readonly [TypeId]: TypeId
@@ -27,13 +27,13 @@ export interface AMQPConnection {
 
 /**
  * @category tags
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messaging/amqp/AMQPConnection")
 
 /**
  * @category constructors
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const make = (url: internal.ConnectionUrl): Effect.Effect<AMQPConnection, AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
@@ -55,7 +55,7 @@ export const make = (url: internal.ConnectionUrl): Effect.Effect<AMQPConnection,
   })
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  * @category Layers
  */
 export const layer = (url: internal.ConnectionUrl): Layer.Layer<

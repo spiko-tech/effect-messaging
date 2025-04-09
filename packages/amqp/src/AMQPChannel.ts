@@ -7,19 +7,19 @@ import * as internal from "./internal/AMQPChannel.js"
 
 /**
  * @category type ids
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPChannel")
 
 /**
  * @category type ids
- * @since 0.2.0
+ * @since 0.1.0
  */
 export type TypeId = typeof TypeId
 
 /**
  * @category models
- * @since 0.2.0
+ * @since 0.1.0
  */
 export interface AMQPChannel {
   readonly [TypeId]: TypeId
@@ -46,13 +46,13 @@ export interface AMQPChannel {
 
 /**
  * @category tags
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
 
 /**
  * @category constructors
- * @since 0.2.0
+ * @since 0.1.0
  */
 export const make: Effect.Effect<AMQPChannel, AMQPChannelError | AMQPConnectionError, Scope.Scope | AMQPConnection> =
   Effect.gen(
@@ -100,7 +100,7 @@ export const make: Effect.Effect<AMQPChannel, AMQPChannelError | AMQPConnectionE
   )
 
 /**
- * @since 0.2.0
+ * @since 0.1.0
  * @category Layers
  */
 export const layer: Layer.Layer<

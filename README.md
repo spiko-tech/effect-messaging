@@ -2,6 +2,12 @@
 
 A message broker toolkit for Effect.
 
+### AMQP protocol features:
+
+- 🔌 Effectful wrappers for AMQP Connection and Channel
+- 🔄 Auto-reconnect functionality when the connection is lost
+- 🧘 Seamless consumption continuation after reconnection
+
 > [!WARNING]
 > This project is currently **under development**. Please note that future releases might introduce breaking changes.
 

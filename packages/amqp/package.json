@@ -1,6 +1,6 @@
 {
     "name": "@effect-messaging/amqp",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "type": "module",
     "license": "MIT",
     "description": "An AMQP toolkit for Effect",
@@ -40,11 +40,13 @@
     },
     "devDependencies": {
         "@effect/platform": "^0.80.6",
+        "@types/amqplib": "0.10.6",
+        "amqplib": "^0.10.5",
         "effect": "^3.14.6"
     },
     "peerDependencies": {
         "@effect/platform": "^0.80.6",
+        "amqplib": "^0.10.5",
         "effect": "^3.14.6"
-    },
-    "dependencies": {}
+    }
 }

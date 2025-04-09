@@ -80,6 +80,26 @@ export const createChannel = (connectionRef: ConnectionRef) =>
   })
 
 /** @internal */
+export const createConfirmChannel = (connectionRef: ConnectionRef) =>
+  Effect.gen(function*() {
+    const conn = yield* getConnection(connectionRef)
+    return yield* Effect.tryPromise({
+      try: () => conn.createConfirmChannel(),
+      catch: (error) => new AMQPConnectionError({ reason: `Failed to create ConfirmChannel`, cause: error })
+    })
+  })
+
+/** @internal */
+export const updateSecret = (connectionRef: ConnectionRef) => (...parameters: Parameters<Connection["updateSecret"]>) =>
+  Effect.gen(function*() {
+    const conn = yield* getConnection(connectionRef)
+    return yield* Effect.tryPromise({
+      try: () => conn.updateSecret(...parameters),
+      catch: (error) => new AMQPConnectionError({ reason: `Failed to create updateSecret`, cause: error })
+    })
+  })
+
+/** @internal */
 export const serverProperties = (connectionRef: ConnectionRef) =>
   Effect.gen(function*() {
     const conn = yield* getConnection(connectionRef)

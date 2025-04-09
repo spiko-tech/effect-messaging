@@ -3,14 +3,7 @@ import type { Scope, Stream } from "effect"
 import { Context, Effect, Layer } from "effect"
 import type { AMQPConnection } from "./AMQPConnection.js"
 import type { AMQPChannelError, AMQPConnectionError } from "./AMQPError.js"
-import {
-  ChannelRef,
-  closeChannel,
-  consume,
-  initiateChannel,
-  watchChannel,
-  wrapChannelMethod
-} from "./internal/AMQPChannel.js"
+import * as internal from "./internal/AMQPChannel.js"
 
 /**
  * @category type ids
@@ -66,29 +59,37 @@ export const make: Effect.Effect<AMQPChannel, AMQPChannelError | AMQPConnectionE
     function*() {
       const channel = yield* Effect.acquireRelease(
         Effect.gen(function*() {
-          const channelRef = yield* ChannelRef.make()
-          yield* initiateChannel(channelRef)
+          const channelRef = yield* internal.ChannelRef.make()
+          yield* internal.initiateChannel(channelRef)
           return {
             [TypeId]: TypeId as TypeId,
-            consume: (queueName: string) => consume(channelRef, queueName),
+            consume: (queueName: string) => internal.consume(channelRef, queueName),
             ack: (...params: Parameters<Channel["ack"]>) =>
-              wrapChannelMethod(channelRef, "ack", async (channel) => channel.ack(...params)),
+              internal.wrapChannelMethod(channelRef, "ack", async (channel) => channel.ack(...params)),
             nack: (...params: Parameters<Channel["nack"]>) =>
-              wrapChannelMethod(channelRef, "nack", async (channel) => channel.nack(...params)),
+              internal.wrapChannelMethod(channelRef, "nack", async (channel) => channel.nack(...params)),
             publish: (...params: Parameters<Channel["publish"]>) =>
-              wrapChannelMethod(channelRef, "publish", async (channel) => channel.publish(...params)),
+              internal.wrapChannelMethod(channelRef, "publish", async (channel) => channel.publish(...params)),
             assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>
-              wrapChannelMethod(channelRef, "assertQueue", async (channel) => channel.assertQueue(...params)),
+              internal.wrapChannelMethod(channelRef, "assertQueue", async (channel) => channel.assertQueue(...params)),
             bindQueue: (...params: Parameters<Channel["bindQueue"]>) =>
-              wrapChannelMethod(channelRef, "bindQueue", async (channel) => channel.bindQueue(...params)),
+              internal.wrapChannelMethod(channelRef, "bindQueue", async (channel) => channel.bindQueue(...params)),
             unbindQueue: (...params: Parameters<Channel["unbindQueue"]>) =>
-              wrapChannelMethod(channelRef, "unbindQueue", async (channel) => channel.unbindQueue(...params)),
+              internal.wrapChannelMethod(channelRef, "unbindQueue", async (channel) => channel.unbindQueue(...params)),
             assertExchange: (...params: Parameters<Channel["assertExchange"]>) =>
-              wrapChannelMethod(channelRef, "assertExchange", async (channel) => channel.assertExchange(...params)),
+              internal.wrapChannelMethod(
+                channelRef,
+                "assertExchange",
+                async (channel) => channel.assertExchange(...params)
+              ),
             checkExchange: (...params: Parameters<Channel["checkExchange"]>) =>
-              wrapChannelMethod(channelRef, "checkExchange", async (channel) => channel.checkExchange(...params)),
-            close: closeChannel(channelRef),
-            watchChannel: watchChannel(channelRef)
+              internal.wrapChannelMethod(
+                channelRef,
+                "checkExchange",
+                async (channel) => channel.checkExchange(...params)
+              ),
+            close: internal.closeChannel(channelRef),
+            watchChannel: internal.watchChannel(channelRef)
           }
         }),
         (channel) => channel.close

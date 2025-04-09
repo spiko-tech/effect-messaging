@@ -2,14 +2,7 @@ import type { Channel } from "amqplib"
 import type { Scope } from "effect"
 import { Context, Effect, Layer } from "effect"
 import type { AMQPConnectionError } from "./AMQPError.js"
-import {
-  closeConnection,
-  ConnectionRef,
-  type ConnectionUrl,
-  createChannel,
-  initiateConnection,
-  watchConnection
-} from "./internal/AMQPConnection.js"
+import * as internal from "./internal/AMQPConnection.js"
 
 /**
  * @category type ids
@@ -42,17 +35,17 @@ export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messag
  * @category constructors
  * @since 0.2.0
  */
-export const make = (url: ConnectionUrl): Effect.Effect<AMQPConnection, AMQPConnectionError, Scope.Scope> =>
+export const make = (url: internal.ConnectionUrl): Effect.Effect<AMQPConnection, AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
     const connection = yield* Effect.acquireRelease(
       Effect.gen(function*() {
-        const connectionRef = yield* ConnectionRef.make()
-        yield* initiateConnection(connectionRef, url)
+        const connectionRef = yield* internal.ConnectionRef.make()
+        yield* internal.initiateConnection(connectionRef, url)
         return {
           [TypeId]: TypeId as TypeId,
-          createChannel: createChannel(connectionRef),
-          close: closeConnection(connectionRef),
-          watchConnection: watchConnection(connectionRef, url)
+          createChannel: internal.createChannel(connectionRef),
+          close: internal.closeConnection(connectionRef),
+          watchConnection: internal.watchConnection(connectionRef, url)
         }
       }),
       (connection) => connection.close
@@ -65,7 +58,7 @@ export const make = (url: ConnectionUrl): Effect.Effect<AMQPConnection, AMQPConn
  * @since 0.2.0
  * @category Layers
  */
-export const layer = (url: ConnectionUrl): Layer.Layer<
+export const layer = (url: internal.ConnectionUrl): Layer.Layer<
   AMQPConnection,
   AMQPConnectionError
 > => Layer.scoped(AMQPConnection, make(url))

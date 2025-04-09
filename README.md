@@ -2,6 +2,9 @@
 
 A message broker toolkit for Effect.
 
+> [!WARNING]
+> This project is currently **under development**. Please note that future releases might introduce breaking changes.
+
 ## Roadmap
 
 - [ ] Common abstractions for message brokers

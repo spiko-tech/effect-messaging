@@ -39,7 +39,10 @@
     "paths": {
       "@effect-messaging/amqp": ["./packages/amqp/src/index.js"],
       "@effect-messaging/amqp/*": ["./packages/amqp/src/*.js"],
-      "@effect-messaging/amqp/test/*": ["./packages/amqp/test/*.js"]
+      "@effect-messaging/amqp/test/*": ["./packages/amqp/test/*.js"],
+      "@effect-messaging/publisher": ["./packages/publisher/src/index.js"],
+      "@effect-messaging/publisher/*": ["./packages/publisher/src/*.js"],
+      "@effect-messaging/publisher/test/*": ["./packages/publisher/test/*.js"]
     }
   }
 }

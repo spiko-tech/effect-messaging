@@ -78,3 +78,10 @@ export const createChannel = (connectionRef: ConnectionRef) =>
       catch: (error) => new AMQPConnectionError({ reason: `Failed to create channel`, cause: error })
     })
   })
+
+/** @internal */
+export const serverProperties = (connectionRef: ConnectionRef) =>
+  Effect.gen(function*() {
+    const conn = yield* getConnection(connectionRef)
+    return conn.connection.serverProperties
+  })

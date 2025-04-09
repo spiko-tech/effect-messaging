@@ -1,7 +1,7 @@
 /**
  * @since 0.1.0
  */
-import type { Channel } from "amqplib"
+import type { Channel, ServerProperties } from "amqplib"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
@@ -28,6 +28,7 @@ export type TypeId = typeof TypeId
 export interface AMQPConnection {
   readonly [TypeId]: TypeId
   readonly createChannel: Effect.Effect<Channel, AMQPError.AMQPConnectionError, never>
+  readonly serverProperties: Effect.Effect<ServerProperties, AMQPError.AMQPConnectionError, never>
 }
 
 /**
@@ -51,6 +52,7 @@ export const make = (
         return {
           [TypeId]: TypeId as TypeId,
           createChannel: internal.createChannel(connectionRef),
+          serverProperties: internal.serverProperties(connectionRef),
           close: internal.closeConnection(connectionRef),
           watchConnection: internal.watchConnection(connectionRef, url)
         }

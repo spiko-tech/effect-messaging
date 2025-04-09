@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.2.2
+
+### Patch Changes
+
+- [`ebc2fc1`](https://github.com/spiko-tech/effect-messaging/commit/ebc2fc1f5c123c844979d7745cd5ec301132cced) Thanks [@wewelll](https://github.com/wewelll)! - Add serverProperties to AMQPConnection module
+
 ## 0.2.1
 
 ### Patch Changes

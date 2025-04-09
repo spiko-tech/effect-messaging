@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.2.1
+
+### Patch Changes
+
+- [`d2b2352`](https://github.com/spiko-tech/effect-messaging/commit/d2b2352239e96b94746e6f7e96b73bdeecd366ee) Thanks [@wewelll](https://github.com/wewelll)! - update effect packages
+
 ## 0.2.0
 
 ### Minor Changes

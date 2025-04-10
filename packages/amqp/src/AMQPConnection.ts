@@ -23,13 +23,22 @@ export type TypeId = typeof TypeId
 
 /**
  * @category models
+ * @since 0.2.5
+ */
+export type AMQPConnectionServerProperties = ServerProperties & {
+  hostname: string | undefined
+  port: string | undefined
+}
+
+/**
+ * @category models
  * @since 0.1.0
  */
 export interface AMQPConnection {
   readonly [TypeId]: TypeId
   readonly createChannel: Effect.Effect<Channel, AMQPError.AMQPConnectionError, never>
   readonly createConfirmChannel: Effect.Effect<ConfirmChannel, AMQPError.AMQPConnectionError, never>
-  readonly serverProperties: Effect.Effect<ServerProperties, AMQPError.AMQPConnectionError, never>
+  readonly serverProperties: Effect.Effect<AMQPConnectionServerProperties, AMQPError.AMQPConnectionError, never>
   readonly updateSecret: (
     ...params: Parameters<Connection["updateSecret"]>
   ) => Effect.Effect<void, AMQPError.AMQPConnectionError, never>
@@ -57,7 +66,7 @@ export const make = (
           [TypeId]: TypeId as TypeId,
           createChannel: internal.createChannel(connectionRef),
           createConfirmChannel: internal.createConfirmChannel(connectionRef),
-          serverProperties: internal.serverProperties(connectionRef),
+          serverProperties: internal.serverProperties(connectionRef, url),
           updateSecret: internal.updateSecret(connectionRef),
           close: internal.closeConnection(connectionRef),
           watchConnection: internal.watchConnection(connectionRef, url)

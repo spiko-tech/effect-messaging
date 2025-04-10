@@ -7,7 +7,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
-import type * as AMQPConnection from "./AMQPConnection.js"
+import * as AMQPConnection from "./AMQPConnection.js"
 import type * as AMQPError from "./AMQPError.js"
 import * as internal from "./internal/AMQPChannel.js"
 
@@ -108,6 +108,8 @@ export const make: Effect.Effect<
       Effect.gen(function*() {
         const channelRef = yield* internal.ChannelRef.make()
         yield* internal.initiateChannel(channelRef)
+        const connection = yield* AMQPConnection.AMQPConnection
+        const serverProperties = yield* connection.serverProperties
         return {
           [TypeId]: TypeId as TypeId,
           consume: (queueName: string) => internal.consume(channelRef, queueName),
@@ -121,8 +123,7 @@ export const make: Effect.Effect<
             internal.wrapChannelMethod(channelRef, "nackAll", async (channel) => channel.nackAll(...params)),
           reject: (...params: Parameters<Channel["reject"]>) =>
             internal.wrapChannelMethod(channelRef, "reject", async (channel) => channel.reject(...params)),
-          publish: (...params: Parameters<Channel["publish"]>) =>
-            internal.wrapChannelMethod(channelRef, "publish", async (channel) => channel.publish(...params)),
+          publish: internal.publish(channelRef, serverProperties),
           sendToQueue: (...params: Parameters<Channel["sendToQueue"]>) =>
             internal.wrapChannelMethod(channelRef, "sendToQueue", async (channel) => channel.sendToQueue(...params)),
           assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>

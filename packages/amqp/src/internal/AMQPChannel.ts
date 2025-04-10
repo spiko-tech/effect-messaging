@@ -1,3 +1,4 @@
+import { Headers, HttpTraceContext } from "@effect/platform"
 import type { Channel, ConsumeMessage } from "amqplib"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
@@ -5,9 +6,17 @@ import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
+import type { AMQPConnectionServerProperties } from "../AMQPConnection.js"
 import { AMQPConnection } from "../AMQPConnection.js"
 import { AMQPChannelError } from "../AMQPError.js"
 import { errorStream } from "./errorStream.js"
+
+const ATTR_SERVER_ADDRESS = "server.address" as const
+const ATTR_SERVER_PORT = "server.port" as const
+const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
+const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
+const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
+const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
 
 /** @internal */
 export type ChannelRef = SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
@@ -66,6 +75,46 @@ export const watchChannel = (channelRef: ChannelRef) =>
       yield* Effect.logError(`AMQPChannel: channel error: ${error}`)
       yield* reconnect(channelRef)
     }))
+
+/** @internal */
+export const publish = (
+  channelRef: ChannelRef,
+  serverProperties: AMQPConnectionServerProperties
+) =>
+(
+  ...[exchange, routingKey, content, options]: Parameters<Channel["publish"]>
+) =>
+  Effect.useSpan(
+    `amqp.publish ${routingKey}`,
+    {
+      kind: "producer",
+      captureStackTrace: false,
+      attributes: {
+        [ATTR_SERVER_ADDRESS]: serverProperties.host,
+        [ATTR_SERVER_PORT]: serverProperties.port,
+        [ATTR_MESSAGING_SYSTEM]: serverProperties.product,
+        [ATTR_MESSAGING_OPERATION_NAME]: "publish",
+        [ATTR_MESSAGING_OPERATION_TYPE]: "send",
+        [ATTR_MESSAGING_DESTINATION_NAME]: routingKey
+      }
+    },
+    (span) =>
+      Effect.gen(function*() {
+        const channel = yield* getChannel(channelRef)
+
+        return yield* Effect.try({
+          try: () =>
+            channel.publish(exchange, routingKey, content, {
+              ...options,
+              headers: Headers.merge(
+                options?.headers ?? {},
+                HttpTraceContext.toHeaders(span)
+              )
+            }),
+          catch: (error) => new AMQPChannelError({ reason: `Failed to publish on channel`, cause: error })
+        })
+      })
+  )
 
 /** @internal */
 export const wrapChannelMethod = <A>(

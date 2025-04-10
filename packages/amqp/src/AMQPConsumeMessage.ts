@@ -5,6 +5,10 @@ import type { ConsumeMessage } from "amqplib"
 import * as Context from "effect/Context"
 import * as Layer from "effect/Layer"
 
+/**
+ * @category models
+ * @since 0.3.0
+ */
 export type AMQPConsumeMessage = ConsumeMessage
 
 /**

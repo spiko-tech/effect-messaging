@@ -25,4 +25,5 @@ export interface Subscriber<M> {
   readonly subscribe: <E, R>(
     handler: Effect.Effect<void, E, R | M>
   ) => Effect.Effect<void, SubscriberError.SubscriberError, R>
+  readonly healthCheck: Effect.Effect<void, SubscriberError.SubscriberError, never>
 }

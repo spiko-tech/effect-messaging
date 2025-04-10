@@ -14,7 +14,7 @@ import * as Stream from "effect/Stream"
 import * as AMQPChannel from "./AMQPChannel.js"
 import * as AMQPConnection from "./AMQPConnection.js"
 import * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
-import type * as AMQPConnectionError from "./AMQPError.js"
+import type * as AMQPError from "./AMQPError.js"
 
 /**
  * @category type ids
@@ -132,6 +132,16 @@ const subscribe = (
     )
   )
 
+/* @internal */
+const healthCheck = (
+  channel: AMQPChannel.AMQPChannel,
+  queueName: string
+): Effect.Effect<void, SubscriberError.SubscriberError, never> =>
+  channel.checkQueue(queueName).pipe(
+    Effect.catchTag("AMQPChannelError", (error) =>
+      new SubscriberError.SubscriberError({ reason: `Healthcheck failed`, cause: error })),
+    Effect.asVoid
+  )
 /**
  * @category constructors
  * @since 0.3.0
@@ -140,7 +150,7 @@ export const make = (
   queueName: string
 ): Effect.Effect<
   AMQPSubscriber,
-  AMQPConnectionError.AMQPConnectionError,
+  AMQPError.AMQPConnectionError,
   AMQPChannel.AMQPChannel | AMQPConnection.AMQPConnection
 > =>
   Effect.gen(function*() {
@@ -151,7 +161,8 @@ export const make = (
     const subscriber: AMQPSubscriber = {
       [TypeId]: TypeId,
       [Subscriber.TypeId]: Subscriber.TypeId,
-      subscribe: subscribe(channel, queueName, serverProperties)
+      subscribe: subscribe(channel, queueName, serverProperties),
+      healthCheck: healthCheck(channel, queueName)
     }
 
     return subscriber

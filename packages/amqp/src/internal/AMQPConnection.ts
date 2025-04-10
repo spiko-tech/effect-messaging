@@ -1,6 +1,8 @@
-import { connect, type Connection, type Options } from "amqplib"
+import type { Connection, Options } from "amqplib"
+import { connect } from "amqplib"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import * as Redacted from "effect/Redacted"
 import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
@@ -8,7 +10,7 @@ import { AMQPConnectionError } from "../AMQPError.js"
 import { errorStream } from "./errorStream.js"
 
 /** @internal */
-export type ConnectionUrl = string | Options.Connect
+export type ConnectionUrl = Redacted.Redacted<string> | Options.Connect
 
 /** @internal */
 export type ConnectionRef = SubscriptionRef.SubscriptionRef<Option.Option<Connection>>
@@ -28,7 +30,7 @@ export const initiateConnection = (connectionRef: ConnectionRef, url: Connection
   SubscriptionRef.updateEffect(connectionRef, () =>
     Effect.gen(function*() {
       const connection = yield* Effect.tryPromise({
-        try: () => connect(url),
+        try: () => connect(Redacted.isRedacted(url) ? Redacted.value(url) : url),
         catch: (error) => new AMQPConnectionError({ reason: "Failed to establish connection", cause: error })
       })
       return Option.some(connection)
@@ -100,8 +102,15 @@ export const updateSecret = (connectionRef: ConnectionRef) => (...parameters: Pa
   })
 
 /** @internal */
-export const serverProperties = (connectionRef: ConnectionRef) =>
+export const serverProperties = (
+  connectionRef: ConnectionRef,
+  url: ConnectionUrl
+) =>
   Effect.gen(function*() {
     const conn = yield* getConnection(connectionRef)
-    return conn.connection.serverProperties
+    return {
+      ...conn.connection.serverProperties,
+      hostname: Redacted.isRedacted(url) ? undefined : url.hostname,
+      port: Redacted.isRedacted(url) ? undefined : url.port?.toString()
+    }
   })

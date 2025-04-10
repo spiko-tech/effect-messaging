@@ -1,4 +1,5 @@
-import { Headers, HttpTraceContext } from "@effect/platform"
+import * as Headers from "@effect/platform/Headers"
+import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Channel, ConsumeMessage } from "amqplib"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"

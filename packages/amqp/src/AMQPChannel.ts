@@ -1,13 +1,14 @@
 /**
  * @since 0.1.0
  */
-import type { Channel, ConsumeMessage, GetMessage, Replies } from "amqplib"
+import type { Channel, GetMessage, Replies } from "amqplib"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
 import * as AMQPConnection from "./AMQPConnection.js"
+import type * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
 import type * as AMQPError from "./AMQPError.js"
 import * as internal from "./internal/AMQPChannel.js"
 
@@ -29,7 +30,9 @@ export type TypeId = typeof TypeId
  */
 export interface AMQPChannel {
   readonly [TypeId]: TypeId
-  readonly consume: (queueName: string) => Stream.Stream<ConsumeMessage, AMQPError.AMQPChannelError>
+  readonly consume: (
+    queueName: string
+  ) => Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>
   readonly ack: (...parameters: Parameters<Channel["ack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly ackAll: (...parameters: Parameters<Channel["ackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly nack: (...parameters: Parameters<Channel["nack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>

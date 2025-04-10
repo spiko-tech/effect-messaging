@@ -16,10 +16,11 @@ A message broker toolkit for Effect.
 - [ ] Common abstractions for message brokers: `@effect-messaging/core`
 
   - [x] Add a `Publisher` interface
-  - [ ] Add a `Subscriber` interface
+  - [x] Add a `Subscriber` interface
 
 - [ ] Implementations for the AMQP protocol: `@effect-messaging/amqp`
 
   - [x] Effect wrappers for AMQP Connection & AMQP Channel
+  - [x] Implement publisher and subscriber
   - [ ] Integration tests
-  - [ ] Implement publisher and subscriber
+  - [ ] Add examples & documentation

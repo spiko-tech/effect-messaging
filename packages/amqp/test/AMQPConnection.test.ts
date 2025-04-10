@@ -1,5 +1,5 @@
-import { AMQPConnection } from "@effect-messaging/amqp"
 import { assert, describe, it } from "@effect/vitest"
+import * as AMQPConnection from "../src/AMQPConnection.js"
 
 describe("AMQPConnection", () => {
   it("Dummy test", () => {

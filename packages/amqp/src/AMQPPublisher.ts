@@ -1,8 +1,8 @@
 /**
  * @since 0.3.0
  */
-import * as Publisher from "@effect-messaging/publisher/Publisher"
-import * as PublisherError from "@effect-messaging/publisher/PublisherError"
+import * as Publisher from "@effect-messaging/core/Publisher"
+import * as PublisherError from "@effect-messaging/core/PublisherError"
 import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
 import { AMQPChannel } from "./AMQPChannel.js"

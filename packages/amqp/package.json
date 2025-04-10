@@ -39,14 +39,14 @@
         "coverage": "vitest --coverage"
     },
     "devDependencies": {
-        "@effect-messaging/publisher": "workspace:^",
+        "@effect-messaging/core": "workspace:^",
         "@effect/platform": "^0.80.7",
         "@types/amqplib": "0.10.6",
         "amqplib": "^0.10.5",
         "effect": "^3.14.7"
     },
     "peerDependencies": {
-        "@effect-messaging/publisher": "workspace:^",
+        "@effect-messaging/core": "workspace:^",
         "@effect/platform": "^0.80.6",
         "amqplib": "^0.10.5",
         "effect": "^3.14.6"

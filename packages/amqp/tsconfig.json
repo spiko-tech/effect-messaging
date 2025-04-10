@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "include": [],
   "references": [
-    { "path": "../publisher" },
+    { "path": "../core" },
     { "path": "tsconfig.src.json" },
     { "path": "tsconfig.test.json" },
     { "path": "tsconfig.examples.json" }

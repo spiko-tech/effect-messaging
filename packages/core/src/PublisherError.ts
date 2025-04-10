@@ -6,7 +6,7 @@ import * as Schema from "effect/Schema"
 /**
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/publisher/PublisherError")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/PublisherError")
 
 /**
  * @since 0.3.0

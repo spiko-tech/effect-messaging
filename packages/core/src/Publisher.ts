@@ -8,7 +8,7 @@ import type * as PublisherError from "./PublisherError.js"
  * @category type ids
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/publisher/Publisher")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/Publisher")
 
 /**
  * @category type ids

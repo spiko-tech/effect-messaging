@@ -1,5 +1,5 @@
 ---
-"@effect-messaging/publisher": minor
+"@effect-messaging/core": minor
 ---
 
-Add publisher package
+Add core package

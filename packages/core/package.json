@@ -1,14 +1,14 @@
 {
-    "name": "@effect-messaging/publisher",
+    "name": "@effect-messaging/core",
     "version": "0.0.1",
     "type": "module",
     "license": "MIT",
-    "description": "Publisher abstractions for Effect",
+    "description": "Message broker abstractions for Effect",
     "homepage": "https://github.com/spiko-tech/effect-messaging",
     "repository": {
         "type": "git",
         "url": "https://github.com/spiko-tech/effect-messaging.git",
-        "directory": "packages/publisher"
+        "directory": "packages/core"
     },
     "bugs": {
         "url": "https://github.com/spiko-tech/effect-messaging/issues"
@@ -16,12 +16,14 @@
     "tags": [
         "typescript",
         "publisher",
+        "subscriber",
         "pubsub",
         "messaging"
     ],
     "keywords": [
         "typescript",
         "publisher",
+        "subscriber",
         "pubsub",
         "messaging"
     ],

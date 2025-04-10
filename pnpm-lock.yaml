@@ -101,9 +101,9 @@ importers:
 
   packages/amqp:
     devDependencies:
-      '@effect-messaging/publisher':
+      '@effect-messaging/core':
         specifier: workspace:^
-        version: link:../publisher/dist
+        version: link:../core/dist
       '@effect/platform':
         specifier: ^0.80.7
         version: 0.80.7(effect@3.14.7)
@@ -118,7 +118,7 @@ importers:
         version: 3.14.7
     publishDirectory: dist
 
-  packages/publisher:
+  packages/core:
     devDependencies:
       effect:
         specifier: ^3.14.7

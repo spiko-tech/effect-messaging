@@ -13,12 +13,12 @@ A message broker toolkit for Effect.
 
 ## Roadmap
 
-- [ ] Common abstractions for message brokers
+- [ ] Common abstractions for message brokers: `@effect-messaging/core`
 
-  - [ ] Create a new package @effect-messaging/publisher
-  - [ ] Create a new package @effect-messaging/subscriber
+  - [x] Add a `Publisher` interface
+  - [ ] Add a `Subscriber` interface
 
-- [ ] Implementations for the AMQP protocol
+- [ ] Implementations for the AMQP protocol: `@effect-messaging/amqp`
 
   - [x] Effect wrappers for AMQP Connection & AMQP Channel
   - [ ] Integration tests

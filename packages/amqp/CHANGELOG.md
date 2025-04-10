@@ -1,5 +1,18 @@
 # @effect-messaging/amqp
 
+## 0.3.0
+
+### Minor Changes
+
+- [#10](https://github.com/spiko-tech/effect-messaging/pull/10) [`5fc42f4`](https://github.com/spiko-tech/effect-messaging/commit/5fc42f46ca99d7224745b8b79dc5f048b54529b9) Thanks [@wewelll](https://github.com/wewelll)! - Add span when a message is published
+
+- [#12](https://github.com/spiko-tech/effect-messaging/pull/12) [`b45785b`](https://github.com/spiko-tech/effect-messaging/commit/b45785bbf261f963a8511cd816e1c25b9257d91c) Thanks [@wewelll](https://github.com/wewelll)! - Add Subscriber with AMQPSubscriber implementation
+
+### Patch Changes
+
+- Updated dependencies [[`b45785b`](https://github.com/spiko-tech/effect-messaging/commit/b45785bbf261f963a8511cd816e1c25b9257d91c)]:
+  - @effect-messaging/core@0.2.0
+
 ## 0.2.4
 
 ### Patch Changes

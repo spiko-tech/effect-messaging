@@ -1,13 +1,13 @@
 import { expect, layer } from "@effect/vitest"
 import { Effect } from "effect"
-import * as AMQPConnection from "../src/AMQPConnection.js"
-import { testConnection } from "./dependencies.js"
+import * as AMQPChannel from "../src/AMQPChannel.js"
+import { testChannel } from "./dependencies.js"
 
-layer(testConnection)("AMQPConnection", (it) => {
+layer(testChannel)("AMQPChannel", (it) => {
   it.effect("Should be able to connect and test server properties", () =>
     Effect.gen(function*() {
-      const connection = yield* AMQPConnection.AMQPConnection
-      const serverProperties = yield* connection.serverProperties
+      const channel = yield* AMQPChannel.AMQPChannel
+      const serverProperties = yield* channel.connection.serverProperties
 
       expect(serverProperties.hostname).toEqual("localhost")
       expect(serverProperties.port).toEqual("5679")

@@ -42,6 +42,9 @@ export interface AMQPConnection {
   readonly updateSecret: (
     ...params: Parameters<Connection["updateSecret"]>
   ) => Effect.Effect<void, AMQPError.AMQPConnectionError, never>
+
+  /* @internal */
+  readonly close: (options: internal.CloseConnectionOptions) => Effect.Effect<void, never, never>
 }
 
 /**
@@ -72,7 +75,7 @@ export const make = (
           watchConnection: internal.watchConnection(connectionRef, url)
         }
       }),
-      (connection) => connection.close
+      (connection) => connection.close()
     )
     yield* Effect.forkScoped(connection.watchConnection)
     return connection

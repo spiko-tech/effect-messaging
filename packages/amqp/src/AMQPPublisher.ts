@@ -5,7 +5,9 @@ import * as Publisher from "@effect-messaging/core/Publisher"
 import * as PublisherError from "@effect-messaging/core/PublisherError"
 import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
-import { AMQPChannel } from "./AMQPChannel.js"
+import * as Schedule from "effect/Schedule"
+import * as AMQPChannel from "./AMQPChannel.js"
+import type * as AMQPError from "./AMQPError.js"
 
 /**
  * @category type ids
@@ -39,28 +41,40 @@ export interface AMQPPublisher extends Publisher.Publisher<AMQPPublishMessage> {
 }
 
 /* @internal */
-const publish =
-  (channel: AMQPChannel) => (message: AMQPPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
-    channel.publish(message.exchange, message.routingKey, message.content, message.options).pipe(
-      Effect.catchTag(
-        "AMQPChannelError",
-        (error) => Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
-      ),
-      Effect.map(() => undefined)
-    )
+const publish = (
+  channel: AMQPChannel.AMQPChannel,
+  retrySchedule: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
+) =>
+(message: AMQPPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
+  channel.publish(message.exchange, message.routingKey, message.content, message.options).pipe(
+    Effect.retry(retrySchedule),
+    Effect.catchTag(
+      "AMQPChannelError",
+      (error) => Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
+    ),
+    Effect.map(() => undefined)
+  )
+
+/**
+ * @category constructors
+ * @since 0.3.2
+ */
+export interface AMQPPublisherConfig {
+  readonly retrySchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
+}
 
 /**
  * @category constructors
  * @since 0.3.0
  */
-export const make = (): Effect.Effect<AMQPPublisher, never, AMQPChannel> =>
+export const make = (config?: AMQPPublisherConfig): Effect.Effect<AMQPPublisher, never, AMQPChannel.AMQPChannel> =>
   Effect.gen(function*() {
-    const channel = yield* AMQPChannel
+    const channel = yield* AMQPChannel.AMQPChannel
 
     const publisher: AMQPPublisher = {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(channel)
+      publish: publish(channel, config?.retrySchedule ?? Schedule.stop)
     }
 
     return publisher

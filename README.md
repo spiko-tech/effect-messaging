@@ -7,6 +7,7 @@ A message broker toolkit for Effect.
 - 🔌 Effectful wrappers for AMQP Connection and Channel
 - 🔄 Auto-reconnect functionality when the connection is lost
 - 🧘 Seamless consumption continuation after reconnection
+- 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
 > [!WARNING]
 > This project is currently **under development**. Please note that future releases might introduce breaking changes.

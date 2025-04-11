@@ -44,6 +44,17 @@ jobs:
     permissions:
       contents: read
     timeout-minutes: 10
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5679:5672
+          - 15679:15672
+        options: >-
+          --health-cmd "rabbitmqctl node_health_check"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

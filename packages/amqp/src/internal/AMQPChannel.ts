@@ -10,7 +10,7 @@ import * as SubscriptionRef from "effect/SubscriptionRef"
 import type { AMQPConnectionServerProperties } from "../AMQPConnection.js"
 import { AMQPConnection } from "../AMQPConnection.js"
 import { AMQPChannelError } from "../AMQPError.js"
-import { errorStream } from "./errorStream.js"
+import { closeStream } from "./closeStream.js"
 
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
@@ -78,7 +78,7 @@ const reconnect = (channelRef: ChannelRef) =>
 
 /** @internal */
 export const watchChannel = (channelRef: ChannelRef) =>
-  Stream.runForEach(errorStream(channelRef), (error) =>
+  Stream.runForEach(closeStream(channelRef), (error) =>
     Effect.gen(function*() {
       yield* Effect.logError(`AMQPChannel: channel error: ${error}`)
       yield* reconnect(channelRef)

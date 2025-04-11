@@ -3,7 +3,7 @@ import type { SubscriptionRef } from "effect"
 import { Effect, Option, Stream } from "effect"
 
 /** @internal */
-export const errorStream = <T extends Connection | Channel>(ref: SubscriptionRef.SubscriptionRef<Option.Option<T>>) =>
+export const closeStream = <T extends Connection | Channel>(ref: SubscriptionRef.SubscriptionRef<Option.Option<T>>) =>
   ref.changes.pipe(
     Stream.flatMap(
       (target) => {
@@ -12,7 +12,6 @@ export const errorStream = <T extends Connection | Channel>(ref: SubscriptionRef
         } else {
           return Stream.asyncPush<unknown>((emit) =>
             Effect.sync(() => {
-              target.value.addListener("error", emit.single)
               target.value.addListener("close", emit.single)
             })
           )

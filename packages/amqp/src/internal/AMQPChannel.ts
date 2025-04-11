@@ -47,11 +47,18 @@ export const initiateChannel = (channelRef: ChannelRef) =>
     )
 
 /** @internal */
-export const closeChannel = (channelRef: ChannelRef) =>
+export interface CloseChannelOptions {
+  removeAllListeners?: boolean
+}
+
+/** @internal */
+export const closeChannel = (channelRef: ChannelRef) => ({ removeAllListeners = true }: CloseChannelOptions = {}) =>
   SubscriptionRef.updateEffect(channelRef, (channel) =>
     Effect.gen(function*() {
       if (Option.isSome(channel)) {
-        channel.value.removeAllListeners()
+        if (removeAllListeners) {
+          channel.value.removeAllListeners()
+        }
         yield* Effect.tryPromise(() => channel.value.close()).pipe(Effect.ignore)
       }
       return Option.none()
@@ -63,7 +70,7 @@ export const closeChannel = (channelRef: ChannelRef) =>
 /** @internal */
 const reconnect = (channelRef: ChannelRef) =>
   Effect.gen(function*() {
-    yield* closeChannel(channelRef)
+    yield* closeChannel(channelRef)()
     yield* initiateChannel(channelRef).pipe(
       Effect.retry(Schedule.forever.pipe(Schedule.addDelay(() => 1000)))
     )

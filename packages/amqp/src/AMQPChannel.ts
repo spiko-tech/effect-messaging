@@ -92,7 +92,7 @@ export interface AMQPChannel {
   ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
 
   /* @internal */
-  readonly close: Effect.Effect<void, never, never>
+  readonly close: (config?: internal.CloseChannelOptions) => Effect.Effect<void, never, never>
 }
 
 /**
@@ -188,7 +188,7 @@ export const make: Effect.Effect<
           watchChannel: internal.watchChannel(channelRef)
         }
       }),
-      (channel) => channel.close
+      (channel) => channel.close()
     )
     yield* Effect.forkScoped(channel.watchChannel)
     return channel

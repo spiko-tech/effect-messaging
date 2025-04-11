@@ -25,7 +25,7 @@ describe("AMQPConnection", () => {
         yield* connection.close({ removeAllListeners: false })
 
         // Connection should be closed
-        expect(yield* connection.serverProperties.pipe(Effect.exit)).toStrictEqual(Exit.fail(expect.any))
+        expect(yield* connection.serverProperties.pipe(Effect.exit)).toStrictEqual(Exit.fail(expect.anything()))
 
         // Wait for reconnection
         yield* Effect.sleep("100 millis")

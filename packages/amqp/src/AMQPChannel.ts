@@ -90,6 +90,9 @@ export interface AMQPChannel {
   readonly recover: (
     ...parameters: Parameters<Channel["recover"]>
   ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+
+  /* @internal */
+  readonly close: Effect.Effect<void, never, never>
 }
 
 /**

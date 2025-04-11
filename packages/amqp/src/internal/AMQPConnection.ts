@@ -41,23 +41,31 @@ export const initiateConnection = (connectionRef: ConnectionRef, url: Connection
     )
 
 /** @internal */
-export const closeConnection = (connectionRef: ConnectionRef) =>
-  SubscriptionRef.updateEffect(connectionRef, (connection) =>
-    Effect.gen(function*() {
-      if (Option.isSome(connection)) {
-        connection.value.removeAllListeners()
-        yield* Effect.tryPromise(() => connection.value.close()).pipe(Effect.ignore)
-      }
-      return Option.none()
-    })).pipe(
-      Effect.tap(() => Effect.logDebug("AMQPConnection: connection closed")),
-      Effect.withSpan("AMQPConnection.closeConnection")
-    )
+export interface CloseConnectionOptions {
+  removeAllListeners?: boolean
+}
+
+/** @internal */
+export const closeConnection =
+  (connectionRef: ConnectionRef) => ({ removeAllListeners = true }: CloseConnectionOptions = {}) =>
+    SubscriptionRef.updateEffect(connectionRef, (connection) =>
+      Effect.gen(function*() {
+        if (Option.isSome(connection)) {
+          if (removeAllListeners) {
+            connection.value.removeAllListeners()
+          }
+          yield* Effect.tryPromise(() => connection.value.close()).pipe(Effect.ignore)
+        }
+        return Option.none()
+      })).pipe(
+        Effect.tap(() => Effect.logDebug("AMQPConnection: connection closed")),
+        Effect.withSpan("AMQPConnection.closeConnection")
+      )
 
 /** @internal */
 const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
   Effect.gen(function*() {
-    yield* closeConnection(connectionRef)
+    yield* closeConnection(connectionRef)()
     yield* initiateConnection(connectionRef, url).pipe(
       Effect.retry(Schedule.forever.pipe(Schedule.addDelay(() => 1000)))
     )

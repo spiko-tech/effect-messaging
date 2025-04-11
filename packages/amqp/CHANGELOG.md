@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.3.2
+
+### Patch Changes
+
+- [`36767f0`](https://github.com/spiko-tech/effect-messaging/commit/36767f0fff968378a219283d62e1f0c4e4f141a1) Thanks [@wewelll](https://github.com/wewelll)! - Add configurable retry schedule for the AMQPPublisher
+
 ## 0.3.1
 
 ### Patch Changes

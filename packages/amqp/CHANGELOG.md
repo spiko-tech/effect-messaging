@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.3.1
+
+### Patch Changes
+
+- [`1509d51`](https://github.com/spiko-tech/effect-messaging/commit/1509d516e2d7229a04ae42aa1f709a1ed410d54f) Thanks [@wewelll](https://github.com/wewelll)! - Stop using specific rabbitmq span annotations
+
 ## 0.3.0
 
 ### Minor Changes

@@ -7,7 +7,7 @@ import * as Schedule from "effect/Schedule"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import { AMQPConnectionError } from "../AMQPError.js"
-import { errorStream } from "./errorStream.js"
+import { closeStream } from "./closeStream.js"
 
 /** @internal */
 export type ConnectionUrl = Redacted.Redacted<string> | Options.Connect
@@ -73,7 +73,7 @@ const reconnect = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
 
 /** @internal */
 export const watchConnection = (connectionRef: ConnectionRef, url: ConnectionUrl) =>
-  Stream.runForEach(errorStream(connectionRef), (error) =>
+  Stream.runForEach(closeStream(connectionRef), (error) =>
     Effect.gen(function*() {
       yield* Effect.logError(`AMQPConnection: connection error: ${error}`)
       yield* reconnect(connectionRef, url)

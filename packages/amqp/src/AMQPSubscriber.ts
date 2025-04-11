@@ -12,7 +12,7 @@ import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
 import * as AMQPChannel from "./AMQPChannel.js"
-import * as AMQPConnection from "./AMQPConnection.js"
+import type * as AMQPConnection from "./AMQPConnection.js"
 import * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
 import type * as AMQPError from "./AMQPError.js"
 
@@ -55,8 +55,8 @@ const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
 const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
 const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
 const ATTR_MESSAGING_MESSAGE_CONVERSATION_ID = "messaging.message.conversation_id" as const
-const ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY = "messaging.rabbitmq.destination.routing_key" as const
-const ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG = "messaging.rabbitmq.message.delivery_tag" as const
+const ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY = "messaging.amqp.destination.routing_key" as const
+const ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG = "messaging.amqp.message.delivery_tag" as const
 const ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME = "messaging.destination.subscription.name" as const
 
 /* @internal */
@@ -72,7 +72,7 @@ const subscribe = (
     Stream.runForEach((message) =>
       Effect.fork(
         Effect.useSpan(
-          `rabbitmq.consume ${message.fields.routingKey}`,
+          `amqp.consume ${message.fields.routingKey}`,
           {
             parent: Option.getOrUndefined(
               HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
@@ -84,12 +84,12 @@ const subscribe = (
               [ATTR_SERVER_PORT]: connectionProperties.port,
               [ATTR_MESSAGING_MESSAGE_ID]: message.properties.messageId,
               [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
-              [ATTR_MESSAGING_SYSTEM]: "rabbitmq",
+              [ATTR_MESSAGING_SYSTEM]: connectionProperties.product,
               [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
               [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
               [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
-              [ATTR_MESSAGING_RABBITMQ_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
-              [ATTR_MESSAGING_RABBITMQ_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
+              [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
+              [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
             }
           },
           (span) =>
@@ -151,12 +151,11 @@ export const make = (
 ): Effect.Effect<
   AMQPSubscriber,
   AMQPError.AMQPConnectionError,
-  AMQPChannel.AMQPChannel | AMQPConnection.AMQPConnection
+  AMQPChannel.AMQPChannel
 > =>
   Effect.gen(function*() {
     const channel = yield* AMQPChannel.AMQPChannel
-    const connection = yield* AMQPConnection.AMQPConnection
-    const serverProperties = yield* connection.serverProperties
+    const serverProperties = yield* channel.connection.serverProperties
 
     const subscriber: AMQPSubscriber = {
       [TypeId]: TypeId,

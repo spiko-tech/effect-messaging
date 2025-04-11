@@ -30,6 +30,7 @@ export type TypeId = typeof TypeId
  */
 export interface AMQPChannel {
   readonly [TypeId]: TypeId
+  readonly connection: AMQPConnection.AMQPConnection
   readonly consume: (
     queueName: string
   ) => Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>
@@ -115,6 +116,7 @@ export const make: Effect.Effect<
         const serverProperties = yield* connection.serverProperties
         return {
           [TypeId]: TypeId as TypeId,
+          connection,
           consume: (queueName: string) => internal.consume(channelRef, queueName),
           ack: (...params: Parameters<Channel["ack"]>) =>
             internal.wrapChannelMethod(channelRef, "ack", async (channel) => channel.ack(...params)),

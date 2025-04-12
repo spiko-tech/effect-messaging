@@ -40,7 +40,7 @@ export interface AMQPPublisher extends Publisher.Publisher<AMQPPublishMessage> {
   readonly [TypeId]: TypeId
 }
 
-/* @internal */
+/** @internal */
 const publish = (
   channel: AMQPChannel.AMQPChannel,
   retrySchedule: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>

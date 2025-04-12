@@ -43,7 +43,7 @@ export interface AMQPConnection {
     ...params: Parameters<Connection["updateSecret"]>
   ) => Effect.Effect<void, AMQPError.AMQPConnectionError, never>
 
-  /* @internal */
+  /** @internal */
   readonly close: (options: internal.CloseConnectionOptions) => Effect.Effect<void, never, never>
 }
 

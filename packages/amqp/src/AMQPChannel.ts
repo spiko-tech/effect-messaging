@@ -91,7 +91,7 @@ export interface AMQPChannel {
     ...parameters: Parameters<Channel["recover"]>
   ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
 
-  /* @internal */
+  /** @internal */
   readonly close: (config?: internal.CloseChannelOptions) => Effect.Effect<void, never, never>
 }
 

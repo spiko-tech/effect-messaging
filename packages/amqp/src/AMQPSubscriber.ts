@@ -59,7 +59,7 @@ const ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY = "messaging.amqp.destination.
 const ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG = "messaging.amqp.message.delivery_tag" as const
 const ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME = "messaging.destination.subscription.name" as const
 
-/* @internal */
+/** @internal */
 const subscribe = (
   channel: AMQPChannel.AMQPChannel,
   queueName: string,
@@ -132,7 +132,7 @@ const subscribe = (
     )
   )
 
-/* @internal */
+/** @internal */
 const healthCheck = (
   channel: AMQPChannel.AMQPChannel,
   queueName: string

@@ -153,14 +153,33 @@ Effect.runPromise(runnable)
 
 ## Roadmap
 
-- [x] Common abstractions for message brokers: `@effect-messaging/core`
+### Common abstractions for message brokers `@effect-messaging/core`
 
-  - [x] Add a `Publisher` interface
-  - [x] Add a `Subscriber` interface
+**Basic abstractions:**
 
-- [x] Implementations for the AMQP protocol: `@effect-messaging/amqp`
+- [x] Add a `Publisher` interface
+- [x] Add a `Subscriber` interface
 
-  - [x] Effect wrappers for AMQP Connection & AMQP Channel
-  - [x] Implement publisher and subscriber
-  - [x] Integration tests
-  - [x] Add examples & documentation
+**Application-level API for consumer apps:**
+
+- [ ] Add support for routing based on the topic / subject
+- [ ] Add support for middlewares
+
+**Higher-level declarative API:**
+
+- [ ] Add declarative API to define messages to publish & consume using `Schema`
+- [ ] Generate publisher based on message definitions
+- [ ] Generate consumer app based on message definitions
+
+### AMQP implementation
+
+- [x] Effect wrappers for AMQP Connection & AMQP Channel
+- [x] Implement publisher and subscriber
+- [x] Integration tests
+- [x] Add examples & documentation
+
+### Implementation for other message brokers:
+
+- [ ] Kafka
+- [ ] NATS
+- [ ] Google PubSub

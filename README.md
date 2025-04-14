@@ -14,7 +14,7 @@ A message broker toolkit for Effect.
 
 ## Roadmap
 
-- [ ] Common abstractions for message brokers: `@effect-messaging/core`
+- [x] Common abstractions for message brokers: `@effect-messaging/core`
 
   - [x] Add a `Publisher` interface
   - [x] Add a `Subscriber` interface
@@ -23,5 +23,5 @@ A message broker toolkit for Effect.
 
   - [x] Effect wrappers for AMQP Connection & AMQP Channel
   - [x] Implement publisher and subscriber
-  - [ ] Integration tests
+  - [x] Integration tests
   - [ ] Add examples & documentation

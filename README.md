@@ -167,7 +167,7 @@ Effect.runPromise(runnable)
 
 **Higher-level declarative API:**
 
-- [ ] Add declarative API to define messages to publish & consume using `Schema`
+- [ ] Add declarative API to define messages schemas
 - [ ] Generate publisher based on message definitions
 - [ ] Generate consumer app based on message definitions
 

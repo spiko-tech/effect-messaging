@@ -59,6 +59,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install dependencies
         uses: ./.github/actions/setup
+      - name: Build
+        run: pnpm build
       - name: Test
         run: pnpm vitest
         env:

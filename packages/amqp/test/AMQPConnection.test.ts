@@ -1,18 +1,19 @@
 import { describe, expect, layer } from "@effect/vitest"
 import { Effect, Exit, TestServices } from "effect"
 import * as AMQPConnection from "../src/AMQPConnection.js"
-import { testConnection } from "./dependencies.js"
+import { simulateConnectionClose, testConnection } from "./dependencies.js"
 
 describe("AMQPConnection", () => {
   layer(testConnection)("serverProperties", (it) => {
     it.effect("Should be able to connect and test server properties", () =>
       Effect.gen(function*() {
         const connection = yield* AMQPConnection.AMQPConnection
-        const serverProperties = yield* connection.serverProperties
 
-        expect(serverProperties.hostname).toEqual("localhost")
-        expect(serverProperties.port).toEqual("5679")
-        expect(serverProperties.product).toEqual("RabbitMQ")
+        expect(yield* connection.serverProperties).toMatchObject({
+          hostname: "localhost",
+          port: "5679",
+          product: "RabbitMQ"
+        })
       }))
   })
 
@@ -20,9 +21,10 @@ describe("AMQPConnection", () => {
     it("Should reconnect the connection when close", () =>
       Effect.gen(function*() {
         const connection = yield* AMQPConnection.AMQPConnection
+        expect(yield* connection.serverProperties).toMatchObject({ hostname: "localhost" })
 
         // Simulate connection close
-        yield* connection.close({ removeAllListeners: false })
+        yield* simulateConnectionClose
 
         // Connection should be closed
         expect(yield* connection.serverProperties.pipe(Effect.exit)).toStrictEqual(Exit.fail(expect.anything()))
@@ -30,8 +32,7 @@ describe("AMQPConnection", () => {
         // Wait for reconnection
         yield* Effect.sleep("100 millis")
 
-        const serverProperties = yield* connection.serverProperties
-        expect(serverProperties.hostname).toEqual("localhost")
+        expect(yield* connection.serverProperties).toMatchObject({ hostname: "localhost" })
       }).pipe(TestServices.provideLive))
   })
 })

@@ -13,6 +13,8 @@ export const testConnection = AMQPConnection.layer({
 export const testChannel = AMQPChannel.layer.pipe(Layer.provideMerge(testConnection))
 
 export const TEST_EXCHANGE = "TEST_EXCHANGE"
+export const TEST_QUEUE = "TEST_QUEUE"
+export const TEST_SUBJECT = "TEST_SUBJECT"
 
 export const assertTestExchange = Effect.gen(function*() {
   const channel = yield* AMQPChannel.AMQPChannel
@@ -27,4 +29,19 @@ export const simulateConnectionClose = Effect.gen(function*() {
 export const simulateChannelClose = Effect.gen(function*() {
   const channel = yield* AMQPChannel.AMQPChannel
   yield* channel.close({ removeAllListeners: false })
+})
+
+export const purgeTestQueue = Effect.gen(function*() {
+  const channel = yield* AMQPChannel.AMQPChannel
+  return yield* channel.purgeQueue(TEST_QUEUE)
+})
+
+export const assertTestQueue = Effect.gen(function*() {
+  const channel = yield* AMQPChannel.AMQPChannel
+  return yield* channel.assertQueue(TEST_QUEUE, { durable: true })
+})
+
+export const bindTestQueue = Effect.gen(function*() {
+  const channel = yield* AMQPChannel.AMQPChannel
+  return yield* channel.bindQueue(TEST_QUEUE, TEST_EXCHANGE, TEST_SUBJECT)
 })

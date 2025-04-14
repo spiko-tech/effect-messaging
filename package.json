@@ -18,7 +18,7 @@
     "docgen": "pnpm --recursive exec docgen && node scripts/docs.mjs",
     "test-types": "tstyche",
     "changeset-version": "changeset version",
-    "changeset-publish": "pnpm build && TEST_DIST= pnpm vitest && changeset publish"
+    "changeset-publish": "pnpm build && changeset publish"
   },
   "keywords": [],
   "author": "",

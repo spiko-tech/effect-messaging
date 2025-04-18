@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.3.4
+
+### Patch Changes
+
+- [#18](https://github.com/spiko-tech/effect-messaging/pull/18) [`51abf13`](https://github.com/spiko-tech/effect-messaging/commit/51abf13b8753fb0bb95437e7ad51cbbbadbf19e9) Thanks [@wewelll](https://github.com/wewelll)! - When requesting a Connection or a Channel, wait for it to be available instead of throwing if unavailable
+
 ## 0.3.3
 
 ### Patch Changes

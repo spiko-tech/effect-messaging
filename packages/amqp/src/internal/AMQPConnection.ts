@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Redacted from "effect/Redacted"
 import * as Schedule from "effect/Schedule"
+import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import { AMQPConnectionError } from "../AMQPError.js"
@@ -19,10 +20,17 @@ export const ConnectionRef = {
 }
 
 /** @internal */
-const getConnection = (connectionRef: ConnectionRef) =>
-  SubscriptionRef.get(connectionRef).pipe(
+const getOrWaitConnection = (connectionRef: ConnectionRef) =>
+  connectionRef.changes.pipe(
+    Stream.takeUntil(Option.isSome),
+    Stream.run(Sink.last()),
     Effect.flatten,
-    Effect.catchTag("NoSuchElementException", () => new AMQPConnectionError({ reason: "Connection is not available" }))
+    Effect.flatten,
+    Effect.catchTag("NoSuchElementException", () =>
+      Effect.dieMessage(`Should never happen: Connection should be available here`)),
+    Effect.timeout(`5 seconds`), // @TODO: make this configurable. Putting a timeout here to avoid blocking forever if the connection is never ready
+    Effect.catchTag("TimeoutException", () =>
+      new AMQPConnectionError({ reason: "Connection is not available" }))
   )
 
 /** @internal */
@@ -82,7 +90,7 @@ export const watchConnection = (connectionRef: ConnectionRef, url: ConnectionUrl
 /** @internal */
 export const createChannel = (connectionRef: ConnectionRef) =>
   Effect.gen(function*() {
-    const conn = yield* getConnection(connectionRef)
+    const conn = yield* getOrWaitConnection(connectionRef)
     return yield* Effect.tryPromise({
       try: () => conn.createChannel(),
       catch: (error) => new AMQPConnectionError({ reason: `Failed to create channel`, cause: error })
@@ -92,7 +100,7 @@ export const createChannel = (connectionRef: ConnectionRef) =>
 /** @internal */
 export const createConfirmChannel = (connectionRef: ConnectionRef) =>
   Effect.gen(function*() {
-    const conn = yield* getConnection(connectionRef)
+    const conn = yield* getOrWaitConnection(connectionRef)
     return yield* Effect.tryPromise({
       try: () => conn.createConfirmChannel(),
       catch: (error) => new AMQPConnectionError({ reason: `Failed to create ConfirmChannel`, cause: error })
@@ -102,7 +110,7 @@ export const createConfirmChannel = (connectionRef: ConnectionRef) =>
 /** @internal */
 export const updateSecret = (connectionRef: ConnectionRef) => (...parameters: Parameters<Connection["updateSecret"]>) =>
   Effect.gen(function*() {
-    const conn = yield* getConnection(connectionRef)
+    const conn = yield* getOrWaitConnection(connectionRef)
     return yield* Effect.tryPromise({
       try: () => conn.updateSecret(...parameters),
       catch: (error) => new AMQPConnectionError({ reason: `Failed to create updateSecret`, cause: error })
@@ -115,7 +123,7 @@ export const serverProperties = (
   url: ConnectionUrl
 ) =>
   Effect.gen(function*() {
-    const conn = yield* getConnection(connectionRef)
+    const conn = yield* getOrWaitConnection(connectionRef)
     return {
       ...conn.connection.serverProperties,
       hostname: Redacted.isRedacted(url) ? undefined : url.hostname,

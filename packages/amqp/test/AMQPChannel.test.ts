@@ -1,7 +1,7 @@
 import { describe, expect, it, layer } from "@effect/vitest"
-import { Effect, Exit, TestServices } from "effect"
+import { Effect, TestServices } from "effect"
 import * as AMQPChannel from "../src/AMQPChannel.js"
-import { assertTestExchange, simulateChannelClose, testChannel } from "./dependencies.js"
+import { assertTestExchange, simulateChannelClose, simulateConnectionClose, testChannel } from "./dependencies.js"
 
 describe("AMQPChannel", () => {
   layer(testChannel)("connection", (it) => {
@@ -25,13 +25,7 @@ describe("AMQPChannel", () => {
         // Simulate channel close
         yield* simulateChannelClose
 
-        // channel should be closed
-        expect(yield* assertTestExchange.pipe(Effect.exit))
-          .toStrictEqual(Exit.fail(expect.anything()))
-
-        // Wait for reconnection
-        yield* Effect.sleep("50 millis")
-
+        // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
       }).pipe(Effect.provide(testChannel), TestServices.provideLive))
 
@@ -40,15 +34,9 @@ describe("AMQPChannel", () => {
         yield* assertTestExchange
 
         // Simulate channel close
-        yield* simulateChannelClose
+        yield* simulateConnectionClose
 
-        // channel should be closed
-        expect(yield* assertTestExchange.pipe(Effect.exit))
-          .toStrictEqual(Exit.fail(expect.anything()))
-
-        // Wait for reconnection - this is a bit longer than the channel close
-        yield* Effect.sleep("2000 millis")
-
+        // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
       }).pipe(Effect.provide(testChannel), TestServices.provideLive))
   })

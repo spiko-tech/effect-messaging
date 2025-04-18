@@ -1,5 +1,5 @@
 import { describe, expect, layer } from "@effect/vitest"
-import { Effect, Exit, TestServices } from "effect"
+import { Effect, TestServices } from "effect"
 import * as AMQPConnection from "../src/AMQPConnection.js"
 import { simulateConnectionClose, testConnection } from "./dependencies.js"
 
@@ -26,12 +26,7 @@ describe("AMQPConnection", () => {
         // Simulate connection close
         yield* simulateConnectionClose
 
-        // Connection should be closed
-        expect(yield* connection.serverProperties.pipe(Effect.exit)).toStrictEqual(Exit.fail(expect.anything()))
-
-        // Wait for reconnection
-        yield* Effect.sleep("100 millis")
-
+        // should wait for connection to re-open and get server properties
         expect(yield* connection.serverProperties).toMatchObject({ hostname: "localhost" })
       }).pipe(TestServices.provideLive))
   })

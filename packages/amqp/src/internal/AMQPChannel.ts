@@ -5,6 +5,7 @@ import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
 import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
+import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import type { AMQPConnectionServerProperties } from "../AMQPConnection.js"
@@ -27,10 +28,17 @@ export const ChannelRef = {
 }
 
 /** @internal */
-export const getChannel = (channelRef: ChannelRef) =>
-  SubscriptionRef.get(channelRef).pipe(
+const getOrWaitChannel = (channelRef: ChannelRef) =>
+  channelRef.changes.pipe(
+    Stream.takeUntil(Option.isSome),
+    Stream.run(Sink.last()),
     Effect.flatten,
-    Effect.catchTag("NoSuchElementException", () => new AMQPChannelError({ reason: "Channel is not available" }))
+    Effect.flatten,
+    Effect.catchTag("NoSuchElementException", () =>
+      Effect.dieMessage(`Should never happen: Channel should be available here`)),
+    Effect.timeout(`5 seconds`), // @TODO: make this configurable. Putting a timeout here to avoid blocking forever if the channel is never ready
+    Effect.catchTag("TimeoutException", () =>
+      new AMQPChannelError({ reason: "Channel is not available" }))
   )
 
 /** @internal */
@@ -108,7 +116,7 @@ export const publish = (
     },
     (span) =>
       Effect.gen(function*() {
-        const channel = yield* getChannel(channelRef)
+        const channel = yield* getOrWaitChannel(channelRef)
 
         return yield* Effect.try({
           try: () =>
@@ -131,7 +139,7 @@ export const wrapChannelMethod = <A>(
   callMethod: (channel: Channel) => PromiseLike<A>
 ) =>
   Effect.gen(function*() {
-    const channel = yield* getChannel(channelRef)
+    const channel = yield* getOrWaitChannel(channelRef)
     return yield* Effect.tryPromise({
       try: () => callMethod(channel),
       catch: (error) => new AMQPChannelError({ reason: `Failed to call ${methodName} on channel`, cause: error })

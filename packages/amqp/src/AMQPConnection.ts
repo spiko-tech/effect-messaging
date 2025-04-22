@@ -61,25 +61,29 @@ export const make = (
   url: internal.ConnectionUrl
 ): Effect.Effect<AMQPConnection, AMQPError.AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
+    const internalConnection = yield* internal.InternalAMQPConnection
+    const provideInternal = Effect.provideService(internal.InternalAMQPConnection, internalConnection)
+
     const connection = yield* Effect.acquireRelease(
       Effect.gen(function*() {
-        const connectionRef = yield* internal.ConnectionRef.make()
-        yield* internal.initiateConnection(connectionRef, url)
+        yield* internal.initiateConnection
         return {
           [TypeId]: TypeId as TypeId,
-          createChannel: internal.createChannel(connectionRef),
-          createConfirmChannel: internal.createConfirmChannel(connectionRef),
-          serverProperties: internal.serverProperties(connectionRef, url),
-          updateSecret: internal.updateSecret(connectionRef),
-          close: internal.closeConnection(connectionRef),
-          watchConnection: internal.watchConnection(connectionRef, url)
+          createChannel: internal.createChannel.pipe(provideInternal),
+          createConfirmChannel: internal.createConfirmChannel.pipe(provideInternal),
+          serverProperties: internal.serverProperties.pipe(provideInternal),
+          updateSecret: (...params: Parameters<Connection["updateSecret"]>) =>
+            internal.updateSecret(...params).pipe(provideInternal),
+          close: (opts: internal.CloseConnectionOptions = {}) => internal.closeConnection(opts).pipe(provideInternal)
         }
       }),
       (connection) => connection.close()
     )
-    yield* Effect.forkScoped(connection.watchConnection)
+    yield* Effect.forkScoped(internal.watchConnection)
     return connection
-  })
+  }).pipe(
+    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new({ url }))
+  )
 
 /**
  * @since 0.1.0

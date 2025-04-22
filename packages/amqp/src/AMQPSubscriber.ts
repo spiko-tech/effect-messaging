@@ -68,69 +68,72 @@ const subscribe = (
 <E, R>(
   handler: Effect.Effect<void, E, R | AMQPConsumeMessage.AMQPConsumeMessage>
 ) =>
-  channel.consume(queueName).pipe(
-    Stream.runForEach((message) =>
-      Effect.fork(
-        Effect.useSpan(
-          `amqp.consume ${message.fields.routingKey}`,
-          {
-            parent: Option.getOrUndefined(
-              HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
-            ),
-            kind: "consumer",
-            captureStackTrace: false,
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: connectionProperties.host,
-              [ATTR_SERVER_PORT]: connectionProperties.port,
-              [ATTR_MESSAGING_MESSAGE_ID]: message.properties.messageId,
-              [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
-              [ATTR_MESSAGING_SYSTEM]: connectionProperties.product,
-              [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
-              [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
-              [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
-              [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
-              [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
-            }
-          },
-          (span) =>
-            Effect.gen(function*() {
-              yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-              yield* handler
-              span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-              yield* channel.ack(message)
-            }).pipe(
-              Effect.provide(AMQPConsumeMessage.layer(message)),
-              Effect.tapErrorCause((cause) =>
-                Effect.gen(function*() {
-                  yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                  span.attribute(
-                    "error.type",
-                    Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
-                    )
-                  )
-                  span.attribute("error.stack", Cause.pretty(cause))
-                  span.attribute(
-                    "error.message",
-                    Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-                    )
-                  )
-                  yield* channel.nack(message, false, false)
-                })
+  Effect.gen(function*() {
+    const consumeStream = yield* channel.consume(queueName)
+    return yield* consumeStream.pipe(
+      Stream.runForEach((message) =>
+        Effect.fork(
+          Effect.useSpan(
+            `amqp.consume ${message.fields.routingKey}`,
+            {
+              parent: Option.getOrUndefined(
+                HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
               ),
-              Effect.withParentSpan(span)
-            )
+              kind: "consumer",
+              captureStackTrace: false,
+              attributes: {
+                [ATTR_SERVER_ADDRESS]: connectionProperties.host,
+                [ATTR_SERVER_PORT]: connectionProperties.port,
+                [ATTR_MESSAGING_MESSAGE_ID]: message.properties.messageId,
+                [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
+                [ATTR_MESSAGING_SYSTEM]: connectionProperties.product,
+                [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
+                [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
+                [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
+                [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
+                [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
+              }
+            },
+            (span) =>
+              Effect.gen(function*() {
+                yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
+                yield* handler
+                span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                yield* channel.ack(message)
+              }).pipe(
+                Effect.provide(AMQPConsumeMessage.layer(message)),
+                Effect.tapErrorCause((cause) =>
+                  Effect.gen(function*() {
+                    yield* Effect.logError(Cause.pretty(cause))
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                    span.attribute(
+                      "error.type",
+                      Cause.squashWith(
+                        cause,
+                        (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                      )
+                    )
+                    span.attribute("error.stack", Cause.pretty(cause))
+                    span.attribute(
+                      "error.message",
+                      Cause.squashWith(
+                        cause,
+                        (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                      )
+                    )
+                    yield* channel.nack(message, false, false)
+                  })
+                ),
+                Effect.withParentSpan(span)
+              )
+          )
         )
+      ),
+      Effect.mapError((error) =>
+        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })
       )
-    ),
-    Effect.mapError((error) =>
-      new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })
     )
-  )
+  })
 
 /** @internal */
 const healthCheck = (

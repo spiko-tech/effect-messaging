@@ -3,8 +3,10 @@
  */
 import type { Channel, GetMessage, Replies } from "amqplib"
 import * as Context from "effect/Context"
+import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import type * as Schedule from "effect/Schedule"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
 import * as AMQPConnection from "./AMQPConnection.js"
@@ -102,119 +104,133 @@ export interface AMQPChannel {
 export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
 
 /**
+ * @category models
+ * @since 0.1.0
+ */
+export interface AMQPChannelOptions {
+  retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
+  waitChannelTimeout?: Duration.DurationInput
+}
+
+/**
  * @category constructors
  * @since 0.1.0
  */
-export const make: Effect.Effect<
+export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
   AMQPChannel,
   AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
   Scope.Scope | AMQPConnection.AMQPConnection
-> = Effect.gen(
-  function*() {
-    const internalChannel = yield* internal.InternalAMQPChannel
-    const provideInternal = Effect.provideService(internal.InternalAMQPChannel, internalChannel)
+> =>
+  Effect.gen(
+    function*() {
+      const internalChannel = yield* internal.InternalAMQPChannel
+      const provideInternal = Effect.provideService(internal.InternalAMQPChannel, internalChannel)
 
-    const channel = yield* Effect.acquireRelease(
-      Effect.gen(function*() {
-        yield* internal.initiateChannel
-        const connection = yield* AMQPConnection.AMQPConnection
+      const channel = yield* Effect.acquireRelease(
+        Effect.gen(function*() {
+          yield* internal.initiateChannel
+          const connection = yield* AMQPConnection.AMQPConnection
 
-        return {
-          [TypeId]: TypeId as TypeId,
-          connection,
-          consume: (queueName: string) => internal.consume(queueName).pipe(provideInternal),
-          ack: (...params: Parameters<Channel["ack"]>) =>
-            internal.wrapChannelMethod("ack", async (channel) => channel.ack(...params)).pipe(provideInternal),
-          ackAll: (...params: Parameters<Channel["ackAll"]>) =>
-            internal.wrapChannelMethod("ackAll", async (channel) => channel.ackAll(...params)).pipe(provideInternal),
-          nack: (...params: Parameters<Channel["nack"]>) =>
-            internal.wrapChannelMethod("nack", async (channel) => channel.nack(...params)).pipe(provideInternal),
-          nackAll: (...params: Parameters<Channel["nackAll"]>) =>
-            internal.wrapChannelMethod("nackAll", async (channel) => channel.nackAll(...params)).pipe(provideInternal),
-          reject: (...params: Parameters<Channel["reject"]>) =>
-            internal.wrapChannelMethod("reject", async (channel) => channel.reject(...params)).pipe(provideInternal),
-          publish: (...params: Parameters<Channel["publish"]>) => internal.publish(...params).pipe(provideInternal),
-          sendToQueue: (...params: Parameters<Channel["sendToQueue"]>) =>
-            internal.wrapChannelMethod("sendToQueue", async (channel) => channel.sendToQueue(...params)).pipe(
-              provideInternal
-            ),
-          assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>
-            internal.wrapChannelMethod("assertQueue", async (channel) => channel.assertQueue(...params)).pipe(
-              provideInternal
-            ),
-          checkQueue: (...params: Parameters<Channel["checkQueue"]>) =>
-            internal.wrapChannelMethod("checkQueue", async (channel) => channel.checkQueue(...params)).pipe(
-              provideInternal
-            ),
-          deleteQueue: (...params: Parameters<Channel["deleteQueue"]>) =>
-            internal.wrapChannelMethod("deleteQueue", async (channel) => channel.deleteQueue(...params)).pipe(
-              provideInternal
-            ),
-          purgeQueue: (...params: Parameters<Channel["purgeQueue"]>) =>
-            internal.wrapChannelMethod("purgeQueue", async (channel) => channel.purgeQueue(...params)).pipe(
-              provideInternal
-            ),
-          bindQueue: (...params: Parameters<Channel["bindQueue"]>) =>
-            internal.wrapChannelMethod("bindQueue", async (channel) => channel.bindQueue(...params)).pipe(
-              provideInternal
-            ),
-          unbindQueue: (...params: Parameters<Channel["unbindQueue"]>) =>
-            internal.wrapChannelMethod("unbindQueue", async (channel) => channel.unbindQueue(...params)).pipe(
-              provideInternal
-            ),
-          assertExchange: (...params: Parameters<Channel["assertExchange"]>) =>
-            internal.wrapChannelMethod(
-              "assertExchange",
-              async (channel) => channel.assertExchange(...params)
-            ).pipe(provideInternal),
-          checkExchange: (...params: Parameters<Channel["checkExchange"]>) =>
-            internal.wrapChannelMethod(
-              "checkExchange",
-              async (channel) => channel.checkExchange(...params)
-            ).pipe(provideInternal),
-          deleteExchange: (...params: Parameters<Channel["deleteExchange"]>) =>
-            internal.wrapChannelMethod(
-              "deleteExchange",
-              async (channel) => channel.deleteExchange(...params)
-            ).pipe(provideInternal),
-          bindExchange: (...params: Parameters<Channel["bindExchange"]>) =>
-            internal.wrapChannelMethod(
-              "bindExchange",
-              async (channel) => channel.bindExchange(...params)
-            ).pipe(provideInternal),
-          unbindExchange: (...params: Parameters<Channel["unbindExchange"]>) =>
-            internal.wrapChannelMethod(
-              "unbindExchange",
-              async (channel) => channel.unbindExchange(...params)
-            ).pipe(provideInternal),
-          cancel: (...params: Parameters<Channel["cancel"]>) =>
-            internal.wrapChannelMethod("cancel", async (channel) => channel.cancel(...params)).pipe(provideInternal),
-          get: (...params: Parameters<Channel["get"]>) =>
-            internal.wrapChannelMethod("get", async (channel) => channel.get(...params)).pipe(provideInternal),
-          prefetch: (...params: Parameters<Channel["prefetch"]>) =>
-            internal.wrapChannelMethod("prefetch", async (channel) => channel.prefetch(...params)).pipe(
-              provideInternal
-            ),
-          recover: (...params: Parameters<Channel["recover"]>) =>
-            internal.wrapChannelMethod("recover", async (channel) => channel.recover(...params)).pipe(provideInternal),
-          close: (opts: internal.CloseChannelOptions = {}) => internal.closeChannel(opts).pipe(provideInternal)
-        }
-      }),
-      (channel) => channel.close()
-    )
-    yield* Effect.forkScoped(internal.watchChannel)
-    return channel
-  }
-).pipe(
-  Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.InternalAMQPChannel.new())
-)
+          return {
+            [TypeId]: TypeId as TypeId,
+            connection,
+            consume: (queueName: string) => internal.consume(queueName).pipe(provideInternal),
+            ack: (...params: Parameters<Channel["ack"]>) =>
+              internal.wrapChannelMethod("ack", async (channel) => channel.ack(...params)).pipe(provideInternal),
+            ackAll: (...params: Parameters<Channel["ackAll"]>) =>
+              internal.wrapChannelMethod("ackAll", async (channel) => channel.ackAll(...params)).pipe(provideInternal),
+            nack: (...params: Parameters<Channel["nack"]>) =>
+              internal.wrapChannelMethod("nack", async (channel) => channel.nack(...params)).pipe(provideInternal),
+            nackAll: (...params: Parameters<Channel["nackAll"]>) =>
+              internal.wrapChannelMethod("nackAll", async (channel) => channel.nackAll(...params)).pipe(
+                provideInternal
+              ),
+            reject: (...params: Parameters<Channel["reject"]>) =>
+              internal.wrapChannelMethod("reject", async (channel) => channel.reject(...params)).pipe(provideInternal),
+            publish: (...params: Parameters<Channel["publish"]>) => internal.publish(...params).pipe(provideInternal),
+            sendToQueue: (...params: Parameters<Channel["sendToQueue"]>) =>
+              internal.wrapChannelMethod("sendToQueue", async (channel) => channel.sendToQueue(...params)).pipe(
+                provideInternal
+              ),
+            assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>
+              internal.wrapChannelMethod("assertQueue", async (channel) => channel.assertQueue(...params)).pipe(
+                provideInternal
+              ),
+            checkQueue: (...params: Parameters<Channel["checkQueue"]>) =>
+              internal.wrapChannelMethod("checkQueue", async (channel) => channel.checkQueue(...params)).pipe(
+                provideInternal
+              ),
+            deleteQueue: (...params: Parameters<Channel["deleteQueue"]>) =>
+              internal.wrapChannelMethod("deleteQueue", async (channel) => channel.deleteQueue(...params)).pipe(
+                provideInternal
+              ),
+            purgeQueue: (...params: Parameters<Channel["purgeQueue"]>) =>
+              internal.wrapChannelMethod("purgeQueue", async (channel) => channel.purgeQueue(...params)).pipe(
+                provideInternal
+              ),
+            bindQueue: (...params: Parameters<Channel["bindQueue"]>) =>
+              internal.wrapChannelMethod("bindQueue", async (channel) => channel.bindQueue(...params)).pipe(
+                provideInternal
+              ),
+            unbindQueue: (...params: Parameters<Channel["unbindQueue"]>) =>
+              internal.wrapChannelMethod("unbindQueue", async (channel) => channel.unbindQueue(...params)).pipe(
+                provideInternal
+              ),
+            assertExchange: (...params: Parameters<Channel["assertExchange"]>) =>
+              internal.wrapChannelMethod(
+                "assertExchange",
+                async (channel) => channel.assertExchange(...params)
+              ).pipe(provideInternal),
+            checkExchange: (...params: Parameters<Channel["checkExchange"]>) =>
+              internal.wrapChannelMethod(
+                "checkExchange",
+                async (channel) => channel.checkExchange(...params)
+              ).pipe(provideInternal),
+            deleteExchange: (...params: Parameters<Channel["deleteExchange"]>) =>
+              internal.wrapChannelMethod(
+                "deleteExchange",
+                async (channel) => channel.deleteExchange(...params)
+              ).pipe(provideInternal),
+            bindExchange: (...params: Parameters<Channel["bindExchange"]>) =>
+              internal.wrapChannelMethod(
+                "bindExchange",
+                async (channel) => channel.bindExchange(...params)
+              ).pipe(provideInternal),
+            unbindExchange: (...params: Parameters<Channel["unbindExchange"]>) =>
+              internal.wrapChannelMethod(
+                "unbindExchange",
+                async (channel) => channel.unbindExchange(...params)
+              ).pipe(provideInternal),
+            cancel: (...params: Parameters<Channel["cancel"]>) =>
+              internal.wrapChannelMethod("cancel", async (channel) => channel.cancel(...params)).pipe(provideInternal),
+            get: (...params: Parameters<Channel["get"]>) =>
+              internal.wrapChannelMethod("get", async (channel) => channel.get(...params)).pipe(provideInternal),
+            prefetch: (...params: Parameters<Channel["prefetch"]>) =>
+              internal.wrapChannelMethod("prefetch", async (channel) => channel.prefetch(...params)).pipe(
+                provideInternal
+              ),
+            recover: (...params: Parameters<Channel["recover"]>) =>
+              internal.wrapChannelMethod("recover", async (channel) => channel.recover(...params)).pipe(
+                provideInternal
+              ),
+            close: (opts: internal.CloseChannelOptions = {}) => internal.closeChannel(opts).pipe(provideInternal)
+          }
+        }),
+        (channel) => channel.close()
+      )
+      yield* Effect.forkScoped(internal.watchChannel)
+      return channel
+    }
+  ).pipe(
+    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.InternalAMQPChannel.new(options))
+  )
 
 /**
  * @since 0.1.0
  * @category Layers
  */
-export const layer: Layer.Layer<
+export const layer = (options: AMQPChannelOptions = {}): Layer.Layer<
   AMQPChannel,
   AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
   AMQPConnection.AMQPConnection
-> = Layer.scoped(AMQPChannel, make)
+> => Layer.scoped(AMQPChannel, make(options))

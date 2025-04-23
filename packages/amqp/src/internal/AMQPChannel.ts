@@ -2,6 +2,7 @@ import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Channel, ConsumeMessage } from "amqplib"
 import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
 import * as Option from "effect/Option"
@@ -10,6 +11,7 @@ import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as AMQPConnection from "../AMQPConnection.js"
+import type { AMQPConnectionError } from "../AMQPError.js"
 import { AMQPChannelError } from "../AMQPError.js"
 import { closeStream } from "./closeStream.js"
 
@@ -25,20 +27,37 @@ export class InternalAMQPChannel
   extends Context.Tag("@effect-messaging/amqp/InternalAMQPChannel")<InternalAMQPChannel, {
     channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
     serverProperties: AMQPConnection.AMQPConnectionServerProperties
+    retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
+    waitChannelTimeout: Duration.DurationInput
   }>()
 {
-  static new = () =>
+  private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
+  private static defaultwaitChannelTimeout = Duration.seconds(5)
+
+  static new = (options: {
+    retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
+    waitChannelTimeout?: Duration.DurationInput
+  }): Effect.Effect<
+    Context.Tag.Service<InternalAMQPChannel>,
+    AMQPConnectionError,
+    AMQPConnection.AMQPConnection
+  > =>
     Effect.gen(function*() {
       const channelRef = yield* SubscriptionRef.make(Option.none<Channel>())
       const connection = yield* AMQPConnection.AMQPConnection
       const serverProperties = yield* connection.serverProperties
-      return { channelRef, serverProperties }
+      return {
+        channelRef,
+        serverProperties,
+        retryConnectionSchedule: options.retryConnectionSchedule ?? InternalAMQPChannel.defaultRetryConnectionSchedule,
+        waitChannelTimeout: options.waitChannelTimeout ?? InternalAMQPChannel.defaultwaitChannelTimeout
+      }
     })
 }
 
 /** @internal */
 const getOrWaitChannel = Effect.gen(function*() {
-  const { channelRef } = yield* InternalAMQPChannel
+  const { channelRef, waitChannelTimeout } = yield* InternalAMQPChannel
   return yield* channelRef.changes.pipe(
     Stream.takeUntil(Option.isSome),
     Stream.run(Sink.last()),
@@ -48,7 +67,7 @@ const getOrWaitChannel = Effect.gen(function*() {
       "NoSuchElementException",
       () => Effect.dieMessage(`Should never happen: Channel should be available here`)
     ),
-    Effect.timeout(`5 seconds`), // @TODO: make this configurable. Putting a timeout here to avoid blocking forever if the channel is never ready
+    Effect.timeout(waitChannelTimeout),
     Effect.catchTag("TimeoutException", () => new AMQPChannelError({ reason: "Channel is not available" }))
   )
 })
@@ -94,10 +113,9 @@ export const closeChannel = ({ removeAllListeners = true }: CloseChannelOptions 
 
 /** @internal */
 const reconnect = Effect.gen(function*() {
+  const { retryConnectionSchedule } = yield* InternalAMQPChannel
   yield* closeChannel()
-  yield* initiateChannel.pipe(
-    Effect.retry(Schedule.forever.pipe(Schedule.addDelay(() => 1000)))
-  )
+  yield* initiateChannel.pipe(Effect.retry(retryConnectionSchedule))
 })
 
 /** @internal */

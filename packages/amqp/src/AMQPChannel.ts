@@ -105,7 +105,7 @@ export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/am
 
 /**
  * @category models
- * @since 0.1.0
+ * @since 0.4.0
  */
 export interface AMQPChannelOptions {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>

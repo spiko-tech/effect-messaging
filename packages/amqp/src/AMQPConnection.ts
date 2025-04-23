@@ -57,7 +57,7 @@ export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messag
 
 /**
  * @category models
- * @since 0.1.0
+ * @since 0.4.0
  */
 export type AMQPConnectionOptions = {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>

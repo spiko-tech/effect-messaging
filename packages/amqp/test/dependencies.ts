@@ -4,12 +4,10 @@ import * as AMQPChannel from "../src/AMQPChannel.js"
 import * as AMQPConnection from "../src/AMQPConnection.js"
 
 export const testConnection = AMQPConnection.layer({
-  url: {
-    hostname: "localhost",
-    port: 5679,
-    username: "guest",
-    password: "guest"
-  }
+  hostname: "localhost",
+  port: 5679,
+  username: "guest",
+  password: "guest"
 })
 
 export const testChannel = AMQPChannel.layer().pipe(Layer.provideMerge(testConnection))

@@ -63,7 +63,8 @@ const ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME = "messaging.destination.subs
 const subscribe = (
   channel: AMQPChannel.AMQPChannel,
   queueName: string,
-  connectionProperties: AMQPConnection.AMQPConnectionServerProperties
+  connectionProperties: AMQPConnection.AMQPConnectionServerProperties,
+  options: AMQPSubscriberOptions
 ) =>
 <E, R>(
   handler: Effect.Effect<void, E, R | AMQPConsumeMessage.AMQPConsumeMessage>
@@ -126,7 +127,7 @@ const subscribe = (
                 ),
                 Effect.withParentSpan(span)
               )
-          )
+          ).pipe(options.uninterruptible ? Effect.uninterruptible : Effect.interruptible)
         )
       ),
       Effect.mapError((error) =>
@@ -145,12 +146,22 @@ const healthCheck = (
       new SubscriberError.SubscriberError({ reason: `Healthcheck failed`, cause: error })),
     Effect.asVoid
   )
+
+/**
+ * @category models
+ * @since 0.3.0
+ */
+export interface AMQPSubscriberOptions {
+  uninterruptible?: boolean
+}
+
 /**
  * @category constructors
  * @since 0.3.0
  */
 export const make = (
-  queueName: string
+  queueName: string,
+  options: AMQPSubscriberOptions = {}
 ): Effect.Effect<
   AMQPSubscriber,
   AMQPError.AMQPConnectionError,
@@ -163,7 +174,7 @@ export const make = (
     const subscriber: AMQPSubscriber = {
       [TypeId]: TypeId,
       [Subscriber.TypeId]: Subscriber.TypeId,
-      subscribe: subscribe(channel, queueName, serverProperties),
+      subscribe: subscribe(channel, queueName, serverProperties, options),
       healthCheck: healthCheck(channel, queueName)
     }
 

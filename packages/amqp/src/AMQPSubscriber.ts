@@ -7,7 +7,9 @@ import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Options } from "amqplib"
 import * as Cause from "effect/Cause"
+import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
@@ -98,7 +100,15 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                yield* handler
+                yield* handler.pipe(
+                  options.handlerTimeout
+                    ? Effect.timeoutFail({
+                      duration: options.handlerTimeout,
+                      onTimeout: () =>
+                        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
+                    })
+                    : Function.identity
+                )
                 span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
                 yield* channel.ack(message)
               }).pipe(
@@ -125,9 +135,10 @@ const subscribe = (
                     yield* channel.nack(message, false, false)
                   })
                 ),
+                options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
                 Effect.withParentSpan(span)
               )
-          ).pipe(options.uninterruptible ? Effect.uninterruptible : Effect.interruptible)
+          )
         )
       ),
       Effect.mapError((error) =>
@@ -153,6 +164,7 @@ const healthCheck = (
  */
 export interface AMQPSubscriberOptions {
   uninterruptible?: boolean
+  handlerTimeout?: Duration.DurationInput
 }
 
 /**

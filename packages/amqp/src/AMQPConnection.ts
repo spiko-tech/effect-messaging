@@ -3,8 +3,10 @@
  */
 import type { Channel, ConfirmChannel, Connection, ServerProperties } from "amqplib"
 import * as Context from "effect/Context"
+import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import type * as Schedule from "effect/Schedule"
 import type * as Scope from "effect/Scope"
 import type * as AMQPError from "./AMQPError.js"
 import * as internal from "./internal/AMQPConnection.js"
@@ -54,11 +56,21 @@ export interface AMQPConnection {
 export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messaging/amqp/AMQPConnection")
 
 /**
+ * @category models
+ * @since 0.1.0
+ */
+export type AMQPConnectionOptions = {
+  url: internal.ConnectionUrl
+  retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
+  waitConnectionTimeout?: Duration.DurationInput
+}
+
+/**
  * @category constructors
  * @since 0.1.0
  */
 export const make = (
-  url: internal.ConnectionUrl
+  options: AMQPConnectionOptions
 ): Effect.Effect<AMQPConnection, AMQPError.AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
     const internalConnection = yield* internal.InternalAMQPConnection
@@ -82,14 +94,14 @@ export const make = (
     yield* Effect.forkScoped(internal.watchConnection)
     return connection
   }).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new({ url }))
+    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new(options))
   )
 
 /**
  * @since 0.1.0
  * @category Layers
  */
-export const layer = (url: internal.ConnectionUrl): Layer.Layer<
+export const layer = (options: AMQPConnectionOptions): Layer.Layer<
   AMQPConnection,
   AMQPError.AMQPConnectionError
-> => Layer.scoped(AMQPConnection, make(url))
+> => Layer.scoped(AMQPConnection, make(options))

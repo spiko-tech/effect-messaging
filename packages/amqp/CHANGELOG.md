@@ -1,5 +1,20 @@
 # @effect-messaging/amqp
 
+## 0.4.0
+
+### Minor Changes
+
+- [#21](https://github.com/spiko-tech/effect-messaging/pull/21) [`af595e0`](https://github.com/spiko-tech/effect-messaging/commit/af595e09e7ce116487aee68f766777153f4cab6f) Thanks [@wewelll](https://github.com/wewelll)! - Add configurable reconnectionSchedule and waitTimeout for AMQPChannel and AMQPConnection
+
+### Patch Changes
+
+- [#21](https://github.com/spiko-tech/effect-messaging/pull/21) [`1114f04`](https://github.com/spiko-tech/effect-messaging/commit/1114f0410d74c482974d4c48c520c49249f96366) Thanks [@wewelll](https://github.com/wewelll)! - Update effect dependencies
+
+- [#21](https://github.com/spiko-tech/effect-messaging/pull/21) [`af595e0`](https://github.com/spiko-tech/effect-messaging/commit/af595e09e7ce116487aee68f766777153f4cab6f) Thanks [@wewelll](https://github.com/wewelll)! - Add options uninterruptible and handlerTimeout on the AMQPSubscriber
+
+- Updated dependencies [[`1114f04`](https://github.com/spiko-tech/effect-messaging/commit/1114f0410d74c482974d4c48c520c49249f96366)]:
+  - @effect-messaging/core@0.2.3
+
 ## 0.3.5
 
 ### Patch Changes

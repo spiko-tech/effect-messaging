@@ -18,7 +18,7 @@ const program = Effect.gen(function*(_) {
 
 const runnable = program.pipe(
   // provide the AMQP Channel dependency
-  Effect.provide(AMQPChannel.layer),
+  Effect.provide(AMQPChannel.layer()),
   // provide the AMQP Connection dependency
   Effect.provide(AMQPConnection.layer({
     hostname: "localhost",

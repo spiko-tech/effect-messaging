@@ -1,6 +1,7 @@
 import type { Connection, Options } from "amqplib"
 import { connect } from "amqplib"
 import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Redacted from "effect/Redacted"
@@ -14,23 +15,39 @@ import { closeStream } from "./closeStream.js"
 /** @internal */
 export type ConnectionUrl = Redacted.Redacted<string> | Options.Connect
 
-/** @internal */
 export class InternalAMQPConnection
   extends Context.Tag("@effect-messaging/amqp/InternalAMQPConnection")<InternalAMQPConnection, {
     connectionRef: SubscriptionRef.SubscriptionRef<Option.Option<Connection>>
     url: ConnectionUrl
+    retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
+    waitConnectionTimeout: Duration.DurationInput
   }>()
 {
-  static new = ({ url }: { url: ConnectionUrl }): Effect.Effect<Context.Tag.Service<InternalAMQPConnection>> =>
-    Effect.all({
-      connectionRef: SubscriptionRef.make(Option.none<Connection>()),
-      url: Effect.succeed(url)
+  private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
+  private static defaultWaitConnectionTimeout = Duration.seconds(5)
+
+  static new = (
+    options: {
+      url: ConnectionUrl
+      retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
+      waitConnectionTimeout?: Duration.DurationInput
+    }
+  ): Effect.Effect<Context.Tag.Service<InternalAMQPConnection>> =>
+    Effect.gen(function*() {
+      const connectionRef = yield* SubscriptionRef.make(Option.none<Connection>())
+      return {
+        connectionRef,
+        url: options.url,
+        retryConnectionSchedule: options.retryConnectionSchedule ??
+          InternalAMQPConnection.defaultRetryConnectionSchedule,
+        waitConnectionTimeout: options.waitConnectionTimeout ?? InternalAMQPConnection.defaultWaitConnectionTimeout
+      }
     })
 }
 
 /** @internal */
 const getOrWaitConnection = Effect.gen(function*() {
-  const { connectionRef } = yield* InternalAMQPConnection
+  const { connectionRef, waitConnectionTimeout } = yield* InternalAMQPConnection
   return yield* connectionRef.changes.pipe(
     Stream.takeUntil(Option.isSome),
     Stream.run(Sink.last()),
@@ -40,7 +57,7 @@ const getOrWaitConnection = Effect.gen(function*() {
       "NoSuchElementException",
       () => Effect.dieMessage(`Should never happen: Connection should be available here`)
     ),
-    Effect.timeout(`5 seconds`), // @TODO: make this configurable. Putting a timeout here to avoid blocking forever if the connection is never ready
+    Effect.timeout(waitConnectionTimeout),
     Effect.catchTag("TimeoutException", () => new AMQPConnectionError({ reason: "Connection is not available" }))
   )
 })
@@ -88,10 +105,9 @@ export const closeConnection = ({ removeAllListeners = true }: CloseConnectionOp
 
 /** @internal */
 const reconnect = Effect.gen(function*() {
+  const { retryConnectionSchedule } = yield* InternalAMQPConnection
   yield* closeConnection()
-  yield* initiateConnection.pipe(
-    Effect.retry(Schedule.forever.pipe(Schedule.addDelay(() => 1000)))
-  )
+  yield* initiateConnection.pipe(Effect.retry(retryConnectionSchedule))
 })
 
 /** @internal */

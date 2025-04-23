@@ -17,14 +17,6 @@ import {
   testChannel
 } from "./dependencies.js"
 
-const makeHandler = (
-  fn: (message: AMQPConsumeMessage.AMQPConsumeMessage) => void
-) =>
-  Effect.gen(function*() {
-    const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-    fn(message)
-  })
-
 const publishAndAssertConsume = (
   { content, onMessage, publisher, times }: {
     publisher: AMQPPublisher.AMQPPublisher
@@ -72,7 +64,10 @@ describe("AMQPChannel", () => {
         const onMessage = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
 
         // Start the subscription
-        yield* Effect.fork(subscriber.subscribe(makeHandler(onMessage)))
+        yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
+          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          onMessage(message)
+        })))
 
         // Message 1
         yield* publishAndAssertConsume({

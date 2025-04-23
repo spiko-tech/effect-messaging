@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.3
+
+### Patch Changes
+
+- [#21](https://github.com/spiko-tech/effect-messaging/pull/21) [`1114f04`](https://github.com/spiko-tech/effect-messaging/commit/1114f0410d74c482974d4c48c520c49249f96366) Thanks [@wewelll](https://github.com/wewelll)! - Update effect dependencies
+
 ## 0.2.2
 
 ### Patch Changes

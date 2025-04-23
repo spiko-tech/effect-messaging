@@ -27,8 +27,8 @@ export class InternalAMQPConnection
   private static defaultWaitConnectionTimeout = Duration.seconds(5)
 
   static new = (
+    url: ConnectionUrl,
     options: {
-      url: ConnectionUrl
       retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
       waitConnectionTimeout?: Duration.DurationInput
     }
@@ -37,7 +37,7 @@ export class InternalAMQPConnection
       const connectionRef = yield* SubscriptionRef.make(Option.none<Connection>())
       return {
         connectionRef,
-        url: options.url,
+        url,
         retryConnectionSchedule: options.retryConnectionSchedule ??
           InternalAMQPConnection.defaultRetryConnectionSchedule,
         waitConnectionTimeout: options.waitConnectionTimeout ?? InternalAMQPConnection.defaultWaitConnectionTimeout

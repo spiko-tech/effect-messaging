@@ -60,7 +60,6 @@ export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messag
  * @since 0.1.0
  */
 export type AMQPConnectionOptions = {
-  url: internal.ConnectionUrl
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
   waitConnectionTimeout?: Duration.DurationInput
 }
@@ -70,7 +69,8 @@ export type AMQPConnectionOptions = {
  * @since 0.1.0
  */
 export const make = (
-  options: AMQPConnectionOptions
+  url: internal.ConnectionUrl,
+  options: AMQPConnectionOptions = {}
 ): Effect.Effect<AMQPConnection, AMQPError.AMQPConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
     const internalConnection = yield* internal.InternalAMQPConnection
@@ -94,14 +94,15 @@ export const make = (
     yield* Effect.forkScoped(internal.watchConnection)
     return connection
   }).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new(options))
+    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new(url, options))
   )
 
 /**
  * @since 0.1.0
  * @category Layers
  */
-export const layer = (options: AMQPConnectionOptions): Layer.Layer<
+
+export const layer = (url: internal.ConnectionUrl, options: AMQPConnectionOptions = {}): Layer.Layer<
   AMQPConnection,
   AMQPError.AMQPConnectionError
-> => Layer.scoped(AMQPConnection, make(options))
+> => Layer.scoped(AMQPConnection, make(url, options))

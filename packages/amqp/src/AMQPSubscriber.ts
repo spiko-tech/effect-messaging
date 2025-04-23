@@ -160,7 +160,7 @@ const healthCheck = (
 
 /**
  * @category models
- * @since 0.3.0
+ * @since 0.4.0
  */
 export interface AMQPSubscriberOptions {
   uninterruptible?: boolean

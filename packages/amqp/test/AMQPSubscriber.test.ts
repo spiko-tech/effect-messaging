@@ -52,7 +52,7 @@ const setup = Effect.gen(function*() {
   yield* purgeTestQueue
 })
 
-describe("AMQPChannel", () => {
+describe("AMQPChannel", { sequential: true }, () => {
   describe("subscribe", () => {
     it.effect("Should consume published events even when connection or channel fails", () =>
       Effect.gen(function*() {
@@ -149,7 +149,7 @@ describe("AMQPChannel", () => {
       }).pipe(Effect.provide(testChannel), TestServices.provideLive))
   })
 
-  describe("interruptable subscribers", () => {
+  describe("interruptable subscribers", { sequential: true }, () => {
     it.effect(
       "Should interrupt the handler if the subscription fiber is interrupted, and the message should be consumed again",
       () =>

@@ -1,5 +1,13 @@
 # @effect-messaging/amqp
 
+## 0.4.1
+
+### Patch Changes
+
+- [#23](https://github.com/spiko-tech/effect-messaging/pull/23) [`601675a`](https://github.com/spiko-tech/effect-messaging/commit/601675ac04b54885154b2249b22b3f995ac36647) Thanks [@wewelll](https://github.com/wewelll)! - Add spans to all methods of AMQPChannel and AMQPConnection
+
+- [#23](https://github.com/spiko-tech/effect-messaging/pull/23) [`9561652`](https://github.com/spiko-tech/effect-messaging/commit/9561652f70caf3b9f25cd5a48b4362004d96b94b) Thanks [@wewelll](https://github.com/wewelll)! - Add error monitoring on channel and connection
+
 ## 0.4.0
 
 ### Minor Changes

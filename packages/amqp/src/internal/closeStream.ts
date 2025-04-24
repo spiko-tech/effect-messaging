@@ -14,6 +14,7 @@ const eventStream =
             return Stream.asyncPush<unknown>((emit) =>
               Effect.sync(() => {
                 target.value.addListener(eventName, emit.single)
+                target.value.addListener("close", emit.end)
               })
             )
           }

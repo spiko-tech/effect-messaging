@@ -199,12 +199,17 @@ const initiateConsumption = (
     yield* Effect.annotateCurrentSpan({
       [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName
     })
-    yield* Effect.tryPromise({
-      try: () =>
+    yield* Effect.try({
+      try: () => {
         channel.consume(queueName, async (message) => {
           if (!message) return
           emit.single(message)
-        }),
+        })
+
+        channel.on("close", () => {
+          emit.end()
+        })
+      },
       catch: (error) => new AMQPChannelError({ reason: `Failed to consume from queue ${queueName}`, cause: error })
     })
     yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName}`)

@@ -164,7 +164,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           const handler = Effect.gen(function*() {
             const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
             onHandlingStarted(message)
-            yield* Effect.sleep("100 millis")
+            yield* Effect.sleep("200 millis")
             onHandlingFinished(message)
           })
 
@@ -183,14 +183,14 @@ describe("AMQPChannel", { sequential: true }, () => {
           })
 
           // Wait for the message to be consumed
-          yield* Effect.sleep("50 millis")
+          yield* Effect.sleep("100 millis")
           // Verify the message was consumed
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
 
           // Wait for the message to be consumed
-          yield* Effect.sleep("100 millis")
+          yield* Effect.sleep("200 millis")
 
           // The message handling should be interrupted
           expect(onHandlingFinished).not.toHaveBeenCalled()
@@ -198,7 +198,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           // Start the subscription again (with a new channel)
           yield* Effect.fork(startSubscription)
 
-          yield* Effect.sleep("150 millis")
+          yield* Effect.sleep("250 millis")
           // The same message should be consumed again because the first subscription was interrupted and the message was nor acked nor nacked
           expect(onHandlingStarted).toHaveBeenCalledTimes(2)
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)

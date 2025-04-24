@@ -109,6 +109,7 @@ export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/am
  */
 export interface AMQPChannelOptions {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
+  retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
   waitChannelTimeout?: Duration.DurationInput
 }
 
@@ -218,7 +219,7 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
         }),
         (channel) => channel.close()
       )
-      yield* Effect.forkScoped(internal.watchChannel)
+      yield* Effect.forkScoped(internal.keepChannelAlive)
       return channel
     }
   ).pipe(

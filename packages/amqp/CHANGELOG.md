@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.4.2
+
+### Patch Changes
+
+- [`77e1dbb`](https://github.com/spiko-tech/effect-messaging/commit/77e1dbb5a7685da42844e2bff905ef38506dd608) Thanks [@wewelll](https://github.com/wewelll)! - terminate streams when channel or connection closes
+
 ## 0.4.1
 
 ### Patch Changes

@@ -14,7 +14,7 @@ import * as SubscriptionRef from "effect/SubscriptionRef"
 import * as AMQPConnection from "../AMQPConnection.js"
 import type { AMQPConnectionError } from "../AMQPError.js"
 import { AMQPChannelError } from "../AMQPError.js"
-import { closeStream } from "./closeStream.js"
+import { closeStream, errorStream } from "./closeStream.js"
 
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
@@ -127,6 +127,15 @@ export const keepChannelAlive = Effect.gen(function*() {
       yield* Effect.logDebug("AMQPChannel: reconnecting")
       yield* initiateChannel.pipe(Effect.retry(retryConnectionSchedule))
     }))
+})
+
+/** @internal */
+export const monitorChannelErrors = Effect.gen(function*() {
+  const { channelRef } = yield* InternalAMQPChannel
+  return yield* Stream.runForEach(
+    errorStream(channelRef),
+    (error) => Effect.logError(`AMQPChannel: error event received - ${error}`)
+  )
 })
 
 /** @internal */

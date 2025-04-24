@@ -220,6 +220,7 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
         (channel) => channel.close()
       )
       yield* Effect.forkScoped(internal.keepChannelAlive)
+      yield* Effect.forkScoped(internal.monitorChannelErrors)
       return channel
     }
   ).pipe(

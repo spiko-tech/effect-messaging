@@ -10,7 +10,7 @@ import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
 import { AMQPConnectionError } from "../AMQPError.js"
-import { closeStream } from "./closeStream.js"
+import { closeStream, errorStream } from "./closeStream.js"
 
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
@@ -126,6 +126,15 @@ export const keepConnectionAlive = Effect.gen(function*() {
       yield* Effect.logDebug(`AMQPConnection: reconnecting`)
       yield* initiateConnection.pipe(Effect.retry(retryConnectionSchedule))
     }))
+})
+
+/** @internal */
+export const monitorConnectionErrors = Effect.gen(function*() {
+  const { connectionRef } = yield* InternalAMQPConnection
+  return yield* Stream.runForEach(
+    errorStream(connectionRef),
+    (error) => Effect.logError(`AMQPConnection: error event received - ${error}`)
+  )
 })
 
 /** @internal */

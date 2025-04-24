@@ -91,7 +91,7 @@ export const make = (
       }),
       (connection) => connection.close()
     )
-    yield* Effect.forkScoped(internal.watchConnection)
+    yield* Effect.forkScoped(internal.keepConnectionAlive)
     return connection
   }).pipe(
     Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new(url, options))

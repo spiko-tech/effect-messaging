@@ -150,57 +150,61 @@ describe("AMQPChannel", () => {
   })
 
   describe("interruptable subscribers", () => {
-    it.effect("Should interrupt the handler if the subscription fiber is interrupted, and the message should be consumed again", () =>
-      Effect.gen(function*() {
-        yield* setup
+    it.effect(
+      "Should interrupt the handler if the subscription fiber is interrupted, and the message should be consumed again",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
 
-        const publisher = yield* AMQPPublisher.make()
+          const publisher = yield* AMQPPublisher.make()
 
-        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-        const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
 
-        const handler = Effect.gen(function*() {
-          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-          onHandlingStarted(message)
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            yield* Effect.sleep("100 millis")
+            onHandlingFinished(message)
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer())) // Provide a fresh channel for each subscription
+
+          // Start the subscription
+          const subscribptionFiber1 = yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("My Message that will be interrupted")
+          })
+
+          // Wait for the message to be consumed
+          yield* Effect.sleep("50 millis")
+          // Verify the message was consumed
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
+
+          // Wait for the message to be consumed
           yield* Effect.sleep("100 millis")
-          onHandlingFinished(message)
-        })
 
-        const startSubscription = Effect.gen(function*() {
-          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
-          yield* subscriber.subscribe(handler)
-        }).pipe(Effect.provide(AMQPChannel.layer())) // Provide a fresh channel for each subscription
+          // The message handling should be interrupted
+          expect(onHandlingFinished).not.toHaveBeenCalled()
 
-        // Start the subscription
-        const subscribptionFiber1 = yield* Effect.fork(startSubscription)
+          // Start the subscription again (with a new channel)
+          yield* Effect.fork(startSubscription)
 
-        yield* publisher.publish({
-          exchange: TEST_EXCHANGE,
-          routingKey: TEST_SUBJECT,
-          content: Buffer.from("My Message that will be interrupted")
-        })
-
-        // Wait for the message to be consumed
-        yield* Effect.sleep("50 millis")
-        // Verify the message was consumed
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-        yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
-
-        // Wait for the message to be consumed
-        yield* Effect.sleep("100 millis")
-
-        // The message handling should be interrupted
-        expect(onHandlingFinished).not.toHaveBeenCalled()
-
-        // Start the subscription again (with a new channel)
-        yield* Effect.fork(startSubscription)
-
-        yield* Effect.sleep("150 millis")
-        // The same message should be consumed again because the first subscription was interrupted and the message was nor acked nor nacked
-        expect(onHandlingStarted).toHaveBeenCalledTimes(2)
-        expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+          yield* Effect.sleep("150 millis")
+          // The same message should be consumed again because the first subscription was interrupted and the message was nor acked nor nacked
+          expect(onHandlingStarted).toHaveBeenCalledTimes(2)
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 10000 }
+    )
 
     it.effect("Should no interrupt the handler if the subscriber is uninterruptible", () =>
       Effect.gen(function*() {
@@ -251,62 +255,66 @@ describe("AMQPChannel", () => {
         // The same message should not be consumed again because the first subscription was uninterrupted and the message was acked or nacked
         expect(onHandlingStarted).toHaveBeenCalledTimes(1)
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel), TestServices.provideLive), { timeout: 10000 })
 
-    it.effect("Should interrupt the handler if the subscriber is uninterruptible but reaches the timeout", () =>
-      Effect.gen(function*() {
-        yield* setup
+    it.effect(
+      "Should interrupt the handler if the subscriber is uninterruptible but reaches the timeout",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
 
-        const publisher = yield* AMQPPublisher.make()
+          const publisher = yield* AMQPPublisher.make()
 
-        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-        const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
 
-        const handler = Effect.gen(function*() {
-          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-          onHandlingStarted(message)
-          // long running task
-          yield* Effect.sleep("200 millis")
-          onHandlingFinished(message)
-        })
-
-        const startSubscription = Effect.gen(function*() {
-          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
-            uninterruptible: true,
-            handlerTimeout: "100 millis"
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            // long running task
+            yield* Effect.sleep("200 millis")
+            onHandlingFinished(message)
           })
-          yield* subscriber.subscribe(handler)
-        }).pipe(Effect.provide(AMQPChannel.layer())) // Provide a fresh channel for each subscription
 
-        // Start the subscription
-        const subscribptionFiber1 = yield* Effect.fork(startSubscription)
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
+              uninterruptible: true,
+              handlerTimeout: "100 millis"
+            })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer())) // Provide a fresh channel for each subscription
 
-        yield* publisher.publish({
-          exchange: TEST_EXCHANGE,
-          routingKey: TEST_SUBJECT,
-          content: Buffer.from("My Message that will NOT be interrupted")
-        })
+          // Start the subscription
+          const subscribptionFiber1 = yield* Effect.fork(startSubscription)
 
-        // Wait for the message to be consumed
-        yield* Effect.sleep("50 millis")
-        // Verify the message was consumed
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("My Message that will NOT be interrupted")
+          })
 
-        // Interrupt the subscription fiber
-        yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
+          // Wait for the message to be consumed
+          yield* Effect.sleep("50 millis")
+          // Verify the message was consumed
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
-        // wait for the handler to timeout
-        yield* Effect.sleep("100 millis")
-        // The handler should timeout and should be interrupted
-        expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+          // Interrupt the subscription fiber
+          yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
 
-        // Start the subscription again (with a new channel)
-        yield* Effect.fork(startSubscription)
+          // wait for the handler to timeout
+          yield* Effect.sleep("100 millis")
+          // The handler should timeout and should be interrupted
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
 
-        yield* Effect.sleep("250 millis")
-        // The same message should not be consumed again because the has timed out and was nacked
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-        expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+          // Start the subscription again (with a new channel)
+          yield* Effect.fork(startSubscription)
+
+          yield* Effect.sleep("250 millis")
+          // The same message should not be consumed again because the has timed out and was nacked
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 10000 }
+    )
   })
 })

@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.4.3
+
+### Patch Changes
+
+- [`26fd090`](https://github.com/spiko-tech/effect-messaging/commit/26fd090ea6d85b069034fa35a639f9f29a86af1f) Thanks [@wewelll](https://github.com/wewelll)! - emit a failure in the consume stream if channel.consume rejects
+
 ## 0.4.2
 
 ### Patch Changes

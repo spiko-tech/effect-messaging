@@ -204,6 +204,10 @@ const initiateConsumption = (
         channel.consume(queueName, async (message) => {
           if (!message) return
           emit.single(message)
+        }).catch((error) => {
+          emit.fail(
+            new AMQPChannelError({ reason: `Consumption from queue ${queueName} ended unexpectedly`, cause: error })
+          )
         })
 
         channel.on("close", () => {

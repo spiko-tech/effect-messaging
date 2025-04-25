@@ -139,6 +139,9 @@ importers:
       '@nats-io/nats-core':
         specifier: ^3.0.2
         version: 3.0.2
+      '@nats-io/transport-node':
+        specifier: ^3.0.2
+        version: 3.0.2
       effect:
         specifier: ^3.14.13
         version: 3.14.13
@@ -796,6 +799,10 @@ packages:
   '@nats-io/nuid@2.0.3':
     resolution: {integrity: sha512-TpA3HEBna/qMVudy+3HZr5M3mo/L1JPofpVT4t0HkFGkz2Cn9wrlrQC8tvR8Md5Oa9//GtGG26eN0qEWF5Vqew==}
     engines: {node: '>= 18.x'}
+
+  '@nats-io/transport-node@3.0.2':
+    resolution: {integrity: sha512-hPuep/ObVepjAM1dFy+XhqMlIzga3bQpbgQiOWM5AxwNZ9CF7GHAtfaxG7WY6+t057tBW8axC0nBL71Q8chQBQ==}
+    engines: {node: '>= 18.0.0'}
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     resolution: {integrity: sha512-s88O1aVtXftvp5bCPB7WnmXc5IwOZZ7YPuwNPt+GtOOXpPvad1LfbmjYv+qII7zP6RU2QGnqve27dnLycEnyEQ==}
@@ -3966,6 +3973,12 @@ snapshots:
       tweetnacl: 1.0.3
 
   '@nats-io/nuid@2.0.3': {}
+
+  '@nats-io/transport-node@3.0.2':
+    dependencies:
+      '@nats-io/nats-core': 3.0.2
+      '@nats-io/nkeys': 2.0.3
+      '@nats-io/nuid': 2.0.3
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     optional: true

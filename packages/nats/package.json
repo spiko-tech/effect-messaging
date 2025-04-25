@@ -41,6 +41,7 @@
         "@effect/platform": "^0.80.13",
         "@nats-io/jetstream": "^3.0.2",
         "@nats-io/nats-core": "^3.0.2",
+        "@nats-io/transport-node": "^3.0.2",
         "effect": "^3.14.13"
     },
     "peerDependencies": {
@@ -48,10 +49,14 @@
         "@effect/platform": "^0.80.13",
         "@nats-io/jetstream": "^3.0.2",
         "@nats-io/nats-core": "^3.0.2",
+        "@nats-io/transport-node": "^3.0.2",
         "effect": "^3.14.13"
     },
     "peerDependenciesMeta": {
         "@nats-io/jetstream": {
+            "optional": true
+        },
+        "@nats-io/transport-node": {
             "optional": true
         }
     }

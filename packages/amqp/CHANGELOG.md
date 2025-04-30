@@ -1,5 +1,14 @@
 # @effect-messaging/amqp
 
+## 0.4.4
+
+### Patch Changes
+
+- [`c040e9e`](https://github.com/spiko-tech/effect-messaging/commit/c040e9ed32aaae9777e6a8bfef703e469ac46ead) Thanks [@wewelll](https://github.com/wewelll)! - Update effect dependencies
+
+- Updated dependencies [[`c040e9e`](https://github.com/spiko-tech/effect-messaging/commit/c040e9ed32aaae9777e6a8bfef703e469ac46ead)]:
+  - @effect-messaging/core@0.2.4
+
 ## 0.4.3
 
 ### Patch Changes

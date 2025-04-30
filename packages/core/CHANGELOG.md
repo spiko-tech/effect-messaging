@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.4
+
+### Patch Changes
+
+- [`c040e9e`](https://github.com/spiko-tech/effect-messaging/commit/c040e9ed32aaae9777e6a8bfef703e469ac46ead) Thanks [@wewelll](https://github.com/wewelll)! - Update effect dependencies
+
 ## 0.2.3
 
 ### Patch Changes

@@ -1,13 +1,13 @@
 /**
  * @since 0.1.0
  */
-import type { ConnectionOptions } from "@nats-io/transport-node"
-import { connect } from "@nats-io/transport-node"
+import type * as nats_core from "@nats-io/nats-core"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import type * as Scope from "effect/Scope"
-import * as NATSError from "./NATSError.js"
+import * as internal from "./internal/NATSConnection.js"
+import type * as NATSError from "./NATSError.js"
 
 /**
  * @category type ids
@@ -27,7 +27,8 @@ export type TypeId = typeof TypeId
  */
 export interface NATSConnection {
   readonly [TypeId]: TypeId
-  readonly close: () => Effect.Effect<void, never, never>
+  readonly info: nats_core.ServerInfo | undefined
+  readonly close: Effect.Effect<void, never, never>
 }
 
 /**
@@ -41,33 +42,27 @@ export const NATSConnection = Context.GenericTag<NATSConnection>("@effect-messag
  * @since 0.1.0
  */
 export const makeNode = (
-  options?: ConnectionOptions
+  options?: nats_core.ConnectionOptions
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
-  Effect.gen(function*() {
-    const connection = yield* Effect.acquireRelease(
-      Effect.gen(function*() {
-        const nc = yield* Effect.tryPromise({
-          try: () => connect(options),
-          catch: (error) => new NATSError.NATSConnectionError({ reason: "Failed to connect", cause: error })
-        })
+  Effect.acquireRelease(
+    Effect.gen(function*() {
+      const connection = yield* internal.connectNode(options)
 
-        return {
-          [TypeId]: TypeId,
-          close: () => Effect.tryPromise(() => nc.close()).pipe(Effect.orDie)
-        } satisfies NATSConnection
-      }),
-      (connection) => connection.close()
-    )
-
-    return connection
-  })
+      return {
+        [TypeId]: TypeId,
+        info: internal.info(connection),
+        close: internal.close(connection)
+      } satisfies NATSConnection
+    }),
+    (connection) => connection.close
+  )
 
 /**
  * @since 0.1.0
  * @category Layers
  */
 
-export const layerNode = (options?: ConnectionOptions): Layer.Layer<
+export const layerNode = (options?: nats_core.ConnectionOptions): Layer.Layer<
   NATSConnection,
   NATSError.NATSConnectionError
 > => Layer.scoped(NATSConnection, makeNode(options))

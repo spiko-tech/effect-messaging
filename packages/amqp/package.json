@@ -40,15 +40,15 @@
     },
     "devDependencies": {
         "@effect-messaging/core": "workspace:^",
-        "@effect/platform": "^0.80.13",
+        "@effect/platform": "^0.80.16",
         "@types/amqplib": "0.10.6",
         "amqplib": "^0.10.5",
-        "effect": "^3.14.13"
+        "effect": "^3.14.16"
     },
     "peerDependencies": {
         "@effect-messaging/core": "workspace:^",
-        "@effect/platform": "^0.80.13",
+        "@effect/platform": "^0.80.16",
         "amqplib": "^0.10.5",
-        "effect": "^3.14.13"
+        "effect": "^3.14.16"
     }
 }

@@ -1,54 +1,54 @@
 {
-    "name": "@effect-messaging/amqp",
-    "version": "0.4.5",
-    "type": "module",
-    "license": "MIT",
-    "description": "An AMQP toolkit for Effect",
-    "homepage": "https://github.com/spiko-tech/effect-messaging",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/spiko-tech/effect-messaging.git",
-        "directory": "packages/amqp"
-    },
-    "bugs": {
-        "url": "https://github.com/spiko-tech/effect-messaging/issues"
-    },
-    "tags": [
-        "typescript",
-        "amqp",
-        "rabbitmq"
-    ],
-    "keywords": [
-        "typescript",
-        "amqp",
-        "rabbitmq"
-    ],
-    "publishConfig": {
-        "access": "public",
-        "directory": "dist",
-        "provenance": true
-    },
-    "scripts": {
-        "codegen": "build-utils prepare-v2",
-        "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2",
-        "build-esm": "tsc -b tsconfig.build.json",
-        "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
-        "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
-        "check": "tsc -b tsconfig.json",
-        "test": "vitest",
-        "coverage": "vitest --coverage"
-    },
-    "devDependencies": {
-        "@effect-messaging/core": "workspace:^",
-        "@effect/platform": "^0.82.0",
-        "@types/amqplib": "0.10.6",
-        "amqplib": "^0.10.5",
-        "effect": "^3.15.0"
-    },
-    "peerDependencies": {
-        "@effect-messaging/core": "workspace:^",
-        "@effect/platform": "^0.82.0",
-        "amqplib": "^0.10.5",
-        "effect": "^3.15.0"
-    }
+  "name": "@effect-messaging/amqp",
+  "version": "0.4.5",
+  "type": "module",
+  "license": "MIT",
+  "description": "An AMQP toolkit for Effect",
+  "homepage": "https://github.com/spiko-tech/effect-messaging",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spiko-tech/effect-messaging.git",
+    "directory": "packages/amqp"
+  },
+  "bugs": {
+    "url": "https://github.com/spiko-tech/effect-messaging/issues"
+  },
+  "tags": [
+    "typescript",
+    "amqp",
+    "rabbitmq"
+  ],
+  "keywords": [
+    "typescript",
+    "amqp",
+    "rabbitmq"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist",
+    "provenance": true
+  },
+  "scripts": {
+    "codegen": "build-utils prepare-v2",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2",
+    "build-esm": "tsc -b tsconfig.build.json",
+    "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
+    "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
+    "check": "tsc -b tsconfig.json",
+    "test": "vitest",
+    "coverage": "vitest --coverage"
+  },
+  "devDependencies": {
+    "@effect-messaging/core": "workspace:^",
+    "@effect/platform": "^0.84.0",
+    "@types/amqplib": "0.10.6",
+    "amqplib": "^0.10.5",
+    "effect": "^3.16.0"
+  },
+  "peerDependencies": {
+    "@effect-messaging/core": "workspace:^",
+    "@effect/platform": "^0.84.0",
+    "amqplib": "^0.10.5",
+    "effect": "^3.16.0"
+  }
 }

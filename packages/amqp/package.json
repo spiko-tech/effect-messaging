@@ -1,6 +1,6 @@
 {
   "name": "@effect-messaging/amqp",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "type": "module",
   "license": "MIT",
   "description": "An AMQP toolkit for Effect",

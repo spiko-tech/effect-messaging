@@ -2,7 +2,7 @@
 
 A message broker toolkit for Effect.
 
-### AMQP protocol features:
+### AMQP protocol features
 
 - 🔌 Effectful wrappers for AMQP Connection and Channel
 - 🔄 Auto-reconnect functionality when the connection is lost
@@ -170,6 +170,7 @@ Effect.runPromise(runnable)
 - [ ] Add declarative API to define messages schemas
 - [ ] Generate publisher based on message definitions
 - [ ] Generate consumer app based on message definitions
+- [ ] AsyncAPI specification generation
 
 ### AMQP implementation
 
@@ -178,7 +179,7 @@ Effect.runPromise(runnable)
 - [x] Integration tests
 - [x] Add examples & documentation
 
-### Implementation for other message brokers:
+### Implementation for other message brokers
 
 - [ ] Kafka
 - [ ] NATS

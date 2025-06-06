@@ -36,11 +36,11 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/platform':
-        specifier: ^0.84.4
-        version: 0.84.4(effect@3.16.3)
+        specifier: ^0.84.8
+        version: 0.84.8(effect@3.16.4)
       '@effect/vitest':
-        specifier: ^0.23.3
-        version: 0.23.3(effect@3.16.3)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))
+        specifier: ^0.23.4
+        version: 0.23.4(effect@3.16.4)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -60,8 +60,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.16.3
-        version: 3.16.3
+        specifier: ^3.16.4
+        version: 3.16.4
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -105,8 +105,8 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.84.4
-        version: 0.84.4(effect@3.16.3)
+        specifier: ^0.84.8
+        version: 0.84.8(effect@3.16.4)
       '@types/amqplib':
         specifier: 0.10.6
         version: 0.10.6
@@ -114,15 +114,15 @@ importers:
         specifier: ^0.10.5
         version: 0.10.7
       effect:
-        specifier: ^3.16.3
-        version: 3.16.3
+        specifier: ^3.16.4
+        version: 3.16.4
     publishDirectory: dist
 
   packages/core:
     devDependencies:
       effect:
-        specifier: ^3.16.3
-        version: 3.16.3
+        specifier: ^3.16.4
+        version: 3.16.4
     publishDirectory: dist
 
 packages:
@@ -317,15 +317,15 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/platform@0.84.4':
-    resolution: {integrity: sha512-RDs5Ju5u3xBpyEHZ6XEt5yKmAxrd/k8VyyeSyjkLVpCzecXNYeRkU8jcGdX4ex4bmH7AAe78j2OHrWoM8nBwSg==}
+  '@effect/platform@0.84.8':
+    resolution: {integrity: sha512-tH4e4FbOtGIzEAD0JFkW6I2ytXTFKG6Zr+iL3Cq2gXbrhhIwZuu8lmFMddrWwsQS83yKs0gToM/IGxhzkBNTOQ==}
     peerDependencies:
-      effect: ^3.16.3
+      effect: ^3.16.4
 
-  '@effect/vitest@0.23.3':
-    resolution: {integrity: sha512-yIB+Cllk1txmtpdpVX95SdmM0/FHqapz4wGSWYTe0c/K9fhgL6t0t5WsLmgzlk0rGnSi0+U21AHmPynjgk6+ig==}
+  '@effect/vitest@0.23.4':
+    resolution: {integrity: sha512-5JxTBv44EEJ1HeRKGt9kEslsRsc3jIYHLQqvKfkBQru6vfUdp+oi8fc9YGttTw71W8nZh8hiKWqNsLg+BVFiuA==}
     peerDependencies:
-      effect: ^3.16.3
+      effect: ^3.16.4
       vitest: ^3.0.0
 
   '@emnapi/core@1.4.0':
@@ -1572,8 +1572,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.16.3:
-    resolution: {integrity: sha512-SWndb1UavNWvet1+hnkU4qp3EHtnmDKhUeP14eB+7vf/2nCFlM77/oIjdDeZctveibNjE65P9H/sBBmF0NTy/w==}
+  effect@3.16.4:
+    resolution: {integrity: sha512-zJo5MRPEMROLjTHyrOJs0PUeEnRLy0ABwum3+HWlP8Y9LNF+NjipIRldVAcjSVQpJ7vY/OEGBxzw0USPzTfWag==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -3625,16 +3625,16 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.84.4(effect@3.16.3)':
+  '@effect/platform@0.84.8(effect@3.16.4)':
     dependencies:
-      effect: 3.16.3
+      effect: 3.16.4
       find-my-way-ts: 0.1.5
       msgpackr: 1.11.4
       multipasta: 0.2.5
 
-  '@effect/vitest@0.23.3(effect@3.16.3)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))':
+  '@effect/vitest@0.23.4(effect@3.16.4)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))':
     dependencies:
-      effect: 3.16.3
+      effect: 3.16.4
       vitest: 3.1.1(@types/node@22.14.1)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -4745,7 +4745,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.16.3:
+  effect@3.16.4:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

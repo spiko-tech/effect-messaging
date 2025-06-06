@@ -1,5 +1,16 @@
 # @effect-messaging/amqp
 
+## 0.4.8
+
+### Patch Changes
+
+- [`50834b8`](https://github.com/spiko-tech/effect-messaging/commit/50834b82414b7519ee8dbf1e3321c6beae756fcf) Thanks [@wewelll](https://github.com/wewelll)! - Add @effect/language-service
+
+- [`ef8ad8a`](https://github.com/spiko-tech/effect-messaging/commit/ef8ad8adee978d64d3cb492189b1c0b38713d4a7) Thanks [@wewelll](https://github.com/wewelll)! - update effect dependencies
+
+- Updated dependencies [[`50834b8`](https://github.com/spiko-tech/effect-messaging/commit/50834b82414b7519ee8dbf1e3321c6beae756fcf), [`ef8ad8a`](https://github.com/spiko-tech/effect-messaging/commit/ef8ad8adee978d64d3cb492189b1c0b38713d4a7)]:
+  - @effect-messaging/core@0.2.8
+
 ## 0.4.7
 
 ### Patch Changes

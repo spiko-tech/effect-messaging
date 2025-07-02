@@ -27,8 +27,8 @@ importers:
         specifier: ^2.29.0
         version: 2.29.0
       '@effect/build-utils':
-        specifier: ^0.8.3
-        version: 0.8.3
+        specifier: ^0.8.6
+        version: 0.8.6
       '@effect/docgen':
         specifier: ^0.5.2
         version: 0.5.2(tsx@4.19.3)(typescript@5.8.3)
@@ -36,14 +36,14 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/language-service':
-        specifier: ^0.22.2
-        version: 0.22.2
+        specifier: ^0.23.5
+        version: 0.23.5
       '@effect/platform':
-        specifier: ^0.87.0
-        version: 0.87.0(effect@3.16.9)
+        specifier: ^0.87.3
+        version: 0.87.3(effect@3.16.11)
       '@effect/vitest':
-        specifier: ^0.23.9
-        version: 0.23.9(effect@3.16.9)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))
+        specifier: ^0.23.11
+        version: 0.23.11(effect@3.16.11)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -63,8 +63,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.16.9
-        version: 3.16.9
+        specifier: ^3.16.11
+        version: 3.16.11
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.87.0
-        version: 0.87.0(effect@3.16.9)
+        specifier: ^0.87.3
+        version: 0.87.3(effect@3.16.11)
       '@types/amqplib':
         specifier: 0.10.6
         version: 0.10.6
@@ -117,15 +117,15 @@ importers:
         specifier: ^0.10.5
         version: 0.10.7
       effect:
-        specifier: ^3.16.9
-        version: 3.16.9
+        specifier: ^3.16.11
+        version: 3.16.11
     publishDirectory: dist
 
   packages/core:
     devDependencies:
       effect:
-        specifier: ^3.16.9
-        version: 3.16.9
+        specifier: ^3.16.11
+        version: 3.16.11
     publishDirectory: dist
 
 packages:
@@ -299,8 +299,8 @@ packages:
   '@dprint/typescript@0.91.8':
     resolution: {integrity: sha512-tuKn4leCPItox1O4uunHcQF0QllDCvPWklnNQIh2PiWWVtRAGltJJnM4Cwj5AciplosD1Hiz7vAY3ew3crLb3A==}
 
-  '@effect/build-utils@0.8.3':
-    resolution: {integrity: sha512-mKv6muX1puZ+bdf7XBLCBS6G8wX2ZASoKZ1Um0dNivAgDKZuQwzEWYGlVURSXDEIwQSbY5RTu9NQkeA6bFk8kA==}
+  '@effect/build-utils@0.8.6':
+    resolution: {integrity: sha512-C2DHKxvO1yK+x0SX8AbvNfYXVK7Prt0T1IhqDdk+tkJi0h4Az+z/QH4eoi6jtvKLnLGGqoGR2Fze+5PKkQTXDQ==}
     engines: {node: '>=16.17.1'}
     hasBin: true
 
@@ -315,23 +315,23 @@ packages:
   '@effect/eslint-plugin@0.3.2':
     resolution: {integrity: sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g==}
 
-  '@effect/language-service@0.22.2':
-    resolution: {integrity: sha512-ytR9uAeFFIevbMppp0WgBdFW8uLhHazG6+fjs6nUkkXgoW5hUrLuVZLyD8V765hPla8N5VYtN+kCoz2n9HB2lQ==}
+  '@effect/language-service@0.23.5':
+    resolution: {integrity: sha512-aQN24eziWuqK/EdFhhZ2Jr/CZgYxNfsP9r7DT7jCYgJWhZ8HPO39hyHcij14cMv41ZM8j0p8lmBnHYZwYN1Wyg==}
 
   '@effect/markdown-toc@0.1.0':
     resolution: {integrity: sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A==}
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/platform@0.87.0':
-    resolution: {integrity: sha512-0PxdNY1EmE0w/4pc/SpMmp6hFsyWNfpThn+01p3BVks3mfeYeDbFqkR1LDzMWhiDqRmZ3H5iXPuMQsCAIbCbDg==}
+  '@effect/platform@0.87.3':
+    resolution: {integrity: sha512-qEdqf5PmRGpFlsdnzUjwkGzwrq0E9RLiUYcjzWfd3RlzbYvXStdmzmLfYAAo9AaYgBeZa4x4ItDL/XE5arKwdg==}
     peerDependencies:
-      effect: ^3.16.9
+      effect: ^3.16.11
 
-  '@effect/vitest@0.23.9':
-    resolution: {integrity: sha512-m9VsciDymwbuzJy/w0B5rV+05bSRD/f5VZdsw2AR6i8IWhfG2Ry9SViKcUqVtfoSMESAtZ0ZFKcLUMkqbPwgoA==}
+  '@effect/vitest@0.23.11':
+    resolution: {integrity: sha512-eYwbgrk1b5oC7YJtl/beldUXanO3kfeYnYqLXqAMVmLEH3hKH0VjRjyKMGCYx8U+JI3CA0BFo8EeyU6SbJRsZw==}
     peerDependencies:
-      effect: ^3.16.9
+      effect: ^3.16.11
       vitest: ^3.0.0
 
   '@emnapi/core@1.4.0':
@@ -1578,8 +1578,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.16.9:
-    resolution: {integrity: sha512-onKn21L/Us3G/x4BeUxiE4B/jNiJ09uRcYEfSYVPJE10dTUM3aDdO3g15PW6ccF1BJuOtQt1cxx4/1lACwX/bA==}
+  effect@3.16.11:
+    resolution: {integrity: sha512-1RE45aGnZ2+vTSysFwZy4GGqq4ho1V+Ve5QS8stK6VhDnmhItU1pMyy9t6diIJ8I9EdRza0RbMFZc7EkVyD/BQ==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -3596,7 +3596,7 @@ snapshots:
 
   '@dprint/typescript@0.91.8': {}
 
-  '@effect/build-utils@0.8.3':
+  '@effect/build-utils@0.8.6':
     dependencies:
       micromatch: 4.0.8
       pkg-entry-points: 1.1.1
@@ -3616,7 +3616,7 @@ snapshots:
       '@dprint/typescript': 0.91.8
       prettier-linter-helpers: 1.0.0
 
-  '@effect/language-service@0.22.2': {}
+  '@effect/language-service@0.23.5': {}
 
   '@effect/markdown-toc@0.1.0':
     dependencies:
@@ -3633,16 +3633,16 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.87.0(effect@3.16.9)':
+  '@effect/platform@0.87.3(effect@3.16.11)':
     dependencies:
-      effect: 3.16.9
+      effect: 3.16.11
       find-my-way-ts: 0.1.5
       msgpackr: 1.11.4
       multipasta: 0.2.5
 
-  '@effect/vitest@0.23.9(effect@3.16.9)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))':
+  '@effect/vitest@0.23.11(effect@3.16.11)(vitest@3.1.1(@types/node@22.14.1)(tsx@4.19.3))':
     dependencies:
-      effect: 3.16.9
+      effect: 3.16.11
       vitest: 3.1.1(@types/node@22.14.1)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -4753,7 +4753,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.16.9:
+  effect@3.16.11:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

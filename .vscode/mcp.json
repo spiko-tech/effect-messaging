@@ -1,0 +1,24 @@
+{
+  "servers": {
+    "nx-mcp": {
+      "type": "sse",
+      "url": "http://localhost:9150/sse"
+    },
+    "effect-docs": {
+      "command": "npx",
+      "args": ["-y", "effect-mcp"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/"
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git"]
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}

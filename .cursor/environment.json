@@ -1,0 +1,10 @@
+{
+  "install": "pnpm install",
+  "start": "sudo service docker start",
+  "terminals": [
+    {
+      "name": "Database & Services",
+      "command": "docker-compose up -d rabbitmq"
+    }
+  ]
+}

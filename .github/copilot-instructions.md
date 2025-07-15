@@ -30,19 +30,6 @@ Create a changeset when making changes that should trigger a version bump and be
 
 5. Confirm the changeset
 
-### Publishing workflow
-
-1. After merging PRs with changesets, run:
-   ```bash
-   pnpm changeset-version
-   ```
-   This updates package.json versions and generates changelogs
-
-2. To publish to npm:
-   ```bash
-   pnpm changeset-publish
-   ```
-
 ### Guidelines for Copilot
 
 When working on dependency updates or bug fixes:

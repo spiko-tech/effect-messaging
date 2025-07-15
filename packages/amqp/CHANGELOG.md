@@ -1,5 +1,14 @@
 # @effect-messaging/amqp
 
+## 0.4.13
+
+### Patch Changes
+
+- [#38](https://github.com/spiko-tech/effect-messaging/pull/38) [`e663381`](https://github.com/spiko-tech/effect-messaging/commit/e66338107bb262a0a94510a17f64f04af73443dc) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Upgrade Effect libraries to latest versions (effect ^3.16.13, @effect/platform ^0.88.0, etc.)
+
+- Updated dependencies [[`e663381`](https://github.com/spiko-tech/effect-messaging/commit/e66338107bb262a0a94510a17f64f04af73443dc)]:
+  - @effect-messaging/core@0.2.13
+
 ## 0.4.12
 
 ### Patch Changes

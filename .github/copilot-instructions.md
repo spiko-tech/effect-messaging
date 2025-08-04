@@ -1,5 +1,13 @@
 # Copilot Instructions for effect-messaging
 
+## Code Quality Standards
+
+### Type Safety
+- **Never use `any` type** - Always use proper typing with TypeScript and Effect's type system
+- Use `unknown` for uncertain types and narrow them with type guards
+- Prefer `Schema.Defect` for error causes instead of casting to `any`
+- Use proper generic constraints and type inference
+
 ## Changeset Workflow
 
 This project uses [Changesets](https://github.com/changesets/changesets) to manage versioning and publishing.

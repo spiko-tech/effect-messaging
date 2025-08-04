@@ -49,7 +49,7 @@ const publish = (
     catch: (error) =>
       new PublisherError.PublisherError({
         reason: `Failed to publish message to subject ${message.subject}: ${error}`,
-        cause: error as any
+        cause: error
       })
   }).pipe(
     Effect.retry(retrySchedule),
@@ -57,7 +57,7 @@ const publish = (
       Effect.fail(
         new PublisherError.PublisherError({
           reason: `Failed to publish message after retries: ${error}`,
-          cause: error as any
+          cause: error
         })
       )
     )

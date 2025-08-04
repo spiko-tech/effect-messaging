@@ -1,5 +1,13 @@
 # Development Standards
 
+## Type Safety
+
+- **Never use `any` type** - Always use proper TypeScript typing
+- Use `unknown` for uncertain types and narrow them with type guards
+- Prefer `Schema.Defect` for error causes instead of casting to `any`
+- Use proper generic constraints and type inference
+- Follow Effect's type system patterns for structured error handling
+
 ## Dependencies
 
 When updating dependencies:

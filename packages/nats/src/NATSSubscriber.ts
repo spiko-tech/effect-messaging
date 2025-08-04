@@ -86,7 +86,7 @@ const subscribe = (
               Effect.fail(
                 new SubscriberError.SubscriberError({
                   reason: `NATS subscription failed: ${error}`,
-                  cause: error as any
+                  cause: error
                 })
               )
             )
@@ -107,7 +107,7 @@ const subscribe = (
       Effect.fail(
         new SubscriberError.SubscriberError({
           reason: `Failed to create NATS subscription: ${error}`,
-          cause: error as any
+          cause: error
         })
       )
     )

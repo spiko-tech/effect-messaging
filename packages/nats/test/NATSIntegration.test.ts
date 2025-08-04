@@ -1,3 +1,4 @@
+import type { Msg } from "nats"
 import { describe, expect, it } from "vitest"
 import * as NATSConnection from "../src/NATSConnection.js"
 import * as NATSMessage from "../src/NATSMessage.js"
@@ -22,14 +23,14 @@ describe("NATS Integration", () => {
 
   it("should handle NATS message operations", () => {
     // Mock message for testing utilities
-    const mockMsg = {
+    const mockMsg: Msg = {
       data: new TextEncoder().encode("test message"),
       string: () => "test message",
       json: () => ({ test: "data" }),
       subject: "test.subject",
       headers: undefined,
       reply: undefined
-    } as any
+    } satisfies Partial<Msg> as Msg
 
     const natsMessage = NATSMessage.make(mockMsg)
 

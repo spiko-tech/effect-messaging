@@ -4,7 +4,7 @@
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Schedule from "effect/Schedule"
+import type * as Schedule from "effect/Schedule"
 import type * as Scope from "effect/Scope"
 import type { ConnectionOptions, NatsConnection } from "nats"
 import { connect } from "nats"
@@ -65,7 +65,7 @@ export const makeConnection = (
       return yield* Effect.fail(
         new NATSError.NATSConnectionError({
           reason: `Failed to connect to NATS: ${error}`,
-          cause: error as any
+          cause: error
         })
       )
     }
@@ -74,7 +74,7 @@ export const makeConnection = (
       Effect.fail(
         new NATSError.NATSConnectionError({
           reason: `Failed to connect to NATS: ${error}`,
-          cause: error as any
+          cause: error
         })
       )
     )
@@ -85,23 +85,17 @@ export const makeConnection = (
  * @since 0.1.0
  */
 export const layer = (
-  options?: ConnectionOptions
-) => Layer.scoped(NATSConnection, makeConnection(options))
-
-/**
- * @category layers
- * @since 0.1.0
- */
-export const layerWithRetry = (
   options?: ConnectionOptions,
   retrySchedule?: Schedule.Schedule<unknown, unknown, unknown>
-) =>
-  Layer.scoped(
-    NATSConnection,
-    makeConnection(options).pipe(
-      Effect.retry(retrySchedule ?? Schedule.exponential("1 second").pipe(Schedule.intersect(Schedule.recurs(5))))
+) => {
+  const connection = retrySchedule
+    ? makeConnection(options).pipe(
+      Effect.retry(retrySchedule)
     )
-  )
+    : makeConnection(options)
+
+  return Layer.scoped(NATSConnection, connection)
+}
 
 /**
  * @category utils

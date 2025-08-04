@@ -3,4 +3,7 @@ import shared from "../../vitest.shared.js"
 
 const config: ViteUserConfig = {}
 
-export default mergeConfig(shared, config)
+export default mergeConfig(
+  shared,
+  config
+)

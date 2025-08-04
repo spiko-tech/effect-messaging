@@ -3,6 +3,7 @@
 ## Type Safety
 
 - **Never use `any` type** - Always use proper TypeScript typing
+- **Avoid type casting with `as`** - Only use type casting when absolutely necessary and when types are properly validated
 - Use `unknown` for uncertain types and narrow them with type guards
 - Prefer `Schema.Defect` for error causes instead of casting to `any`
 - Use proper generic constraints and type inference

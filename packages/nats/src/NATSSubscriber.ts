@@ -66,8 +66,8 @@ const subscribe = (
       )
 
       return yield* Effect.async<void, SubscriberError.SubscriberError>((resume) => {
-        const processMessages = async () => {
-          try {
+        const processMessages = Effect.tryPromise({
+          try: async () => {
             for await (const msg of subscription) {
               const natsMessage = NATSMessage.make(msg)
               // Fire and forget message processing to avoid blocking
@@ -80,20 +80,18 @@ const subscribe = (
                 )
               )
             }
-            resume(Effect.void)
-          } catch (error) {
-            resume(
-              Effect.fail(
-                new SubscriberError.SubscriberError({
-                  reason: `NATS subscription failed: ${error}`,
-                  cause: error
-                })
-              )
-            )
-          }
-        }
+          },
+          catch: (error) =>
+            new SubscriberError.SubscriberError({
+              reason: `NATS subscription failed: ${error}`,
+              cause: error
+            })
+        })
 
-        processMessages()
+        Effect.runPromise(processMessages).then(
+          () => resume(Effect.void),
+          (error) => resume(Effect.fail(error))
+        )
 
         return Effect.sync(() => {
           if (!subscription.isClosed()) {
@@ -102,16 +100,7 @@ const subscribe = (
         })
       })
     })
-  ).pipe(
-    Effect.catchAll((error) =>
-      Effect.fail(
-        new SubscriberError.SubscriberError({
-          reason: `Failed to create NATS subscription: ${error}`,
-          cause: error
-        })
-      )
-    )
-  ) as Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, NATSMessage.NATSMessage>>
+  )
 
 /** @internal */
 const healthCheck = (

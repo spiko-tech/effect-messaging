@@ -54,31 +54,21 @@ export const makeConnection = (
   options?: ConnectionOptions
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
-    try {
-      const natsConnection = yield* Effect.promise(() => connect(options))
-      const connection = make(natsConnection)
-
-      yield* Effect.addFinalizer(() => Effect.promise(() => natsConnection.drain()))
-
-      return connection
-    } catch (error) {
-      return yield* Effect.fail(
+    const natsConnection = yield* Effect.tryPromise({
+      try: () => connect(options),
+      catch: (error) =>
         new NATSError.NATSConnectionError({
           reason: `Failed to connect to NATS: ${error}`,
           cause: error
         })
-      )
-    }
-  }).pipe(
-    Effect.catchAll((error) =>
-      Effect.fail(
-        new NATSError.NATSConnectionError({
-          reason: `Failed to connect to NATS: ${error}`,
-          cause: error
-        })
-      )
-    )
-  )
+    })
+
+    const connection = make(natsConnection)
+
+    yield* Effect.addFinalizer(() => Effect.promise(() => natsConnection.drain()))
+
+    return connection
+  })
 
 /**
  * @category layers

@@ -36,14 +36,14 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/language-service':
-        specifier: ^0.31.2
-        version: 0.31.2
+        specifier: ^0.33.2
+        version: 0.33.2
       '@effect/platform':
         specifier: ^0.90.0
-        version: 0.90.0(effect@3.17.3)
+        version: 0.90.0(effect@3.17.6)
       '@effect/vitest':
         specifier: ^0.25.0
-        version: 0.25.0(effect@3.17.3)(vitest@3.2.4(@types/node@22.14.1)(tsx@4.19.3))
+        version: 0.25.0(effect@3.17.6)(vitest@3.2.4(@types/node@22.14.1)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -63,8 +63,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.17.3
-        version: 3.17.3
+        specifier: ^3.17.6
+        version: 3.17.6
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -109,7 +109,7 @@ importers:
         version: link:../core/dist
       '@effect/platform':
         specifier: ^0.90.0
-        version: 0.90.0(effect@3.17.3)
+        version: 0.90.0(effect@3.17.6)
       '@types/amqplib':
         specifier: 0.10.6
         version: 0.10.6
@@ -117,15 +117,15 @@ importers:
         specifier: ^0.10.5
         version: 0.10.7
       effect:
-        specifier: ^3.17.3
-        version: 3.17.3
+        specifier: ^3.17.6
+        version: 3.17.6
     publishDirectory: dist
 
   packages/core:
     devDependencies:
       effect:
-        specifier: ^3.17.3
-        version: 3.17.3
+        specifier: ^3.17.6
+        version: 3.17.6
     publishDirectory: dist
 
 packages:
@@ -315,8 +315,8 @@ packages:
   '@effect/eslint-plugin@0.3.2':
     resolution: {integrity: sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g==}
 
-  '@effect/language-service@0.31.2':
-    resolution: {integrity: sha512-OuFjNT9CiKwW6yTrkBeUoO6Qrl/thLk7x4oYU73MD9kXUEMwQJQ7eCr+nZj74axofLHGJpsyrxvSzGN75pEk1Q==}
+  '@effect/language-service@0.33.2':
+    resolution: {integrity: sha512-sgIC4zg6v3qVtg9kP/F28rhQ/XOVHDgdojjtKUEbPqF3pvxaEasb/bHgq5PuhHk4P+/ksyarsgKmcpIEYAhMsg==}
     hasBin: true
 
   '@effect/markdown-toc@0.1.0':
@@ -1451,8 +1451,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.17.3:
-    resolution: {integrity: sha512-FbFMr6xBXPII5Od8QJnkHz+2GTmQgq+8NPQev6C2k9cf1lcUjQ4vpw1kjbMc2X0UkjIkIWe0EtNK2RV6bl34UQ==}
+  effect@3.17.6:
+    resolution: {integrity: sha512-BDVr3TEI6JpTnsZwDzXlzxDtyMS0cwtfWmhqfL3nl7Be/443+geFYAlVpCy7SCkLCck0NbmFX86LtlCZtCgdxA==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -3505,7 +3505,7 @@ snapshots:
       '@dprint/typescript': 0.91.8
       prettier-linter-helpers: 1.0.0
 
-  '@effect/language-service@0.31.2': {}
+  '@effect/language-service@0.33.2': {}
 
   '@effect/markdown-toc@0.1.0':
     dependencies:
@@ -3522,17 +3522,17 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.90.0(effect@3.17.3)':
+  '@effect/platform@0.90.0(effect@3.17.6)':
     dependencies:
       '@opentelemetry/semantic-conventions': 1.36.0
-      effect: 3.17.3
+      effect: 3.17.6
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.4
       multipasta: 0.2.7
 
-  '@effect/vitest@0.25.0(effect@3.17.3)(vitest@3.2.4(@types/node@22.14.1)(tsx@4.19.3))':
+  '@effect/vitest@0.25.0(effect@3.17.6)(vitest@3.2.4(@types/node@22.14.1)(tsx@4.19.3))':
     dependencies:
-      effect: 3.17.3
+      effect: 3.17.6
       vitest: 3.2.4(@types/node@22.14.1)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -4589,7 +4589,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.17.3:
+  effect@3.17.6:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

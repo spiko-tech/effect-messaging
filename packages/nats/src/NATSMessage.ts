@@ -1,9 +1,9 @@
 /**
  * @since 0.1.0
  */
-import type { Msg, MsgHdrs } from "nats"
 import * as Context from "effect/Context"
 import * as Layer from "effect/Layer"
+import type { Msg, MsgHdrs } from "nats"
 
 /**
  * @category type ids
@@ -94,5 +94,4 @@ export const reply = (message: NATSMessage): string | undefined => message.msg.r
  * @since 0.1.0
  * @category Layers
  */
-export const layer = (message: NATSMessage): Layer.Layer<NATSMessage> =>
-  Layer.succeed(NATSMessage, message)
+export const layer = (message: NATSMessage): Layer.Layer<NATSMessage> => Layer.succeed(NATSMessage, message)

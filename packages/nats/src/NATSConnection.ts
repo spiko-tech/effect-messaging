@@ -1,13 +1,13 @@
 /**
  * @since 0.1.0
  */
-import type { ConnectionOptions, NatsConnection } from "nats"
-import { connect } from "nats"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Schedule from "effect/Schedule"
-import * as Scope from "effect/Scope"
+import type * as Scope from "effect/Scope"
+import type { ConnectionOptions, NatsConnection } from "nats"
+import { connect } from "nats"
 import * as NATSError from "./NATSError.js"
 
 /**
@@ -53,15 +53,13 @@ export const make = (connection: NatsConnection): NATSConnection => ({
 export const makeConnection = (
   options?: ConnectionOptions
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     try {
       const natsConnection = yield* Effect.promise(() => connect(options))
       const connection = make(natsConnection)
-      
-      yield* Effect.addFinalizer(() =>
-        Effect.promise(() => natsConnection.drain())
-      )
-      
+
+      yield* Effect.addFinalizer(() => Effect.promise(() => natsConnection.drain()))
+
       return connection
     } catch (error) {
       return yield* Effect.fail(
@@ -88,8 +86,7 @@ export const makeConnection = (
  */
 export const layer = (
   options?: ConnectionOptions
-) =>
-  Layer.scoped(NATSConnection, makeConnection(options))
+) => Layer.scoped(NATSConnection, makeConnection(options))
 
 /**
  * @category layers
@@ -126,12 +123,10 @@ export const closed = (natsConnection: NATSConnection): Effect.Effect<Error | un
  * @category utils
  * @since 0.1.0
  */
-export const isClosed = (natsConnection: NATSConnection): boolean =>
-  natsConnection.connection.isClosed()
+export const isClosed = (natsConnection: NATSConnection): boolean => natsConnection.connection.isClosed()
 
 /**
  * @category utils
  * @since 0.1.0
  */
-export const isDraining = (natsConnection: NATSConnection): boolean =>
-  natsConnection.connection.isDraining()
+export const isDraining = (natsConnection: NATSConnection): boolean => natsConnection.connection.isDraining()

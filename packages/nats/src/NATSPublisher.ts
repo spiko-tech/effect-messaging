@@ -92,7 +92,7 @@ export const layer = (
 ): Layer.Layer<NATSPublisher, never, NATSConnection.NATSConnection> =>
   Layer.effect(
     NATSPublisher,
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const connection = yield* NATSConnection.NATSConnection
       return make(connection, retrySchedule)
     })

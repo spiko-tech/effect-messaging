@@ -3,10 +3,10 @@
  */
 import * as Subscriber from "@effect-messaging/core/Subscriber"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
-import type { SubscriptionOptions } from "nats"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import type { SubscriptionOptions } from "nats"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSMessage from "./NATSMessage.js"
 
@@ -54,9 +54,9 @@ const subscribe = (
   handler: Effect.Effect<void, E, R | NATSMessage.NATSMessage>
 ): Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, NATSMessage.NATSMessage>> =>
   Effect.scoped(
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const subscription = connection.connection.subscribe(config.subject, config.options)
-      
+
       yield* Effect.addFinalizer(() =>
         Effect.sync(() => {
           if (!subscription.isClosed()) {
@@ -76,9 +76,7 @@ const subscribe = (
                   handler,
                   NATSMessage.layer(natsMessage)
                 ) as Effect.Effect<void, never, never>).pipe(
-                  Effect.catchAll((error) =>
-                    Effect.logError(`Failed to process NATS message: ${error}`)
-                  )
+                  Effect.catchAll((error) => Effect.logError(`Failed to process NATS message: ${error}`))
                 )
               )
             }
@@ -119,7 +117,7 @@ const subscribe = (
 const healthCheck = (
   connection: NATSConnection.NATSConnection
 ): Effect.Effect<void, SubscriberError.SubscriberError, never> =>
-  Effect.gen(function* () {
+  Effect.gen(function*() {
     if (NATSConnection.isClosed(connection)) {
       yield* Effect.fail(
         new SubscriberError.SubscriberError({
@@ -152,7 +150,7 @@ export const layer = (
 ): Layer.Layer<NATSSubscriber, never, NATSConnection.NATSConnection> =>
   Layer.effect(
     NATSSubscriber,
-    Effect.gen(function* () {
+    Effect.gen(function*() {
       const connection = yield* NATSConnection.NATSConnection
       return make(connection, config)
     })

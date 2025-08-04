@@ -9,6 +9,11 @@
 - Prefer `Schema.Defect` for error causes instead of casting to `any`
 - Use proper generic constraints and type inference
 
+### Testing Standards
+- **Always use `it.effect`** for tests with `@effect/vitest` when working with Effect-based code
+- Use proper Effect composition patterns in tests
+- Prefer integration tests that verify full stack functionality
+
 ## Changeset Workflow
 
 This project uses [Changesets](https://github.com/changesets/changesets) to manage versioning and publishing.

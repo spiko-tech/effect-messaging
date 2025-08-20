@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.17
+
+### Patch Changes
+
+- [#48](https://github.com/spiko-tech/effect-messaging/pull/48) [`75d83d0`](https://github.com/spiko-tech/effect-messaging/commit/75d83d05a75cb4483cee522c81861825b52c601f) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Upgrade TypeScript to ^5.9.2 and related TypeScript ESLint packages to ^8.39.1
+
 ## 0.2.16
 
 ### Patch Changes

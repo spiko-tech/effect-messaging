@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.18
+
+### Patch Changes
+
+- [#50](https://github.com/spiko-tech/effect-messaging/pull/50) [`0d1915b`](https://github.com/spiko-tech/effect-messaging/commit/0d1915b659ce8472bf82a3adb8815d3a9fb1783c) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - Upgrade Effect libraries to latest versions (effect ^3.17.9, @effect/platform ^0.90.6, @effect/language-service ^0.36.0)
+
 ## 0.2.17
 
 ### Patch Changes

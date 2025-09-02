@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.4.20
+
+### Patch Changes
+
+- [#54](https://github.com/spiko-tech/effect-messaging/pull/54) [`b64d91f`](https://github.com/spiko-tech/effect-messaging/commit/b64d91f2427b0e6b30be744731192e0c153772dc) Thanks [@wewelll](https://github.com/wewelll)! - Update amqplib dependency from ^0.10.5 to ^0.10.9 and @types/amqplib from 0.10.6 to 0.10.7
+
 ## 0.4.19
 
 ### Patch Changes

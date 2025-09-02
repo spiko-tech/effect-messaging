@@ -1,7 +1,7 @@
 /**
  * @since 0.1.0
  */
-import type { Channel, ConfirmChannel, Connection, ServerProperties } from "amqplib"
+import type { Channel, ChannelModel, ConfirmChannel, ServerProperties } from "amqplib"
 import * as Context from "effect/Context"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
@@ -42,7 +42,7 @@ export interface AMQPConnection {
   readonly createConfirmChannel: Effect.Effect<ConfirmChannel, AMQPError.AMQPConnectionError, never>
   readonly serverProperties: Effect.Effect<AMQPConnectionServerProperties, AMQPError.AMQPConnectionError, never>
   readonly updateSecret: (
-    ...params: Parameters<Connection["updateSecret"]>
+    ...params: Parameters<ChannelModel["updateSecret"]>
   ) => Effect.Effect<void, AMQPError.AMQPConnectionError, never>
 
   /** @internal */
@@ -84,7 +84,7 @@ export const make = (
           createChannel: internal.createChannel.pipe(provideInternal),
           createConfirmChannel: internal.createConfirmChannel.pipe(provideInternal),
           serverProperties: internal.serverProperties.pipe(provideInternal),
-          updateSecret: (...params: Parameters<Connection["updateSecret"]>) =>
+          updateSecret: (...params: Parameters<ChannelModel["updateSecret"]>) =>
             internal.updateSecret(...params).pipe(provideInternal),
           close: (opts: internal.CloseConnectionOptions = {}) => internal.closeConnection(opts).pipe(provideInternal)
         }

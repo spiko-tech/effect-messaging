@@ -1,4 +1,4 @@
-import type { Connection, Options } from "amqplib"
+import type { ChannelModel, Options } from "amqplib"
 import { connect } from "amqplib"
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
@@ -21,7 +21,7 @@ export type ConnectionUrl = Redacted.Redacted<string> | Options.Connect
 
 export class InternalAMQPConnection
   extends Context.Tag("@effect-messaging/amqp/InternalAMQPConnection")<InternalAMQPConnection, {
-    connectionRef: SubscriptionRef.SubscriptionRef<Option.Option<Connection>>
+    connectionRef: SubscriptionRef.SubscriptionRef<Option.Option<ChannelModel>>
     url: ConnectionUrl
     retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
     waitConnectionTimeout: Duration.DurationInput
@@ -38,7 +38,7 @@ export class InternalAMQPConnection
     }
   ): Effect.Effect<Context.Tag.Service<InternalAMQPConnection>> =>
     Effect.gen(function*() {
-      const connectionRef = yield* SubscriptionRef.make(Option.none<Connection>())
+      const connectionRef = yield* SubscriptionRef.make(Option.none<ChannelModel>())
       return {
         connectionRef,
         url,
@@ -67,7 +67,7 @@ const getOrWaitConnection = Effect.gen(function*() {
 })
 
 /** @internal */
-const annotateSpanWithConnectionProps = (conn: Connection) =>
+const annotateSpanWithConnectionProps = (conn: ChannelModel) =>
   Effect.annotateCurrentSpan({
     [ATTR_SERVER_ADDRESS]: conn.connection.serverProperties.host,
     [ATTR_SERVER_PORT]: conn.connection.serverProperties.port,
@@ -162,7 +162,7 @@ export const createConfirmChannel = Effect.gen(function*() {
 )
 
 /** @internal */
-export const updateSecret = (...parameters: Parameters<Connection["updateSecret"]>) =>
+export const updateSecret = (...parameters: Parameters<ChannelModel["updateSecret"]>) =>
   Effect.gen(function*() {
     const conn = yield* getOrWaitConnection
     yield* annotateSpanWithConnectionProps(conn)

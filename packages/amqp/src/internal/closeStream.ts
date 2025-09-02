@@ -1,10 +1,10 @@
-import type { Channel, Connection } from "amqplib"
+import type { Channel, ChannelModel } from "amqplib"
 import type { SubscriptionRef } from "effect"
 import { Effect, Option, Stream } from "effect"
 
 /** @internal */
 const eventStream =
-  (eventName: string) => <T extends Connection | Channel>(ref: SubscriptionRef.SubscriptionRef<Option.Option<T>>) =>
+  (eventName: string) => <T extends ChannelModel | Channel>(ref: SubscriptionRef.SubscriptionRef<Option.Option<T>>) =>
     ref.changes.pipe(
       Stream.flatMap(
         (target) => {

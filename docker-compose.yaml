@@ -16,5 +16,27 @@ services:
       timeout: 5s
       retries: 5
 
+  nats:
+    image: nats:latest
+    container_name: nats-test
+    ports:
+      - "4222:4222" # Client connections
+      - "8222:8222" # HTTP monitoring
+      - "6222:6222" # Routing for clusters
+    command: ["-js", "-m", "8222"]
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8222/varz"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   rabbitmq_data:

@@ -30,6 +30,22 @@ export class NATSConnectionError extends Schema.TaggedError<NATSConnectionError>
 }
 
 /**
+ * Represents a NATS JetStream Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class NATSJetStreamError extends Schema.TaggedError<NATSJetStreamError>()(
+  "NATSJetStreamError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
  * Represents a NATS Error
  *
  * @since 0.1.0

@@ -135,7 +135,7 @@ importers:
         version: link:../core/dist
       '@effect/platform':
         specifier: ^0.90.6
-        version: 0.90.6(effect@3.17.10)
+        version: 0.90.10(effect@3.19.4)
       '@nats-io/jetstream':
         specifier: ^3.2.0
         version: 3.2.0
@@ -147,7 +147,7 @@ importers:
         version: 3.2.0
       effect:
         specifier: ^3.17.10
-        version: 3.17.10
+        version: 3.19.4
     publishDirectory: dist
 
 packages:
@@ -345,6 +345,11 @@ packages:
     resolution: {integrity: sha512-IRfvvwqQLabVTIw9hhIj4scOGIYPfa13QuEFv+dBWE6p47R+RR0J8jQvfDINFf0Vn80XXVjNRtZxkZpkKXLx2A==}
     engines: {node: '>=0.10.0'}
     hasBin: true
+
+  '@effect/platform@0.90.10':
+    resolution: {integrity: sha512-QhDPgCaLfIMQKOCoCPQvRUS+Y34iYJ07jdZ/CBAvYFvg/iUBebsmFuHL63RCD/YZH9BuK/kqqLYAA3M0fmUEgg==}
+    peerDependencies:
+      effect: ^3.17.13
 
   '@effect/platform@0.93.2':
     resolution: {integrity: sha512-IFWF2xuz37tZbyEsf3hwBlcYYqbqJho+ZM871CG92lWJSjcTgvmjCy77qnV0QhTWVdh9BMs12QKzQCMlqz4cJQ==}
@@ -3780,6 +3785,13 @@ snapshots:
       remarkable: 1.7.4
       repeat-string: 1.6.1
       strip-color: 0.1.0
+
+  '@effect/platform@0.90.10(effect@3.19.4)':
+    dependencies:
+      effect: 3.19.4
+      find-my-way-ts: 0.1.6
+      msgpackr: 1.11.5
+      multipasta: 0.2.7
 
   '@effect/platform@0.93.2(effect@3.19.4)':
     dependencies:

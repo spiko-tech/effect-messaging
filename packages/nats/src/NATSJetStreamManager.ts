@@ -41,25 +41,25 @@ export const NATSJetStreamManager = Context.GenericTag<NATSJetStreamManager>(
 )
 
 /** @internal */
-export const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): Effect.Effect<
+const wrapPromise = <A>(promise: (signal: AbortSignal) => Promise<A>, errorReason: string) =>
+  Effect.tryPromise({
+    try: promise,
+    catch: (error) => new NATSError.NATSJetStreamError({ reason: errorReason, cause: error })
+  })
+
+/** @internal */
+const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): Effect.Effect<
   NATSJetStreamManager,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
 > =>
   Effect.gen(function*() {
     const { nc } = yield* NATSConnection.NATSConnection
-
-    const jsm = yield* Effect.tryPromise({
-      try: () => JetStream.jetstreamManager(nc, options),
-      catch: (error) => new NATSError.NATSJetStreamError({ reason: "Failed to create JetStream client", cause: error })
-    })
+    const jsm = yield* wrapPromise(() => JetStream.jetstreamManager(nc, options), "Failed to create JetStream manager")
 
     const client: NATSJetStreamManager = {
       [TypeId]: TypeId,
-      accountInfo: Effect.tryPromise({
-        try: () => jsm.getAccountInfo(),
-        catch: (error) => new NATSError.NATSJetStreamError({ reason: "Failed to get account info", cause: error })
-      }),
+      accountInfo: wrapPromise(() => jsm.getAccountInfo(), "Failed to get account info"),
       jsm
     }
 

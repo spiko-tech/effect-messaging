@@ -43,14 +43,18 @@ export interface NATSConnection {
 export const NATSConnection = Context.GenericTag<NATSConnection>("@effect-messaging/nats/NATSConnection")
 
 /** @internal */
-export const make = (
+const wrapPromise = <A>(promise: (signal: AbortSignal) => Promise<A>, errorReason: string) =>
+  Effect.tryPromise({
+    try: promise,
+    catch: (error) => new NATSError.NATSConnectionError({ reason: errorReason, cause: error })
+  })
+
+/** @internal */
+const make = (
   connect: () => Promise<NATSCore.NatsConnection>
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
-    const nc = yield* Effect.tryPromise({
-      try: connect,
-      catch: (error) => new NATSError.NATSConnectionError({ reason: "Failed to create NATS connection", cause: error })
-    })
+    const nc = yield* wrapPromise(connect, "Failed to create NATS connection")
 
     const connection: NATSConnection = {
       [TypeId]: TypeId,

@@ -38,18 +38,21 @@ export interface NATSJetStreamClient {
 export const NATSJetStreamClient = Context.GenericTag<NATSJetStreamClient>("@effect-messaging/nats/NATSJetStreamClient")
 
 /** @internal */
-export const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.Effect<
+const wrapPromise = <A>(promise: (signal: AbortSignal) => Promise<A>, errorReason: string) =>
+  Effect.tryPromise({
+    try: promise,
+    catch: (error) => new NATSError.NATSJetStreamError({ reason: errorReason, cause: error })
+  })
+
+/** @internal */
+const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.Effect<
   NATSJetStreamClient,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
 > =>
   Effect.gen(function*() {
     const { nc } = yield* NATSConnection.NATSConnection
-
-    const js = yield* Effect.try({
-      try: () => JetStream.jetstream(nc, options),
-      catch: (error) => new NATSError.NATSJetStreamError({ reason: "Failed to create JetStream client", cause: error })
-    })
+    const js = yield* wrapPromise(async () => JetStream.jetstream(nc, options), "Failed to create JetStream client")
 
     const client: NATSJetStreamClient = {
       [TypeId]: TypeId,

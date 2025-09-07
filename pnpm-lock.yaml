@@ -128,6 +128,28 @@ importers:
         version: 3.19.10
     publishDirectory: dist
 
+  packages/nats:
+    devDependencies:
+      '@effect-messaging/core':
+        specifier: workspace:^
+        version: link:../core/dist
+      '@effect/platform':
+        specifier: ^0.90.6
+        version: 0.90.6(effect@3.17.10)
+      '@nats-io/jetstream':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@nats-io/nats-core':
+        specifier: ^3.2.0
+        version: 3.2.0
+      '@nats-io/transport-node':
+        specifier: ^3.2.0
+        version: 3.2.0
+      effect:
+        specifier: ^3.17.10
+        version: 3.17.10
+    publishDirectory: dist
+
 packages:
 
   '@ampproject/remapping@2.3.0':
@@ -782,6 +804,24 @@ packages:
 
   '@napi-rs/wasm-runtime@0.2.8':
     resolution: {integrity: sha512-OBlgKdX7gin7OIq4fadsjpg+cp2ZphvAIKucHsNfTdJiqdOmOEwQd/bHi0VwNrcw5xpBJyUw6cK/QilCqy1BSg==}
+
+  '@nats-io/jetstream@3.2.0':
+    resolution: {integrity: sha512-6H/vMjTMPsFEXKGK7dqScwHEtP1ZedZrwbCdRQuYDIVq4WLqZOD6ryeEZ/gMAP7YKLy82G6IixGUm2DVsDPCMw==}
+
+  '@nats-io/nats-core@3.2.0':
+    resolution: {integrity: sha512-yHMsS0RTkKRh80COCGY/kuhEj0KPU47qkVU6IPEXmqjmskH6mX2roykxY5CXCAQc78FKYrpKQp6EHv02dRAjDw==}
+
+  '@nats-io/nkeys@2.0.3':
+    resolution: {integrity: sha512-JVt56GuE6Z89KUkI4TXUbSI9fmIfAmk6PMPknijmuL72GcD+UgIomTcRWiNvvJKxA01sBbmIPStqJs5cMRBC3A==}
+    engines: {node: '>=18.0.0'}
+
+  '@nats-io/nuid@2.0.3':
+    resolution: {integrity: sha512-TpA3HEBna/qMVudy+3HZr5M3mo/L1JPofpVT4t0HkFGkz2Cn9wrlrQC8tvR8Md5Oa9//GtGG26eN0qEWF5Vqew==}
+    engines: {node: '>= 18.x'}
+
+  '@nats-io/transport-node@3.2.0':
+    resolution: {integrity: sha512-foSEx0KHRIjuVtb0teEnkax2elrWR4MxijBPuFPtodSAprUh+6wiYk+v5qCqhIdVl6cWGLTXCtlCHs1bkocGTg==}
+    engines: {node: '>= 18.0.0'}
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     resolution: {integrity: sha512-s88O1aVtXftvp5bCPB7WnmXc5IwOZZ7YPuwNPt+GtOOXpPvad1LfbmjYv+qII7zP6RU2QGnqve27dnLycEnyEQ==}
@@ -3190,6 +3230,9 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
+  tweetnacl@1.0.3:
+    resolution: {integrity: sha512-6rt+RN7aOi1nGMyC4Xa5DdYiukl2UWCbcJft7YhxReBGQD7OAM8Pbxw6YMo4r2diNEA8FEmu32YOn9rhaiE5yw==}
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -4053,6 +4096,27 @@ snapshots:
       '@emnapi/runtime': 1.4.0
       '@tybys/wasm-util': 0.9.0
     optional: true
+
+  '@nats-io/jetstream@3.2.0':
+    dependencies:
+      '@nats-io/nats-core': 3.2.0
+
+  '@nats-io/nats-core@3.2.0':
+    dependencies:
+      '@nats-io/nkeys': 2.0.3
+      '@nats-io/nuid': 2.0.3
+
+  '@nats-io/nkeys@2.0.3':
+    dependencies:
+      tweetnacl: 1.0.3
+
+  '@nats-io/nuid@2.0.3': {}
+
+  '@nats-io/transport-node@3.2.0':
+    dependencies:
+      '@nats-io/nats-core': 3.2.0
+      '@nats-io/nkeys': 2.0.3
+      '@nats-io/nuid': 2.0.3
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
     optional: true
@@ -6744,6 +6808,8 @@ snapshots:
       get-tsconfig: 4.13.0
     optionalDependencies:
       fsevents: 2.3.3
+
+  tweetnacl@1.0.3: {}
 
   type-check@0.4.0:
     dependencies:

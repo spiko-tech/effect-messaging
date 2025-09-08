@@ -62,11 +62,14 @@ jobs:
           - 8222:8222
           - 6222:6222
         options: >-
-          -js -m 8222
-          --health-cmd "wget --quiet --tries=1 --spider http://localhost:8222/varz"
+          --health-cmd "curl -f http://localhost:8222/varz || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        env:
+          NATS_SERVER_CONFIG: |
+            jetstream: enabled
+            http_port: 8222
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

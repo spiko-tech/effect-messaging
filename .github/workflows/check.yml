@@ -62,8 +62,7 @@ jobs:
           - 8222:8222
           - 6222:6222
         options: >-
-          -js
-          -m 8222
+          --entrypoint "nats-server -js -m 8222"
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

@@ -43,12 +43,12 @@
     "@effect/platform": "^0.92.1",
     "@types/amqplib": "0.10.7",
     "amqplib": "^0.10.9",
-    "effect": "^3.18.4"
+    "effect": "^3.18.3"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.92.1",
     "amqplib": "^0.10.9",
-    "effect": "^3.18.4"
+    "effect": "^3.18.3"
   }
 }

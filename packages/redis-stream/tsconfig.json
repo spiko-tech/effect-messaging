@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "build",
+    "composite": true,
+    "paths": {
+      "@effect-messaging/core": ["../core/src/index.js"],
+      "@effect-messaging/core/*": ["../core/src/*.js"],
+      "@effect-messaging/core/test/*": ["../core/test/*.js"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["test/**/*", "examples/**/*", "node_modules", "build", "dist"]
+}

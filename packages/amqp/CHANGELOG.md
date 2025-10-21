@@ -1,5 +1,14 @@
 # @effect-messaging/amqp
 
+## 0.4.26
+
+### Patch Changes
+
+- [#68](https://github.com/spiko-tech/effect-messaging/pull/68) [`116fa92`](https://github.com/spiko-tech/effect-messaging/commit/116fa925fa46a21f4230543fc94f5086bc7e9755) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade Effect libraries to latest versions (effect ^3.18.4, @effect/language-service ^0.46.0)
+
+- Updated dependencies [[`116fa92`](https://github.com/spiko-tech/effect-messaging/commit/116fa925fa46a21f4230543fc94f5086bc7e9755)]:
+  - @effect-messaging/core@0.2.25
+
 ## 0.4.25
 
 ### Patch Changes

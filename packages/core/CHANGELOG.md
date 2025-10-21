@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.28
+
+### Patch Changes
+
+- [#75](https://github.com/spiko-tech/effect-messaging/pull/75) [`3341ea1`](https://github.com/spiko-tech/effect-messaging/commit/3341ea1de92d1bef8ce2658ee324e9989a032008) Thanks [@wewelll](https://github.com/wewelll)! - Update to NodeJS 24
+
 ## 0.2.27
 
 ### Patch Changes

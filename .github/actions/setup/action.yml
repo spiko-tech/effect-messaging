@@ -4,15 +4,21 @@ inputs:
   node-version:
     description: The version of Node.js to install
     required: true
-    default: 20.18.1
+    default: "24"
+  pnpm-version:
+    description: The version of PNPM to install
+    required: true
+    default: "10"
 
 runs:
   using: composite
   steps:
     - name: Install pnpm
-      uses: pnpm/action-setup@v3
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
     - name: Install node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         cache: pnpm
         node-version: ${{ inputs.node-version }}

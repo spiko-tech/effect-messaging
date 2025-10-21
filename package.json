@@ -27,18 +27,6 @@
     "node": "24",
     "npm": "10"
   },
-  "devEngines": {
-    "runtime": {
-      "name": "node",
-      "version": "24",
-      "onFail": "error"
-    },
-    "packageManager": {
-      "name": "pnpm",
-      "version": "10",
-      "onFail": "error"
-    }
-  },
   "devDependencies": {
     "@babel/cli": "^7.27.0",
     "@babel/core": "^7.26.10",

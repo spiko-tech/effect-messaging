@@ -1,5 +1,5 @@
 import { describe, expect, layer } from "@effect/vitest"
-import { Effect } from "effect"
+import { Effect, Option } from "effect"
 import * as NATSConnection from "../src/NATSConnection.js"
 import { testConnection } from "./dependencies.js"
 
@@ -8,7 +8,7 @@ describe("NATSConnection", () => {
     it.effect("Should be able to connect", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
-        expect(connection.nc.info).toMatchObject({ port: 4222 })
+        expect(connection.info).toMatchObject(Option.some({ port: 4222 }))
       }))
   })
 })

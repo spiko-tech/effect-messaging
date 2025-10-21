@@ -8,7 +8,7 @@ describe("NATSJetStreamClient", () => {
     it.effect("Should be able to create a JetStream client", () =>
       Effect.gen(function*() {
         const jetStreamclient = yield* NATSJetStreamClient.NATSJetStreamClient
-        expect(jetStreamclient.js.apiPrefix).toEqual(expect.any(String))
+        expect(jetStreamclient.apiPrefix).toEqual(expect.any(String))
       }))
   })
 })

@@ -6,8 +6,6 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
-permissions: {}
-
 jobs:
   release:
     name: Release
@@ -28,4 +26,3 @@ jobs:
           publish: pnpm changeset-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,5 +1,14 @@
 # @effect-messaging/amqp
 
+## 0.4.28
+
+### Patch Changes
+
+- [#73](https://github.com/spiko-tech/effect-messaging/pull/73) [`e56021b`](https://github.com/spiko-tech/effect-messaging/commit/e56021be866d7faccc519c2fb0aa5ba6e2283c51) Thanks [@wewelll](https://github.com/wewelll)! - try fixing release
+
+- Updated dependencies [[`e56021b`](https://github.com/spiko-tech/effect-messaging/commit/e56021be866d7faccc519c2fb0aa5ba6e2283c51)]:
+  - @effect-messaging/core@0.2.27
+
 ## 0.4.27
 
 ### Patch Changes

@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    timeout-minutes: 10
+    timeout-minutes: 15
     services:
       rabbitmq:
         image: rabbitmq:3-management
@@ -65,3 +65,4 @@ jobs:
         run: pnpm vitest
         env:
           NODE_OPTIONS: --max_old_space_size=8192
+          RABBITMQ_URL: amqp://localhost:5679

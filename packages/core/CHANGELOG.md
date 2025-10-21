@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.26
+
+### Patch Changes
+
+- [#70](https://github.com/spiko-tech/effect-messaging/pull/70) [`b6feab9`](https://github.com/spiko-tech/effect-messaging/commit/b6feab95132c2c5065c4b377a75dde91a1483f94) Thanks [@wewelll](https://github.com/wewelll)! - Add NPM_TOKEN workaround to release workflow while changesets issue #1152 is open.
+
 ## 0.2.25
 
 ### Patch Changes

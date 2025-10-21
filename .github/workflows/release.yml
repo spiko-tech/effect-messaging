@@ -26,4 +26,4 @@ jobs:
           publish: pnpm changeset-publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: "" # needed while this issue is open https://github.com/changesets/changesets/issues/1152
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

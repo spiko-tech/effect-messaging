@@ -37,7 +37,7 @@
     "@effect/build-utils": "^0.8.9",
     "@effect/docgen": "^0.5.2",
     "@effect/eslint-plugin": "^0.3.2",
-    "@effect/language-service": "^0.46.0",
+    "@effect/language-service": "^0.51.0",
     "@effect/platform": "^0.92.1",
     "@effect/vitest": "^0.26.0",
     "@eslint/js": "^9.24.0",

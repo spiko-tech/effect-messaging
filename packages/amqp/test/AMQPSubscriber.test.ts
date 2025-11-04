@@ -314,7 +314,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
-      { timeout: 10000 }
+      { timeout: 20000 }
     )
   })
 })

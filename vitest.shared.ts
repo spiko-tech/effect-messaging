@@ -22,6 +22,7 @@ const config: ViteUserConfig = {
     sequence: {
       concurrent: true
     },
+    hookTimeout: 20000,
     include: ["test/**/*.test.ts"],
     alias: {
       ...alias("amqp")

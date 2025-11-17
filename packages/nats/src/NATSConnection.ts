@@ -10,6 +10,7 @@ import * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
+import * as NATSSubscription from "./NATSSubscription.js"
 
 /**
  * @category type ids
@@ -34,24 +35,24 @@ export interface NATSConnection {
   info: Option.Option<NATSCore.ServerInfo>
   readonly publish: (
     ...params: Parameters<NATSCore.NatsConnection["publish"]>
-  ) => Effect.Effect<void, NATSError.NATSConnectionError, void>
+  ) => Effect.Effect<void, NATSError.NATSConnectionError>
   readonly publishMessage: (
     ...params: Parameters<NATSCore.NatsConnection["publishMessage"]>
-  ) => Effect.Effect<void, NATSError.NATSConnectionError, void>
+  ) => Effect.Effect<void, NATSError.NATSConnectionError>
   readonly respondMessage: (
     ...params: Parameters<NATSCore.NatsConnection["respondMessage"]>
-  ) => Effect.Effect<boolean, NATSError.NATSConnectionError, void>
+  ) => Effect.Effect<boolean, NATSError.NATSConnectionError>
   readonly request: (
     ...params: Parameters<NATSCore.NatsConnection["request"]>
-  ) => Effect.Effect<NATSMessage.NATSMessage, NATSError.NATSConnectionError, void>
+  ) => Effect.Effect<NATSMessage.NATSMessage, NATSError.NATSConnectionError>
   readonly subscribe: (
     ...params: Parameters<NATSCore.NatsConnection["subscribe"]>
-  ) => Effect.Effect<NATSCore.Subscription, NATSError.NATSConnectionError, void>
+  ) => Effect.Effect<NATSSubscription.NATSSubscription, NATSError.NATSConnectionError>
 
   /** @internal */
-  readonly close: Effect.Effect<void, never, never>
+  readonly close: Effect.Effect<void, never>
   /** @internal */
-  readonly drain: Effect.Effect<void, never, never>
+  readonly drain: Effect.Effect<void, never>
   /** @internal */
   readonly nc: NATSCore.NatsConnection
 }
@@ -88,7 +89,9 @@ const make = (
       request: (...params) =>
         wrap(() => nc.request(...params), "Failed to request message").pipe(Effect.map(NATSMessage.make)),
       subscribe: (...params) =>
-        wrap(async () => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`),
+        wrap(async () => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`).pipe(
+          Effect.map(NATSSubscription.make)
+        ),
       close: Effect.promise(() => nc.close()),
       drain: Effect.promise(() => nc.drain()),
       nc

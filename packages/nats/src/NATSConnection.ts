@@ -24,6 +24,8 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSConn
 export type TypeId = typeof TypeId
 
 /**
+ * Represents a NATS Connection
+ *
  * @category models
  * @since 0.1.0
  */

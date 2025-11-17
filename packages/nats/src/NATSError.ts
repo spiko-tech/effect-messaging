@@ -46,6 +46,22 @@ export class NATSMessageError extends Schema.TaggedError<NATSMessageError>()(
 }
 
 /**
+ * Represents a NATS Subscription Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class NATSSubscriptionError extends Schema.TaggedError<NATSSubscriptionError>()(
+  "NATSSubscriptionError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
  * Represents a NATS JetStream Error
  *
  * @since 0.1.0

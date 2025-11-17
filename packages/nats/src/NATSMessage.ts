@@ -35,7 +35,7 @@ export interface NATSMessage {
     ...params: Parameters<NATSCore.Msg["respond"]>
   ) => Effect.Effect<boolean, NATSError.NATSMessageError>
   readonly json: <T>(...params: Parameters<NATSCore.Msg["json"]>) => Effect.Effect<T, NATSError.NATSMessageError>
-  readonly string: () => Effect.Effect<string, NATSError.NATSMessageError>
+  readonly string: Effect.Effect<string, NATSError.NATSMessageError>
 
   /** @internal */
   readonly msg: NATSCore.Msg
@@ -57,6 +57,6 @@ export const make = (msg: NATSCore.Msg): NATSMessage => ({
     wrap(() => msg.respond(...params), "Failed to respond to NATS message"),
   json: (...params: Parameters<NATSCore.Msg["json"]>) =>
     wrap(() => msg.json(...params), "Failed to parse NATS message as JSON"),
-  string: () => wrap(() => msg.string(), "Failed to convert NATS message to string"),
+  string: wrap(() => msg.string(), "Failed to convert NATS message to string"),
   msg
 })

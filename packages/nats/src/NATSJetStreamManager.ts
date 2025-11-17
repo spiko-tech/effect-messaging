@@ -21,6 +21,8 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSJetS
 export type TypeId = typeof TypeId
 
 /**
+ * Represents a NATS JetStream Manager
+ *
  * @category models
  * @since 0.1.0
  */

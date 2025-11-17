@@ -1,0 +1,7 @@
+{
+    "src": "src",
+    "out": "docs",
+    "theme": "minimal",
+    "includeVersion": true,
+    "categorizeByGroup": true
+}

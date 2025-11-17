@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.4.36
+
+### Patch Changes
+
+- [#92](https://github.com/spiko-tech/effect-messaging/pull/92) [`d145cdc`](https://github.com/spiko-tech/effect-messaging/commit/d145cdca0659fc68a1ce5ba3cdf75ca856da70c9) Thanks [@wewelll](https://github.com/wewelll)! - add spans to amqp publish method
+
 ## 0.4.35
 
 ### Patch Changes

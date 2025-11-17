@@ -23,6 +23,9 @@ const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
 const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
 const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
 const ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME = "messaging.destination.subscription.name" as const
+const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
+const ATTR_MESSAGING_MESSAGE_CONVERSATION_ID = "messaging.message.conversation_id" as const
+const ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY = "messaging.amqp.destination.routing_key" as const
 
 /** @internal */
 export class InternalAMQPChannel
@@ -155,7 +158,10 @@ export const publish = (
           [ATTR_MESSAGING_SYSTEM]: serverProperties.product,
           [ATTR_MESSAGING_OPERATION_NAME]: "publish",
           [ATTR_MESSAGING_OPERATION_TYPE]: "send",
-          [ATTR_MESSAGING_DESTINATION_NAME]: routingKey
+          [ATTR_MESSAGING_DESTINATION_NAME]: routingKey,
+          [ATTR_MESSAGING_MESSAGE_ID]: options?.messageId,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: options?.correlationId,
+          [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: routingKey
         }
       },
       (span) =>

@@ -2,8 +2,9 @@
  * @since 0.1.0
  */
 import type * as NATSCore from "@nats-io/nats-core"
-import * as Effect from "effect/Effect"
+import type * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 
 /**
@@ -41,9 +42,7 @@ export interface NATSMessage {
   readonly msg: NATSCore.Msg
 }
 
-/** @internal */
-const wrap = <A>(fn: () => A, errorReason: string): Effect.Effect<A, NATSError.NATSMessageError> =>
-  Effect.try({ try: fn, catch: (error) => new NATSError.NATSMessageError({ reason: errorReason, cause: error }) })
+const wrap = utils.wrap(NATSError.NATSMessageError)
 
 /** @internal */
 export const make = (msg: NATSCore.Msg): NATSMessage => ({

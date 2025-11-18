@@ -5,6 +5,7 @@ import * as JetStream from "@nats-io/jetstream"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as utils from "./internal/utils.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 
@@ -42,12 +43,7 @@ export const NATSJetStreamManager = Context.GenericTag<NATSJetStreamManager>(
   "@effect-messaging/nats/NATSJetStreamManager"
 )
 
-/** @internal */
-const wrapPromise = <A>(promise: (signal: AbortSignal) => Promise<A>, errorReason: string) =>
-  Effect.tryPromise({
-    try: promise,
-    catch: (error) => new NATSError.NATSJetStreamError({ reason: errorReason, cause: error })
-  })
+const wrapAsync = utils.wrapAsync(NATSError.NATSJetStreamError)
 
 /** @internal */
 const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): Effect.Effect<
@@ -57,11 +53,14 @@ const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): E
 > =>
   Effect.gen(function*() {
     const { nc } = yield* NATSConnection.NATSConnection
-    const jsm = yield* wrapPromise(() => JetStream.jetstreamManager(nc, options), "Failed to create JetStream manager")
+    const jsm = yield* wrapAsync(
+      () => JetStream.jetstreamManager(nc, options),
+      "Failed to create JetStream manager"
+    )
 
     const client: NATSJetStreamManager = {
       [TypeId]: TypeId,
-      accountInfo: wrapPromise(() => jsm.getAccountInfo(), "Failed to get account info"),
+      accountInfo: wrapAsync(() => jsm.getAccountInfo(), "Failed to get account info"),
       jsm
     }
 

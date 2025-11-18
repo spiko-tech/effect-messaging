@@ -2,9 +2,10 @@
  * @since 0.1.0
  */
 import type * as NATSCore from "@nats-io/nats-core"
-import * as Effect from "effect/Effect"
+import type * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
+import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
 
@@ -46,22 +47,8 @@ export interface NATSSubscription {
   readonly sub: NATSCore.Subscription
 }
 
-/** @internal */
-const wrap = <A>(
-  promise: (signal: AbortSignal) => Promise<A>,
-  errorReason: string
-): Effect.Effect<A, NATSError.NATSSubscriptionError> =>
-  Effect.tryPromise({
-    try: promise,
-    catch: (error) => new NATSError.NATSSubscriptionError({ reason: errorReason, cause: error })
-  })
-
-/** @internal */
-const wrapSync = <A>(fn: () => A, errorReason: string): Effect.Effect<A, NATSError.NATSSubscriptionError> =>
-  Effect.try({
-    try: fn,
-    catch: (error) => new NATSError.NATSSubscriptionError({ reason: errorReason, cause: error })
-  })
+const wrapAsync = utils.wrapAsync(NATSError.NATSSubscriptionError)
+const wrap = utils.wrap(NATSError.NATSSubscriptionError)
 
 /** @internal */
 export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
@@ -71,14 +58,29 @@ export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
     (error) => new NATSError.NATSSubscriptionError({ reason: "Failed to read from NATS subscription", cause: error })
   ).pipe(Stream.map(NATSMessage.make)),
   unsubscribe: (...params: Parameters<NATSCore.Subscription["unsubscribe"]>) =>
-    wrap(async () => sub.unsubscribe(...params), "Failed to unsubscribe NATS subscription"),
-  drain: wrap(() => sub.drain(), "Failed to drain NATS subscription"),
-  isDraining: wrapSync(() => sub.isDraining(), "Failed to get draining state of NATS subscription"),
-  isClosed: wrapSync(() => sub.isClosed(), "Failed to get closed state of NATS subscription"),
-  getSubject: wrapSync(() => sub.getSubject(), "Failed to get subject of NATS subscription"),
-  getReceived: wrapSync(() => sub.getReceived(), "Failed to get received count of NATS subscription"),
-  getProcessed: wrapSync(() => sub.getProcessed(), "Failed to get processed count of NATS subscription"),
-  getPending: wrapSync(() => sub.getPending(), "Failed to get pending count of NATS subscription"),
-  getMax: wrapSync(() => Option.fromNullable(sub.getMax()), "Failed to get max of NATS subscription"),
+    wrap(() => sub.unsubscribe(...params), "Failed to unsubscribe NATS subscription"),
+  drain: wrapAsync(() => sub.drain(), "Failed to drain NATS subscription"),
+  isDraining: wrap(
+    () => sub.isDraining(),
+    "Failed to get draining state of NATS subscription"
+  ),
+  isClosed: wrap(() => sub.isClosed(), "Failed to get closed state of NATS subscription"),
+  getSubject: wrap(() => sub.getSubject(), "Failed to get subject of NATS subscription"),
+  getReceived: wrap(
+    () => sub.getReceived(),
+    "Failed to get received count of NATS subscription"
+  ),
+  getProcessed: wrap(
+    () => sub.getProcessed(),
+    "Failed to get processed count of NATS subscription"
+  ),
+  getPending: wrap(
+    () => sub.getPending(),
+    "Failed to get pending count of NATS subscription"
+  ),
+  getMax: wrap(
+    () => Option.fromNullable(sub.getMax()),
+    "Failed to get max of NATS subscription"
+  ),
   sub
 })

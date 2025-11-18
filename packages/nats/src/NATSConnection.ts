@@ -8,6 +8,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
+import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
 import * as NATSSubscription from "./NATSSubscription.js"
@@ -63,35 +64,29 @@ export interface NATSConnection {
  */
 export const NATSConnection = Context.GenericTag<NATSConnection>("@effect-messaging/nats/NATSConnection")
 
-/** @internal */
-const wrap = <A>(
-  promise: (signal: AbortSignal) => Promise<A>,
-  errorReason: string
-): Effect.Effect<A, NATSError.NATSConnectionError> =>
-  Effect.tryPromise({
-    try: promise,
-    catch: (error) => new NATSError.NATSConnectionError({ reason: errorReason, cause: error })
-  })
+const wrapAsync = utils.wrapAsync(NATSError.NATSConnectionError)
+const wrap = utils.wrap(NATSError.NATSConnectionError)
 
 /** @internal */
 const make = (
   connect: () => Promise<NATSCore.NatsConnection>
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
-    const nc = yield* wrap(connect, "Failed to create NATS connection")
+    const nc = yield* wrapAsync(connect, "Failed to create NATS connection")
 
     const connection: NATSConnection = {
       [TypeId]: TypeId,
       info: Option.fromNullable(nc.info),
-      publish: (...params) => wrap(async () => nc.publish(...params), "Failed to publish message"),
-      publishMessage: (...params) => wrap(async () => nc.publishMessage(...params), "Failed to publish message"),
-      respondMessage: (...params) => wrap(async () => nc.respondMessage(...params), "Failed to respond to message"),
+      publish: (...params) => wrap(() => nc.publish(...params), "Failed to publish message"),
+      publishMessage: (...params) => wrap(() => nc.publishMessage(...params), "Failed to publish message"),
+      respondMessage: (...params) => wrap(() => nc.respondMessage(...params), "Failed to respond to message"),
       request: (...params) =>
-        wrap(() => nc.request(...params), "Failed to request message").pipe(Effect.map(NATSMessage.make)),
-      subscribe: (...params) =>
-        wrap(async () => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`).pipe(
-          Effect.map(NATSSubscription.make)
+        wrapAsync(() => nc.request(...params), "Failed to request message").pipe(
+          Effect.map(NATSMessage.make)
         ),
+      subscribe: (...params) =>
+        wrap(() => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`)
+          .pipe(Effect.map(NATSSubscription.make)),
       close: Effect.promise(() => nc.close()),
       drain: Effect.promise(() => nc.drain()),
       nc

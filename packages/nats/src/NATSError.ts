@@ -62,13 +62,13 @@ export class NATSSubscriptionError extends Schema.TaggedError<NATSSubscriptionEr
 }
 
 /**
- * Represents a NATS JetStream Error
+ * Represents a NATS JetStreamClient Error
  *
  * @since 0.1.0
  * @category errors
  */
-export class NATSJetStreamError extends Schema.TaggedError<NATSJetStreamError>()(
-  "NATSJetStreamError",
+export class JetStreamClientError extends Schema.TaggedError<JetStreamClientError>()(
+  "JetStreamClientError",
   { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
 ) {
   /**
@@ -78,13 +78,13 @@ export class NATSJetStreamError extends Schema.TaggedError<NATSJetStreamError>()
 }
 
 /**
- * Represents a NATS Error
+ * Represents a NATS JetStreamManager Error
  *
  * @since 0.1.0
  * @category errors
  */
-export class NATSError extends Schema.TaggedError<NATSError>()(
-  "NATSError",
+export class JetStreamManagerError extends Schema.TaggedError<JetStreamManagerError>()(
+  "JetStreamManagerError",
   { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
 ) {
   /**

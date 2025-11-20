@@ -172,3 +172,35 @@ export class JetStreamStoredMessageError extends Schema.TaggedError<JetStreamSto
    */
   readonly [TypeId] = TypeId
 }
+
+/**
+ * Represents a NATS JetStreamConsumer Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamConsumerError extends Schema.TaggedError<JetStreamConsumerError>()(
+  "JetStreamConsumerError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
+ * Represents a NATS JetStreamMessage Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamMessageError extends Schema.TaggedError<JetStreamMessageError>()(
+  "JetStreamMessageError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}

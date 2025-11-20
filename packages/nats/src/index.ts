@@ -16,6 +16,11 @@ export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamConsumer from "./JetStreamConsumer.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
 
 /**
@@ -27,6 +32,11 @@ export * as JetStreamLister from "./JetStreamLister.js"
  * @since 0.1.0
  */
 export * as JetStreamManager from "./JetStreamManager.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamMessage from "./JetStreamMessage.js"
 
 /**
  * @since 0.1.0

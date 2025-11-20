@@ -1,22 +1,22 @@
 /**
  * @since 0.1.0
  */
-export * as JetStreamClient from "./JetStreamClient.js"
-
-/**
- * @since 0.1.0
- */
 export * as JetStreamBatch from "./JetStreamBatch.js"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
+export * as JetStreamClient from "./JetStreamClient.js"
 
 /**
  * @since 0.1.0
  */
 export * as JetStreamConsumer from "./JetStreamConsumer.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
 
 /**
  * @since 0.1.0
@@ -41,7 +41,7 @@ export * as JetStreamMessage from "./JetStreamMessage.js"
 /**
  * @since 0.1.0
  */
-export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
+export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 
 /**
  * @since 0.1.0
@@ -51,7 +51,7 @@ export * as JetStreamStream from "./JetStreamStream.js"
 /**
  * @since 0.1.0
  */
-export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
+export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 
 /**
  * @since 0.1.0

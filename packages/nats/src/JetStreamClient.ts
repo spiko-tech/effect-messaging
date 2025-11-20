@@ -7,6 +7,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as utils from "./internal/utils.js"
 import * as JetStreamBatch from "./JetStreamBatch.js"
+import * as JetStreamConsumers from "./JetStreamConsumer.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 
@@ -38,6 +39,7 @@ export interface JetStreamClient {
     ...params: Parameters<JetStream.JetStreamClient["startBatch"]>
   ) => Effect.Effect<JetStreamBatch.JetStreamBatch, NATSError.JetStreamClientError, void>
   readonly options: Effect.Effect<JetStream.JetStreamOptions, NATSError.JetStreamClientError, never>
+  readonly consumers: JetStreamConsumers.Consumers
 
   /** @internal */
   readonly js: JetStream.JetStreamClient
@@ -63,6 +65,7 @@ export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
       Effect.map(JetStreamBatch.make)
     ),
   options: wrap(() => js.getOptions(), "Failed to get JetStream options"),
+  consumers: JetStreamConsumers.makeConsumers(js.consumers),
   js
 })
 

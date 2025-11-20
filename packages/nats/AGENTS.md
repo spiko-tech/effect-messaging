@@ -13,6 +13,8 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 - `JetStreamDirectStreamAPI` - Direct stream API for low-latency reads
 - `JetStreamManager` - High-level stream and consumer management
 - `JetStreamStoredMessage` - Wrapped JetStream stored message with Effect operations
+- `JetStreamLister` - Wrapped JetStream Lister with Effect operations
+- `NATSQueuedIterator` - Wrapped NATS QueuedIterator with Effect operations
 - `NATSSubscription` - Subscription handling
 - `NATSMessage` - Message utilities
 - `NATSError` - Tagged errors

@@ -46,6 +46,11 @@ export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamStream from "./JetStreamStream.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 
 /**

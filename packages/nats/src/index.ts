@@ -6,6 +6,11 @@ export * as JetStreamClient from "./JetStreamClient.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamBatch from "./JetStreamBatch.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamManager from "./JetStreamManager.js"
 
 /**

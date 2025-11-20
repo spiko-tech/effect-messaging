@@ -92,3 +92,19 @@ export class JetStreamManagerError extends Schema.TaggedError<JetStreamManagerEr
    */
   readonly [TypeId] = TypeId
 }
+
+/**
+ * Represents a NATS JetStreamBatch Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamBatchError extends Schema.TaggedError<JetStreamBatchError>()(
+  "JetStreamBatchError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}

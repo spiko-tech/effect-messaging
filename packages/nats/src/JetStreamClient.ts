@@ -6,6 +6,7 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as utils from "./internal/utils.js"
+import * as JetStreamBatch from "./JetStreamBatch.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 
@@ -35,7 +36,7 @@ export interface JetStreamClient {
   ) => Effect.Effect<JetStream.PubAck, NATSError.JetStreamClientError, void>
   readonly startBatch: (
     ...params: Parameters<JetStream.JetStreamClient["startBatch"]>
-  ) => Effect.Effect<JetStream.Batch, NATSError.JetStreamClientError, void>
+  ) => Effect.Effect<JetStreamBatch.JetStreamBatch, NATSError.JetStreamClientError, void>
   readonly options: Effect.Effect<JetStream.JetStreamOptions, NATSError.JetStreamClientError, never>
 
   /** @internal */
@@ -58,7 +59,9 @@ export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
   publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
     wrapAsync(() => js.publish(...params), `Failed to publish message`),
   startBatch: (...params: Parameters<JetStream.JetStreamClient["startBatch"]>) =>
-    wrapAsync(() => js.startBatch(...params), `Failed to start batch`),
+    wrapAsync(() => js.startBatch(...params), `Failed to start batch`).pipe(
+      Effect.map(JetStreamBatch.make)
+    ),
   options: wrap(() => js.getOptions(), "Failed to get JetStream options"),
 
   js

@@ -8,6 +8,7 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
+import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
@@ -49,6 +50,13 @@ export interface NATSConnection {
   readonly subscribe: (
     ...params: Parameters<NATSCore.NatsConnection["subscribe"]>
   ) => Effect.Effect<NATSSubscription.NATSSubscription, NATSError.NATSConnectionError>
+  readonly getServer: Effect.Effect<string, NATSError.NATSConnectionError>
+  readonly status: Effect.Effect<
+    Stream.Stream<NATSCore.Status, NATSError.NATSConnectionError>,
+    NATSError.NATSConnectionError
+  >
+  readonly stats: Effect.Effect<NATSCore.Stats, NATSError.NATSConnectionError>
+  readonly rtt: Effect.Effect<number, NATSError.NATSConnectionError>
 
   /** @internal */
   readonly close: Effect.Effect<void, never>
@@ -87,6 +95,18 @@ const make = (
       subscribe: (...params) =>
         wrap(() => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`)
           .pipe(Effect.map(NATSSubscription.make)),
+      getServer: wrap(() => nc.getServer(), "Failed to get server"),
+      status: wrap(
+        () =>
+          Stream.fromAsyncIterable(
+            nc.status(),
+            (error) =>
+              new NATSError.NATSConnectionError({ reason: "An error occurred in status async iterable", cause: error })
+          ),
+        "Failed to get status stream"
+      ),
+      stats: wrap(() => nc.stats(), "Failed to get stats"),
+      rtt: wrapAsync(() => nc.rtt(), "Failed to measure round-trip time"),
       close: Effect.promise(() => nc.close()),
       drain: Effect.promise(() => nc.drain()),
       nc

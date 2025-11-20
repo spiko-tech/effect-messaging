@@ -66,10 +66,6 @@ export interface NATSConnection {
   readonly rtt: Effect.Effect<number, NATSError.NATSConnectionError>
 
   /** @internal */
-  readonly close: Effect.Effect<void, never>
-  /** @internal */
-  readonly drain: Effect.Effect<void, never>
-  /** @internal */
   readonly nc: NATSCore.NatsConnection
 }
 
@@ -128,12 +124,10 @@ const make = (
       ),
       stats: wrap(() => nc.stats(), "Failed to get stats"),
       rtt: wrapAsync(() => nc.rtt(), "Failed to measure round-trip time"),
-      close: Effect.promise(() => nc.close()),
-      drain: Effect.promise(() => nc.drain()),
       nc
     }
 
-    yield* Effect.addFinalizer(() => connection.drain)
+    yield* Effect.addFinalizer(() => Effect.promise(() => nc.drain()))
 
     return connection
   })

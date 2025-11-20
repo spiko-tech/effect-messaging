@@ -2,10 +2,9 @@
  * @since 0.1.0
  */
 import type * as JetStream from "@nats-io/jetstream"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
-import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.js"
+import * as JetStreamLister from "./JetStreamLister.js"
 import * as NATSError from "./NATSError.js"
 
 /**
@@ -42,7 +41,11 @@ export interface JetStreamConsumerAPI {
   ) => Effect.Effect<boolean, NATSError.JetStreamConsumerAPIError, never>
   readonly list: (
     ...params: Parameters<JetStream.ConsumerAPI["list"]>
-  ) => Stream.Stream<JetStream.ConsumerInfo, NATSError.JetStreamConsumerAPIError, never>
+  ) => Effect.Effect<
+    JetStreamLister.JetStreamLister<JetStream.ConsumerInfo, NATSError.JetStreamConsumerAPIError>,
+    NATSError.JetStreamConsumerAPIError,
+    never
+  >
   readonly pause: (
     ...params: Parameters<JetStream.ConsumerAPI["pause"]>
   ) => Effect.Effect<
@@ -71,14 +74,6 @@ export interface JetStreamConsumerAPI {
   readonly consumers: JetStream.ConsumerAPI
 }
 
-/**
- * @category tags
- * @since 0.1.0
- */
-export const JetStreamConsumerAPI = Context.GenericTag<JetStreamConsumerAPI>(
-  "@effect-messaging/nats/JetStreamConsumerAPI"
-)
-
 const wrap = utils.wrap(NATSError.JetStreamConsumerAPIError)
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamConsumerAPIError)
 
@@ -98,17 +93,7 @@ export const make = (consumerAPI: JetStream.ConsumerAPI): JetStreamConsumerAPI =
     wrapAsync(() => consumerAPI.delete(...params), "Failed to delete consumer"),
   list: (...params: Parameters<JetStream.ConsumerAPI["list"]>) =>
     wrap(() => consumerAPI.list(...params), "Failed to list consumers").pipe(
-      Effect.map((lister) =>
-        Stream.fromAsyncIterable(
-          lister,
-          (error) =>
-            new NATSError.JetStreamConsumerAPIError({
-              reason: "An error occurred in consumers list async iterable",
-              cause: error
-            })
-        )
-      ),
-      Stream.unwrap
+      Effect.map(JetStreamLister.make(NATSError.JetStreamConsumerAPIError))
     ),
   pause: (...params: Parameters<JetStream.ConsumerAPI["pause"]>) =>
     wrapAsync(() => consumerAPI.pause(...params), "Failed to pause consumer"),

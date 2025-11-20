@@ -2,11 +2,10 @@
  * @since 0.1.0
  */
 import type * as JetStream from "@nats-io/jetstream"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.js"
+import * as JetStreamLister from "./JetStreamLister.js"
 import * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 import * as NATSError from "./NATSError.js"
 
@@ -47,7 +46,11 @@ export interface JetStreamStreamAPI {
   ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError, never>
   readonly list: (
     ...params: Parameters<JetStream.StreamAPI["list"]>
-  ) => Stream.Stream<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError, never>
+  ) => Effect.Effect<
+    JetStreamLister.JetStreamLister<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError>,
+    NATSError.JetStreamStreamAPIError,
+    never
+  >
   readonly deleteMessage: (
     ...params: Parameters<JetStream.StreamAPI["deleteMessage"]>
   ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError, never>
@@ -63,19 +66,15 @@ export interface JetStreamStreamAPI {
   ) => Effect.Effect<string, NATSError.JetStreamStreamAPIError, never>
   readonly names: (
     ...params: Parameters<JetStream.StreamAPI["names"]>
-  ) => Stream.Stream<string, NATSError.JetStreamStreamAPIError, never>
+  ) => Effect.Effect<
+    JetStreamLister.JetStreamLister<string, NATSError.JetStreamStreamAPIError>,
+    NATSError.JetStreamStreamAPIError,
+    never
+  >
 
   /** @internal */
   readonly streams: JetStream.StreamAPI
 }
-
-/**
- * @category tags
- * @since 0.1.0
- */
-export const JetStreamStreamAPI = Context.GenericTag<JetStreamStreamAPI>(
-  "@effect-messaging/nats/JetStreamStreamAPI"
-)
 
 const wrap = utils.wrap(NATSError.JetStreamStreamAPIError)
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamStreamAPIError)
@@ -98,17 +97,7 @@ export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
     wrapAsync(() => streams.delete(...params), "Failed to delete stream"),
   list: (...params: Parameters<JetStream.StreamAPI["list"]>) =>
     wrap(() => streams.list(...params), "Failed to list streams").pipe(
-      Effect.map((lister) =>
-        Stream.fromAsyncIterable(
-          lister,
-          (error) =>
-            new NATSError.JetStreamStreamAPIError({
-              reason: "An error occurred in streams list async iterable",
-              cause: error
-            })
-        )
-      ),
-      Stream.unwrap
+      Effect.map(JetStreamLister.make(NATSError.JetStreamStreamAPIError))
     ),
   deleteMessage: (...params: Parameters<JetStream.StreamAPI["deleteMessage"]>) =>
     wrapAsync(() => streams.deleteMessage(...params), "Failed to delete message"),
@@ -121,17 +110,7 @@ export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
     wrapAsync(() => streams.find(...params), "Failed to find stream"),
   names: (...params: Parameters<JetStream.StreamAPI["names"]>) =>
     wrap(() => streams.names(...params), "Failed to list stream names").pipe(
-      Effect.map((lister) =>
-        Stream.fromAsyncIterable(
-          lister,
-          (error) =>
-            new NATSError.JetStreamStreamAPIError({
-              reason: "An error occurred in stream names async iterable",
-              cause: error
-            })
-        )
-      ),
-      Stream.unwrap
+      Effect.map(JetStreamLister.make(NATSError.JetStreamStreamAPIError))
     ),
 
   streams

@@ -11,7 +11,27 @@ export * as JetStreamBatch from "./JetStreamBatch.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamManager from "./JetStreamManager.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 
 /**
  * @since 0.1.0

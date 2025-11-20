@@ -63,7 +63,6 @@ export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
       Effect.map(JetStreamBatch.make)
     ),
   options: wrap(() => js.getOptions(), "Failed to get JetStream options"),
-
   js
 })
 

@@ -8,7 +8,11 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 
 - `NATSConnection` - Core NATS connection (publish/subscribe/request)
 - `JetStreamClient` - JetStream consumer and publisher
-- `JetStreamManager` - Stream and consumer management
+- `JetStreamConsumerAPI` - Consumer management API
+- `JetStreamStreamAPI` - Stream management API
+- `JetStreamDirectStreamAPI` - Direct stream API for low-latency reads
+- `JetStreamManager` - High-level stream and consumer management
+- `JetStreamStoredMessage` - Wrapped JetStream stored message with Effect operations
 - `NATSSubscription` - Subscription handling
 - `NATSMessage` - Message utilities
 - `NATSError` - Tagged errors
@@ -19,6 +23,9 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 - Layer-based dependency injection for NATS components
 - Scope-based resource management for connections and subscriptions
 - All operations return `Effect` instead of promises or callbacks
+- Use `Parameters<>` utility type for API method signatures to match upstream types
+- Avoid `any` types - use proper type casting with internal types when needed
+- Never use `null` - always use `Option` from Effect for optional values
 
 ## Testing
 

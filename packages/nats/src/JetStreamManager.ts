@@ -5,6 +5,7 @@ import * as JetStream from "@nats-io/jetstream"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
@@ -29,7 +30,9 @@ export type TypeId = typeof TypeId
  */
 export interface JetStreamManager {
   readonly [TypeId]: TypeId
-  readonly accountInfo: Effect.Effect<JetStream.JetStreamAccountStats, NATSError.NATSJetStreamError, never>
+  readonly accountInfo: Effect.Effect<JetStream.JetStreamAccountStats, NATSError.JetStreamManagerError, never>
+  readonly advisoryStream: Stream.Stream<JetStream.Advisory, NATSError.JetStreamManagerError, never>
+  readonly options: Effect.Effect<JetStream.JetStreamManagerOptions, NATSError.JetStreamManagerError, never>
 
   /** @internal */
   readonly jsm: JetStream.JetStreamManager
@@ -43,29 +46,40 @@ export const JetStreamManager = Context.GenericTag<JetStreamManager>(
   "@effect-messaging/nats/JetStreamManager"
 )
 
-const wrapAsync = utils.wrapAsync(NATSError.NATSJetStreamError)
+const wrap = utils.wrap(NATSError.JetStreamManagerError)
+const wrapAsync = utils.wrapAsync(NATSError.JetStreamManagerError)
+
+/** @internal */
+export const make = (jsm: JetStream.JetStreamManager): JetStreamManager => ({
+  [TypeId]: TypeId,
+  accountInfo: wrapAsync(() => jsm.getAccountInfo(), "Failed to get account info"),
+  advisoryStream: wrap(() => jsm.advisories(), `Failed to get advisories`).pipe(
+    Effect.map((a) =>
+      Stream.fromAsyncIterable(
+        a,
+        (error) =>
+          new NATSError.JetStreamManagerError({ reason: `An error occured in advisories async iterable`, cause: error })
+      )
+    ),
+    Stream.unwrap
+  ),
+  options: wrap(() => jsm.getOptions(), "Failed to get JetStream manager options"),
+
+  jsm
+})
 
 /** @internal */
 const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): Effect.Effect<
   JetStreamManager,
-  NATSError.NATSJetStreamError,
+  NATSError.JetStreamManagerError,
   NATSConnection.NATSConnection
 > =>
-  Effect.gen(function*() {
-    const { nc } = yield* NATSConnection.NATSConnection
-    const jsm = yield* wrapAsync(
-      () => JetStream.jetstreamManager(nc, options),
-      "Failed to create JetStream manager"
-    )
-
-    const client: JetStreamManager = {
-      [TypeId]: TypeId,
-      accountInfo: wrapAsync(() => jsm.getAccountInfo(), "Failed to get account info"),
-      jsm
-    }
-
-    return client
-  })
+  NATSConnection.NATSConnection.pipe(
+    Effect.flatMap(({ nc }) =>
+      wrapAsync(() => JetStream.jetstreamManager(nc, options), "Failed to create JetStream manager")
+    ),
+    Effect.map(make)
+  )
 
 /**
  * @since 0.1.0
@@ -73,6 +87,6 @@ const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): E
  */
 export const layer = (options: JetStream.JetStreamManagerOptions = {}): Layer.Layer<
   JetStreamManager,
-  NATSError.NATSJetStreamError,
+  NATSError.JetStreamManagerError,
   NATSConnection.NATSConnection
 > => Layer.scoped(JetStreamManager, makeJetStreamClient(options))

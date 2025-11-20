@@ -32,10 +32,11 @@ export interface JetStreamClient {
   readonly apiPrefix: string
   readonly publish: (
     ...params: Parameters<JetStream.JetStreamClient["publish"]>
-  ) => Effect.Effect<JetStream.PubAck, NATSError.NATSJetStreamError, void>
+  ) => Effect.Effect<JetStream.PubAck, NATSError.JetStreamClientError, void>
   readonly startBatch: (
     ...params: Parameters<JetStream.JetStreamClient["startBatch"]>
-  ) => Effect.Effect<JetStream.Batch, NATSError.NATSJetStreamError, void>
+  ) => Effect.Effect<JetStream.Batch, NATSError.JetStreamClientError, void>
+  readonly options: Effect.Effect<JetStream.JetStreamOptions, NATSError.JetStreamClientError, never>
 
   /** @internal */
   readonly js: JetStream.JetStreamClient
@@ -47,34 +48,32 @@ export interface JetStreamClient {
  */
 export const JetStreamClient = Context.GenericTag<JetStreamClient>("@effect-messaging/nats/JetStreamClient")
 
-const wrapAsync = utils.wrapAsync(NATSError.NATSJetStreamError)
-const wrap = utils.wrap(NATSError.NATSJetStreamError)
+const wrapAsync = utils.wrapAsync(NATSError.JetStreamClientError)
+const wrap = utils.wrap(NATSError.JetStreamClientError)
+
+/** @internal */
+export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
+  [TypeId]: TypeId,
+  apiPrefix: js.apiPrefix,
+  publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
+    wrapAsync(() => js.publish(...params), `Failed to publish message`),
+  startBatch: (...params: Parameters<JetStream.JetStreamClient["startBatch"]>) =>
+    wrapAsync(() => js.startBatch(...params), `Failed to start batch`),
+  options: wrap(() => js.getOptions(), "Failed to get JetStream options"),
+
+  js
+})
 
 /** @internal */
 const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.Effect<
   JetStreamClient,
-  NATSError.NATSJetStreamError,
+  NATSError.JetStreamClientError,
   NATSConnection.NATSConnection
 > =>
-  Effect.gen(function*() {
-    const { nc } = yield* NATSConnection.NATSConnection
-    const js = yield* wrap(
-      () => JetStream.jetstream(nc, options),
-      "Failed to create JetStream client"
-    )
-
-    const client: JetStreamClient = {
-      [TypeId]: TypeId,
-      apiPrefix: js.apiPrefix,
-      publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
-        wrapAsync(() => js.publish(...params), `Failed to publish message`),
-      startBatch: (...params: Parameters<JetStream.JetStreamClient["startBatch"]>) =>
-        wrapAsync(() => js.startBatch(...params), `Failed to start batch`),
-      js
-    }
-
-    return client
-  })
+  NATSConnection.NATSConnection.pipe(
+    Effect.flatMap(({ nc }) => wrap(() => JetStream.jetstream(nc, options), "Failed to create JetStream client")),
+    Effect.map(make)
+  )
 
 /**
  * @since 0.1.0
@@ -82,6 +81,6 @@ const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.E
  */
 export const layer = (options: JetStream.JetStreamOptions = {}): Layer.Layer<
   JetStreamClient,
-  NATSError.NATSJetStreamError,
+  NATSError.JetStreamClientError,
   NATSConnection.NATSConnection
 > => Layer.scoped(JetStreamClient, makeJetStreamClient(options))

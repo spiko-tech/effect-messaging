@@ -7,6 +7,9 @@ import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.js"
+import * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
+import * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
+import * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 
@@ -33,6 +36,9 @@ export interface JetStreamManager {
   readonly accountInfo: Effect.Effect<JetStream.JetStreamAccountStats, NATSError.JetStreamManagerError, never>
   readonly advisoryStream: Stream.Stream<JetStream.Advisory, NATSError.JetStreamManagerError, never>
   readonly options: Effect.Effect<JetStream.JetStreamManagerOptions, NATSError.JetStreamManagerError, never>
+  readonly consumers: JetStreamConsumerAPI.JetStreamConsumerAPI
+  readonly streams: JetStreamStreamAPI.JetStreamStreamAPI
+  readonly direct: JetStreamDirectStreamAPI.JetStreamDirectStreamAPI
 
   /** @internal */
   readonly jsm: JetStream.JetStreamManager
@@ -64,6 +70,9 @@ export const make = (jsm: JetStream.JetStreamManager): JetStreamManager => ({
     Stream.unwrap
   ),
   options: wrap(() => jsm.getOptions(), "Failed to get JetStream manager options"),
+  consumers: JetStreamConsumerAPI.make(jsm.consumers),
+  streams: JetStreamStreamAPI.make(jsm.streams),
+  direct: JetStreamDirectStreamAPI.make(jsm.direct),
 
   jsm
 })

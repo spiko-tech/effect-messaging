@@ -108,3 +108,67 @@ export class JetStreamBatchError extends Schema.TaggedError<JetStreamBatchError>
    */
   readonly [TypeId] = TypeId
 }
+
+/**
+ * Represents a NATS JetStreamConsumerAPI Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamConsumerAPIError extends Schema.TaggedError<JetStreamConsumerAPIError>()(
+  "JetStreamConsumerAPIError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
+ * Represents a NATS JetStreamStreamAPI Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamStreamAPIError extends Schema.TaggedError<JetStreamStreamAPIError>()(
+  "JetStreamStreamAPIError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
+ * Represents a NATS JetStreamDirectStreamAPI Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamDirectStreamAPIError extends Schema.TaggedError<JetStreamDirectStreamAPIError>()(
+  "JetStreamDirectStreamAPIError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}
+
+/**
+ * Represents a NATS JetStreamStoredMessage Error
+ *
+ * @since 0.1.0
+ * @category errors
+ */
+export class JetStreamStoredMessageError extends Schema.TaggedError<JetStreamStoredMessageError>()(
+  "JetStreamStoredMessageError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+) {
+  /**
+   * @since  0.1.0
+   */
+  readonly [TypeId] = TypeId
+}

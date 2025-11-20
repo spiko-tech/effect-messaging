@@ -1,12 +1,12 @@
 import { Layer } from "effect"
+import * as JetStreamClient from "../src/JetStreamClient.js"
+import * as JetStreamManager from "../src/JetStreamManager.js"
 import * as NATSConnection from "../src/NATSConnection.js"
-import * as NATSJetStreamClient from "../src/NATSJetStreamClient.js"
-import * as NATSJetStreamManager from "../src/NATSJetStreamManager.js"
 
 export const testConnection = NATSConnection.layerNode({
   servers: "localhost:4222"
 })
 
-export const testJetStreamClient = NATSJetStreamClient.layer().pipe(Layer.provideMerge(testConnection))
+export const testJetStreamClient = JetStreamClient.layer().pipe(Layer.provideMerge(testConnection))
 
-export const testJetStreamManager = NATSJetStreamManager.layer().pipe(Layer.provideMerge(testConnection))
+export const testJetStreamManager = JetStreamManager.layer().pipe(Layer.provideMerge(testConnection))

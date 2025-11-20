@@ -13,7 +13,7 @@ import * as NATSError from "./NATSError.js"
  * @category type ids
  * @since 0.1.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSJetStreamClient")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamClient")
 
 /**
  * @category type ids
@@ -27,7 +27,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.1.0
  */
-export interface NATSJetStreamClient {
+export interface JetStreamClient {
   readonly [TypeId]: TypeId
   readonly apiPrefix: string
   readonly publish: (
@@ -45,14 +45,14 @@ export interface NATSJetStreamClient {
  * @category tags
  * @since 0.1.0
  */
-export const NATSJetStreamClient = Context.GenericTag<NATSJetStreamClient>("@effect-messaging/nats/NATSJetStreamClient")
+export const JetStreamClient = Context.GenericTag<JetStreamClient>("@effect-messaging/nats/JetStreamClient")
 
 const wrapAsync = utils.wrapAsync(NATSError.NATSJetStreamError)
 const wrap = utils.wrap(NATSError.NATSJetStreamError)
 
 /** @internal */
 const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.Effect<
-  NATSJetStreamClient,
+  JetStreamClient,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
 > =>
@@ -63,7 +63,7 @@ const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.E
       "Failed to create JetStream client"
     )
 
-    const client: NATSJetStreamClient = {
+    const client: JetStreamClient = {
       [TypeId]: TypeId,
       apiPrefix: js.apiPrefix,
       publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
@@ -81,7 +81,7 @@ const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.E
  * @category Layers
  */
 export const layer = (options: JetStream.JetStreamOptions = {}): Layer.Layer<
-  NATSJetStreamClient,
+  JetStreamClient,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
-> => Layer.scoped(NATSJetStreamClient, makeJetStreamClient(options))
+> => Layer.scoped(JetStreamClient, makeJetStreamClient(options))

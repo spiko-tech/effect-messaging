@@ -13,7 +13,7 @@ import * as NATSError from "./NATSError.js"
  * @category type ids
  * @since 0.1.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSJetStreamManager")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamManager")
 
 /**
  * @category type ids
@@ -27,7 +27,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.1.0
  */
-export interface NATSJetStreamManager {
+export interface JetStreamManager {
   readonly [TypeId]: TypeId
   readonly accountInfo: Effect.Effect<JetStream.JetStreamAccountStats, NATSError.NATSJetStreamError, never>
 
@@ -39,15 +39,15 @@ export interface NATSJetStreamManager {
  * @category tags
  * @since 0.1.0
  */
-export const NATSJetStreamManager = Context.GenericTag<NATSJetStreamManager>(
-  "@effect-messaging/nats/NATSJetStreamManager"
+export const JetStreamManager = Context.GenericTag<JetStreamManager>(
+  "@effect-messaging/nats/JetStreamManager"
 )
 
 const wrapAsync = utils.wrapAsync(NATSError.NATSJetStreamError)
 
 /** @internal */
 const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): Effect.Effect<
-  NATSJetStreamManager,
+  JetStreamManager,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
 > =>
@@ -58,7 +58,7 @@ const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): E
       "Failed to create JetStream manager"
     )
 
-    const client: NATSJetStreamManager = {
+    const client: JetStreamManager = {
       [TypeId]: TypeId,
       accountInfo: wrapAsync(() => jsm.getAccountInfo(), "Failed to get account info"),
       jsm
@@ -72,7 +72,7 @@ const makeJetStreamClient = (options: JetStream.JetStreamManagerOptions = {}): E
  * @category Layers
  */
 export const layer = (options: JetStream.JetStreamManagerOptions = {}): Layer.Layer<
-  NATSJetStreamManager,
+  JetStreamManager,
   NATSError.NATSJetStreamError,
   NATSConnection.NATSConnection
-> => Layer.scoped(NATSJetStreamManager, makeJetStreamClient(options))
+> => Layer.scoped(JetStreamManager, makeJetStreamClient(options))

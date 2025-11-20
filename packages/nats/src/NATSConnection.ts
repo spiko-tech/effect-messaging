@@ -50,6 +50,13 @@ export interface NATSConnection {
   readonly subscribe: (
     ...params: Parameters<NATSCore.NatsConnection["subscribe"]>
   ) => Effect.Effect<NATSSubscription.NATSSubscription, NATSError.NATSConnectionError>
+  readonly flush: Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly requestMany: (
+    ...params: Parameters<NATSCore.NatsConnection["requestMany"]>
+  ) => Effect.Effect<
+    Stream.Stream<NATSMessage.NATSMessage, NATSError.NATSConnectionError>,
+    NATSError.NATSConnectionError
+  >
   readonly getServer: Effect.Effect<string, NATSError.NATSConnectionError>
   readonly status: Effect.Effect<
     Stream.Stream<NATSCore.Status, NATSError.NATSConnectionError>,
@@ -95,6 +102,20 @@ const make = (
       subscribe: (...params) =>
         wrap(() => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`)
           .pipe(Effect.map(NATSSubscription.make)),
+      flush: wrapAsync(() => nc.flush(), "Failed to flush"),
+      requestMany: (...params) =>
+        wrapAsync(() => nc.requestMany(...params), "Failed to request many messages").pipe(
+          Effect.map((asyncIterable) =>
+            Stream.fromAsyncIterable(
+              asyncIterable,
+              (error) =>
+                new NATSError.NATSConnectionError({
+                  reason: "An error occurred in requestMany async iterable",
+                  cause: error
+                })
+            ).pipe(Stream.map(NATSMessage.make))
+          )
+        ),
       getServer: wrap(() => nc.getServer(), "Failed to get server"),
       status: wrap(
         () =>

@@ -2,4 +2,4 @@
 "@effect-messaging/nats": patch
 ---
 
-add monitoring methods to NATSConnection (getServer, status, stats, rtt)
+add monitoring and operation methods to NATSConnection (flush, requestMany, getServer, status, stats, rtt)

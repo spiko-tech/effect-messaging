@@ -7,8 +7,8 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 **Key modules:**
 
 - `NATSConnection` - Core NATS connection (publish/subscribe/request)
-- `NATSJetStreamClient` - JetStream consumer and publisher
-- `NATSJetStreamManager` - Stream and consumer management
+- `JetStreamClient` - JetStream consumer and publisher
+- `JetStreamManager` - Stream and consumer management
 - `NATSSubscription` - Subscription handling
 - `NATSMessage` - Message utilities
 - `NATSError` - Tagged errors

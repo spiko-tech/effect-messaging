@@ -11,12 +11,12 @@ export * as NATSError from "./NATSError.js"
 /**
  * @since 0.1.0
  */
-export * as NATSJetStreamClient from "./NATSJetStreamClient.js"
+export * as JetStreamClient from "./JetStreamClient.js"
 
 /**
  * @since 0.1.0
  */
-export * as NATSJetStreamManager from "./NATSJetStreamManager.js"
+export * as JetStreamManager from "./JetStreamManager.js"
 
 /**
  * @since 0.1.0

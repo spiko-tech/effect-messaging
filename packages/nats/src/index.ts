@@ -1,22 +1,22 @@
 /**
  * @since 0.1.0
  */
-export * as NATSConnection from "./NATSConnection.js"
-
-/**
- * @since 0.1.0
- */
-export * as NATSError from "./NATSError.js"
-
-/**
- * @since 0.1.0
- */
 export * as JetStreamClient from "./JetStreamClient.js"
 
 /**
  * @since 0.1.0
  */
 export * as JetStreamManager from "./JetStreamManager.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSConnection from "./NATSConnection.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSError from "./NATSError.js"
 
 /**
  * @since 0.1.0

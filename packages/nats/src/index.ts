@@ -21,6 +21,11 @@ export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamLister from "./JetStreamLister.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamManager from "./JetStreamManager.js"
 
 /**
@@ -47,6 +52,11 @@ export * as NATSError from "./NATSError.js"
  * @since 0.1.0
  */
 export * as NATSMessage from "./NATSMessage.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSQueuedIterator from "./NATSQueuedIterator.js"
 
 /**
  * @since 0.1.0

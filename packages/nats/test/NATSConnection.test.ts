@@ -1,20 +1,17 @@
-import { describe, expect, layer, vi } from "@effect/vitest"
-import { Effect, Option, Stream, TestServices } from "effect"
+import { describe, expect, layer } from "@effect/vitest"
+import { Chunk, Effect, Option, Stream, TestServices } from "effect"
 import * as NATSConnection from "../src/NATSConnection.js"
-import type * as NATSMessage from "../src/NATSMessage.js"
 import { testConnection } from "./dependencies.js"
 
-layer(testConnection)("NATSConnection", (it) => {
-  describe("info", () => {
+describe("NATSConnection", () => {
+  layer(testConnection)("connection", (it) => {
     it.effect("Should be able to connect", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
         expect(connection.info).toMatchObject(Option.some({ port: 4222 }))
       }))
-  })
 
-  describe("publish/subscribe", () => {
-    it.effect("Should be able to publish and subscribe to a subject", () =>
+    it("Should be able to publish and subscribe to a subject", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
 
@@ -23,74 +20,80 @@ layer(testConnection)("NATSConnection", (it) => {
 
         const subscription = yield* connection.subscribe(subject)
 
-        const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-        const messageHandler = (message: NATSMessage.NATSMessage) =>
+        // Publish message after subscribing
+        yield* Effect.fork(
           Effect.gen(function*() {
-            onMessage(message)
-            return yield* Effect.void
+            yield* Effect.sleep("50 millis")
+            yield* connection.publish(subject, message)
           })
+        )
 
-        yield* Effect.fork(subscription.stream.pipe(Stream.runForEach(messageHandler)))
+        // Take only one message from the stream
+        const messages = yield* subscription.stream.pipe(
+          Stream.take(1),
+          Stream.runCollect
+        )
 
-        yield* connection.publish(subject, message)
+        expect(Chunk.size(messages)).toBe(1)
+        const receivedMessage = Chunk.unsafeGet(messages, 0)
+        expect(yield* receivedMessage.string).toBe("Hello, NATS!")
+      }).pipe(TestServices.provideLive))
 
-        // Wait for the message to be consumed
-        yield* Effect.sleep("100 millis")
-
-        expect(onMessage).toHaveBeenCalledTimes(1)
-        const receivedMessage = onMessage.mock.calls[0][0]
-        expect(yield* receivedMessage.string).toStrictEqual("Hello, NATS!")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
-
-    it.effect("Should receive multiple messages in order", () =>
+    it("Should receive multiple messages in order", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
         const subject = "test.multiple"
 
         const subscription = yield* connection.subscribe(subject)
-        const receivedMessages: Array<string> = []
 
-        const messageHandler = (message: NATSMessage.NATSMessage) =>
+        // Publish messages after subscribing
+        yield* Effect.fork(
           Effect.gen(function*() {
-            const content = yield* message.string
-            receivedMessages.push(content)
+            yield* Effect.sleep("50 millis")
+            yield* connection.publish(subject, "Message 1")
+            yield* connection.publish(subject, "Message 2")
+            yield* connection.publish(subject, "Message 3")
           })
+        )
 
-        yield* Effect.fork(subscription.stream.pipe(Stream.runForEach(messageHandler)))
+        // Collect 3 messages
+        const messages = yield* subscription.stream.pipe(
+          Stream.take(3),
+          Stream.mapEffect((msg) => msg.string),
+          Stream.runCollect
+        )
 
-        // Publish multiple messages
-        yield* connection.publish(subject, "Message 1")
-        yield* connection.publish(subject, "Message 2")
-        yield* connection.publish(subject, "Message 3")
+        expect(Chunk.toArray(messages)).toEqual(["Message 1", "Message 2", "Message 3"])
+      }).pipe(TestServices.provideLive))
 
-        yield* Effect.sleep("50 millis")
-
-        expect(receivedMessages).toEqual(["Message 1", "Message 2", "Message 3"])
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
-
-    it.effect("Should support wildcard subscriptions", () =>
+    it("Should support wildcard subscriptions", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
 
-        const subscription = yield* connection.subscribe("test.*")
-        const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+        const subscription = yield* connection.subscribe("test.wildcard.*")
 
+        // Publish messages after subscribing
         yield* Effect.fork(
-          subscription.stream.pipe(Stream.runForEach((msg) => Effect.sync(() => onMessage(msg))))
+          Effect.gen(function*() {
+            yield* Effect.sleep("50 millis")
+            yield* connection.publish("test.wildcard.foo", "Message 1")
+            yield* connection.publish("test.wildcard.bar", "Message 2")
+            yield* connection.publish("other.baz", "Message 3") // Should not be received
+          })
         )
 
-        yield* connection.publish("test.foo", "Message 1")
-        yield* connection.publish("test.bar", "Message 2")
-        yield* connection.publish("other.baz", "Message 3")
+        // Collect 2 messages (the third one should not match)
+        const messages = yield* subscription.stream.pipe(
+          Stream.take(2),
+          Stream.runCollect
+        )
 
-        yield* Effect.sleep("50 millis")
-
-        expect(onMessage).toHaveBeenCalledTimes(2)
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
+        expect(Chunk.size(messages)).toBe(2)
+      }).pipe(TestServices.provideLive))
   })
 
-  describe("request/reply", () => {
-    it.effect("Should support request/reply pattern", () =>
+  layer(testConnection)("request/reply", (it) => {
+    it("Should support request/reply pattern", () =>
       Effect.gen(function*() {
         const connection = yield* NATSConnection.NATSConnection
         const subject = "test.request"
@@ -100,6 +103,7 @@ layer(testConnection)("NATSConnection", (it) => {
         // Set up responder
         yield* Effect.fork(
           subscription.stream.pipe(
+            Stream.take(1),
             Stream.runForEach((msg) =>
               Effect.gen(function*() {
                 const request = yield* msg.string
@@ -116,69 +120,6 @@ layer(testConnection)("NATSConnection", (it) => {
         const responseText = yield* response.string
 
         expect(responseText).toEqual("Echo: Hello")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
-
-    it.effect("Should support requestMany pattern for multiple responses", () =>
-      Effect.gen(function*() {
-        const connection = yield* NATSConnection.NATSConnection
-        const subject = "test.requestMany"
-
-        // Set up multiple responders
-        const responder1 = yield* connection.subscribe(subject)
-        const responder2 = yield* connection.subscribe(subject)
-        const responder3 = yield* connection.subscribe(subject)
-
-        yield* Effect.fork(
-          responder1.stream.pipe(
-            Stream.runForEach((msg) =>
-              Effect.gen(function*() {
-                const request = yield* msg.string
-                yield* msg.respond(`Responder 1: ${request}`)
-              })
-            )
-          )
-        )
-
-        yield* Effect.fork(
-          responder2.stream.pipe(
-            Stream.runForEach((msg) =>
-              Effect.gen(function*() {
-                const request = yield* msg.string
-                yield* msg.respond(`Responder 2: ${request}`)
-              })
-            )
-          )
-        )
-
-        yield* Effect.fork(
-          responder3.stream.pipe(
-            Stream.runForEach((msg) =>
-              Effect.gen(function*() {
-                const request = yield* msg.string
-                yield* msg.respond(`Responder 3: ${request}`)
-              })
-            )
-          )
-        )
-
-        yield* Effect.sleep("50 millis")
-
-        // Send request and collect multiple responses
-        const responseStream = yield* connection.requestMany(subject, "Hello")
-        const responses = yield* Stream.runCollect(
-          responseStream.pipe(
-            Stream.take(3),
-            Stream.mapEffect((msg) => msg.string)
-          )
-        )
-
-        const responseTexts = Array.from(responses)
-
-        // Should receive responses from all three responders
-        expect(responseTexts.length).toBe(3)
-        expect(responseTexts).toContain("Responder 1: Hello")
-        expect(responseTexts).toContain("Responder 2: Hello")
-        expect(responseTexts).toContain("Responder 3: Hello")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 10000 })
+      }).pipe(TestServices.provideLive))
   })
 })

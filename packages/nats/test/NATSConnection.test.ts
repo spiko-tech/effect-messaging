@@ -40,7 +40,7 @@ layer(testConnection)("NATSConnection", (it) => {
         expect(onMessage).toHaveBeenCalledTimes(1)
         const receivedMessage = onMessage.mock.calls[0][0]
         expect(yield* receivedMessage.string).toStrictEqual("Hello, NATS!")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
+      }).pipe(TestServices.provideLive), { timeout: 5000 })
 
     it.effect("Should receive multiple messages in order", () =>
       Effect.gen(function*() {
@@ -66,7 +66,7 @@ layer(testConnection)("NATSConnection", (it) => {
         yield* Effect.sleep("50 millis")
 
         expect(receivedMessages).toEqual(["Message 1", "Message 2", "Message 3"])
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
+      }).pipe(TestServices.provideLive), { timeout: 5000 })
 
     it.effect("Should support wildcard subscriptions", () =>
       Effect.gen(function*() {
@@ -86,7 +86,7 @@ layer(testConnection)("NATSConnection", (it) => {
         yield* Effect.sleep("50 millis")
 
         expect(onMessage).toHaveBeenCalledTimes(2)
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
+      }).pipe(TestServices.provideLive), { timeout: 5000 })
   })
 
   describe("request/reply", () => {
@@ -116,7 +116,7 @@ layer(testConnection)("NATSConnection", (it) => {
         const responseText = yield* response.string
 
         expect(responseText).toEqual("Echo: Hello")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 5000 })
+      }).pipe(TestServices.provideLive), { timeout: 5000 })
 
     it.effect("Should support requestMany pattern for multiple responses", () =>
       Effect.gen(function*() {
@@ -179,6 +179,6 @@ layer(testConnection)("NATSConnection", (it) => {
         expect(responseTexts).toContain("Responder 1: Hello")
         expect(responseTexts).toContain("Responder 2: Hello")
         expect(responseTexts).toContain("Responder 3: Hello")
-      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 10000 })
+      }).pipe(TestServices.provideLive), { timeout: 10000 })
   })
 })

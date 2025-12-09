@@ -166,6 +166,44 @@ describe("JetStreamClient", { sequential: true }, () => {
             }
           })
         ).pipe(TestServices.provideLive))
+
+      it("Should consume messages continuously with consume", () =>
+        Effect.scoped(
+          Effect.gen(function*() {
+            yield* makeTestStreamAndConsumer()
+
+            const client = yield* JetStreamClient.JetStreamClient
+            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+
+            // Publish messages
+            yield* client.publish(TEST_SUBJECT, "Consume Message 1")
+            yield* client.publish(TEST_SUBJECT, "Consume Message 2")
+            yield* client.publish(TEST_SUBJECT, "Consume Message 3")
+
+            yield* Effect.sleep("100 millis")
+
+            // Start consuming - this returns an iterator that continuously receives messages
+            const consumerMessages = yield* consumer.consume()
+
+            // Collect messages from the stream
+            const messages = yield* consumerMessages.stream.pipe(
+              Stream.take(3),
+              Stream.runCollect
+            )
+            const messagesArray = Chunk.toArray(messages)
+
+            expect(messagesArray.length).toBe(3)
+            expect(messagesArray[0].string()).toBe("Consume Message 1")
+            expect(messagesArray[1].string()).toBe("Consume Message 2")
+            expect(messagesArray[2].string()).toBe("Consume Message 3")
+
+            // Acknowledge all messages
+            yield* Effect.all(messagesArray.map((msg) => msg.ack))
+
+            // Close the consumer messages iterator
+            yield* consumerMessages.close
+          })
+        ).pipe(TestServices.provideLive))
     })
   })
 })

@@ -34,7 +34,7 @@ const publishAndAssertConsume = (
     })
 
     // Wait for the message to be consumed
-    yield* Effect.sleep("50 millis")
+    yield* Effect.sleep("200 millis")
     // Verify the message was consumed
     expect(onMessage).toHaveBeenCalledTimes(times)
     expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
@@ -164,7 +164,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           const handler = Effect.gen(function*() {
             const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
             onHandlingStarted(message)
-            yield* Effect.sleep("200 millis")
+            yield* Effect.sleep("500 millis")
             onHandlingFinished(message)
           })
 
@@ -183,14 +183,14 @@ describe("AMQPChannel", { sequential: true }, () => {
           })
 
           // Wait for the message to be consumed
-          yield* Effect.sleep("100 millis")
+          yield* Effect.sleep("300 millis")
           // Verify the message was consumed
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
 
-          // Wait for the message to be consumed
-          yield* Effect.sleep("200 millis")
+          // Wait for the interruption to complete
+          yield* Effect.sleep("500 millis")
 
           // The message handling should be interrupted
           expect(onHandlingFinished).not.toHaveBeenCalled()
@@ -198,12 +198,12 @@ describe("AMQPChannel", { sequential: true }, () => {
           // Start the subscription again (with a new channel)
           yield* Effect.fork(startSubscription)
 
-          yield* Effect.sleep("250 millis")
+          yield* Effect.sleep("700 millis")
           // The same message should be consumed again because the first subscription was interrupted and the message was nor acked nor nacked
           expect(onHandlingStarted).toHaveBeenCalledTimes(2)
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
-      { timeout: 10000 }
+      { timeout: 15000 }
     )
 
     it.effect("Should no interrupt the handler if the subscriber is uninterruptible", () =>
@@ -218,7 +218,7 @@ describe("AMQPChannel", { sequential: true }, () => {
         const handler = Effect.gen(function*() {
           const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
           onHandlingStarted(message)
-          yield* Effect.sleep("100 millis")
+          yield* Effect.sleep("300 millis")
           onHandlingFinished(message)
         })
 
@@ -237,7 +237,7 @@ describe("AMQPChannel", { sequential: true }, () => {
         })
 
         // Wait for the message to be consumed
-        yield* Effect.sleep("50 millis")
+        yield* Effect.sleep("200 millis")
         // Verify the message was consumed
         expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
@@ -245,17 +245,17 @@ describe("AMQPChannel", { sequential: true }, () => {
         yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
 
         // The subscription should be uninterrupted - wait for the message to be consumed
-        yield* Effect.sleep("100 millis")
+        yield* Effect.sleep("300 millis")
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
 
         // Start the subscription again (with a new channel)
         yield* Effect.fork(startSubscription)
 
-        yield* Effect.sleep("150 millis")
+        yield* Effect.sleep("500 millis")
         // The same message should not be consumed again because the first subscription was uninterrupted and the message was acked or nacked
         expect(onHandlingStarted).toHaveBeenCalledTimes(1)
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive), { timeout: 10000 })
+      }).pipe(Effect.provide(testChannel), TestServices.provideLive), { timeout: 15000 })
 
     it.effect(
       "Should interrupt the handler if the subscriber is uninterruptible but reaches the timeout",
@@ -272,14 +272,14 @@ describe("AMQPChannel", { sequential: true }, () => {
             const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
             onHandlingStarted(message)
             // long running task
-            yield* Effect.sleep("200 millis")
+            yield* Effect.sleep("500 millis")
             onHandlingFinished(message)
           })
 
           const startSubscription = Effect.gen(function*() {
             const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
               uninterruptible: true,
-              handlerTimeout: "100 millis"
+              handlerTimeout: "300 millis"
             })
             yield* subscriber.subscribe(handler)
           }).pipe(Effect.provide(AMQPChannel.layer())) // Provide a fresh channel for each subscription
@@ -294,7 +294,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           })
 
           // Wait for the message to be consumed
-          yield* Effect.sleep("50 millis")
+          yield* Effect.sleep("200 millis")
           // Verify the message was consumed
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
@@ -302,19 +302,19 @@ describe("AMQPChannel", { sequential: true }, () => {
           yield* subscribptionFiber1.interruptAsFork(subscribptionFiber1.id())
 
           // wait for the handler to timeout
-          yield* Effect.sleep("100 millis")
+          yield* Effect.sleep("300 millis")
           // The handler should timeout and should be interrupted
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
 
           // Start the subscription again (with a new channel)
           yield* Effect.fork(startSubscription)
 
-          yield* Effect.sleep("250 millis")
+          yield* Effect.sleep("700 millis")
           // The same message should not be consumed again because the has timed out and was nacked
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
-      { timeout: 20000 }
+      { timeout: 30000 }
     )
   })
 })

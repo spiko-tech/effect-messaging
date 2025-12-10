@@ -33,10 +33,7 @@ export interface JetStreamLister<T, E> {
   readonly lister: JetStream.Lister<T>
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make =
   <E>(ErrorClass: utils.NATSErrorConstructor<E>) => <T>(lister: JetStream.Lister<T>): JetStreamLister<T, E> => ({
     [TypeId]: TypeId,

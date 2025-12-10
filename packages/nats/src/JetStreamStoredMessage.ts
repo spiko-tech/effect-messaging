@@ -46,10 +46,7 @@ export interface JetStreamStoredMessage {
 
 const wrap = utils.wrap(NATSError.JetStreamStoredMessageError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (msg: JetStream.StoredMsg): JetStreamStoredMessage => ({
   [TypeId]: TypeId,
   subject: msg.subject,

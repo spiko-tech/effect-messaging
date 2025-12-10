@@ -59,10 +59,7 @@ export interface JetStreamMessage {
 const wrapSync = wrap(NATSError.JetStreamMessageError)
 const wrapPromise = wrapAsync(NATSError.JetStreamMessageError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
   [TypeId]: TypeId,
   redelivered: jsMsg.redelivered,

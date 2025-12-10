@@ -77,10 +77,7 @@ export interface JetStreamConsumerAPI {
 const wrap = utils.wrap(NATSError.JetStreamConsumerAPIError)
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamConsumerAPIError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (consumerAPI: JetStream.ConsumerAPI): JetStreamConsumerAPI => ({
   [TypeId]: TypeId,
   add: (...params: Parameters<JetStream.ConsumerAPI["add"]>) =>

@@ -57,10 +57,7 @@ export interface JetStreamDirectStreamAPI {
 
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamDirectStreamAPIError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (direct: JetStream.DirectStreamAPI): JetStreamDirectStreamAPI => ({
   [TypeId]: TypeId,
   getMessage: (...params: Parameters<JetStream.DirectStreamAPI["getMessage"]>) =>

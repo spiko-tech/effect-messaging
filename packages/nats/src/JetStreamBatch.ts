@@ -32,10 +32,10 @@ export interface JetStreamBatch {
     subj: string,
     payload?: Uint8Array | string,
     opts?: Partial<JetStream.BatchMessageOptions | JetStream.BatchMessageOptionsWithReply>
-  ) => Effect.Effect<void, NATSError.JetStreamBatchError, void>
+  ) => Effect.Effect<void, NATSError.JetStreamBatchError>
   readonly commit: (
     ...params: Parameters<JetStream.Batch["commit"]>
-  ) => Effect.Effect<JetStream.BatchAck, NATSError.JetStreamBatchError, void>
+  ) => Effect.Effect<JetStream.BatchAck, NATSError.JetStreamBatchError>
 
   /** @internal */
   readonly batch: JetStream.Batch
@@ -43,10 +43,7 @@ export interface JetStreamBatch {
 
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamBatchError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (batch: JetStream.Batch): JetStreamBatch => ({
   [TypeId]: TypeId,
   id: batch.id,

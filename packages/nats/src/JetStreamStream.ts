@@ -54,10 +54,7 @@ export interface JetStreamStream {
   readonly stream: JetStream.Stream
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeJetStreamStream = (stream: JetStream.Stream): JetStreamStream => ({
   [JetStreamStreamTypeId]: JetStreamStreamTypeId,
   name: stream.name,
@@ -105,10 +102,7 @@ export interface JetStreamStreams {
   readonly streams: JetStream.Streams
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeJetStreamStreams = (streams: JetStream.Streams): JetStreamStreams => ({
   [JetStreamStreamsTypeId]: JetStreamStreamsTypeId,
   get: (...args) => wrapAsync(() => streams.get(...args), "Failed to get stream").pipe(Effect.map(makeJetStreamStream)),

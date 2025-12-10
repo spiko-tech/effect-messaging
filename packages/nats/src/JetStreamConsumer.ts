@@ -37,10 +37,7 @@ export interface Close {
   readonly closed: Effect.Effect<void, NATSError.JetStreamConsumerError>
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeClose = (closeable: JetStream.Close): Close => ({
   [CloseTypeId]: CloseTypeId,
   close: wrapAsync(() => closeable.close(), "Failed to close resource").pipe(
@@ -94,10 +91,7 @@ export interface ConsumerMessages extends
   readonly consumerMessages: JetStream.ConsumerMessages
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeConsumerMessages = (consumerMessages: JetStream.ConsumerMessages): ConsumerMessages => {
   const qi = NATSQueuedIterator.make(NATSError.JetStreamConsumerError)(consumerMessages)
   const close = makeClose(consumerMessages)
@@ -250,10 +244,7 @@ export interface Consumer extends ExportedConsumer, InfoableConsumer, Deleteable
   readonly consumer: JetStream.Consumer
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeConsumer = (consumer: JetStream.Consumer): Consumer => ({
   [ConsumerTypeId]: ConsumerTypeId,
   [ExportedConsumerTypeId]: ExportedConsumerTypeId,
@@ -303,10 +294,7 @@ export interface PushConsumer extends InfoableConsumer, DeleteableConsumer, Cons
   readonly pushConsumer: JetStream.PushConsumer
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makePushConsumer = (pushConsumer: JetStream.PushConsumer): PushConsumer => ({
   [PushConsumerTypeId]: PushConsumerTypeId,
   [ConsumerKindTypeId]: ConsumerKindTypeId,
@@ -358,10 +346,7 @@ export interface Consumers {
   readonly consumers: JetStream.Consumers
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const makeConsumers = (consumers: JetStream.Consumers): Consumers => ({
   [ConsumersTypeId]: ConsumersTypeId,
   get: (...args) => wrapAsync(() => consumers.get(...args), "Failed to get consumer").pipe(Effect.map(makeConsumer)),

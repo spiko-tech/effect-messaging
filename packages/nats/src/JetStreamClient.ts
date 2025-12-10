@@ -35,10 +35,10 @@ export interface JetStreamClient {
   readonly apiPrefix: string
   readonly publish: (
     ...params: Parameters<JetStream.JetStreamClient["publish"]>
-  ) => Effect.Effect<JetStream.PubAck, NATSError.JetStreamClientError, void>
+  ) => Effect.Effect<JetStream.PubAck, NATSError.JetStreamClientError>
   readonly startBatch: (
     ...params: Parameters<JetStream.JetStreamClient["startBatch"]>
-  ) => Effect.Effect<JetStreamBatch.JetStreamBatch, NATSError.JetStreamClientError, void>
+  ) => Effect.Effect<JetStreamBatch.JetStreamBatch, NATSError.JetStreamClientError>
   readonly options: Effect.Effect<JetStream.JetStreamOptions, NATSError.JetStreamClientError, never>
   readonly consumers: JetStreamConsumers.Consumers
   readonly streams: JetStreamStream.JetStreamStreams

@@ -79,10 +79,7 @@ export interface JetStreamStreamAPI {
 const wrap = utils.wrap(NATSError.JetStreamStreamAPIError)
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamStreamAPIError)
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
   [TypeId]: TypeId,
   info: (...params: Parameters<JetStream.StreamAPI["info"]>) =>

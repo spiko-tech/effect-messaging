@@ -36,10 +36,7 @@ export interface NATSQueuedIterator<T, E> {
   readonly iterator: NATS.QueuedIterator<T>
 }
 
-/**
- * @since 0.1.0
- * @category constructors
- */
+/** @internal */
 export const make = <E>(ErrorClass: utils.NATSErrorConstructor<E>) =>
 <T>(
   iterator: NATS.QueuedIterator<T>

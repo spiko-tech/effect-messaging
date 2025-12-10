@@ -41,6 +41,11 @@ export * as JetStreamMessage from "./JetStreamMessage.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamPublisher from "./JetStreamPublisher.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 
 /**
@@ -56,12 +61,22 @@ export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamSubscriber from "./JetStreamSubscriber.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as NATSConnection from "./NATSConnection.js"
 
 /**
  * @since 0.1.0
  */
 export * as NATSError from "./NATSError.js"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSHeaders from "./NATSHeaders.js"
 
 /**
  * @since 0.1.0

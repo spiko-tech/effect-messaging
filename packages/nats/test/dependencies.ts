@@ -51,7 +51,8 @@ export const makeTestStream = (
 // Scoped helper to create and cleanup a test consumer
 export const makeTestConsumer = (
   stream: string = TEST_STREAM,
-  name: string = TEST_CONSUMER
+  name: string = TEST_CONSUMER,
+  options?: { ack_wait?: number }
 ) =>
   Effect.acquireRelease(
     JetStreamManager.JetStreamManager.pipe(
@@ -61,7 +62,8 @@ export const makeTestConsumer = (
           durable_name: name,
           ack_policy: AckPolicy.Explicit,
           max_deliver: 10,
-          ack_wait: 30_000_000_000
+          // Default to 500ms for tests, allows faster redelivery
+          ack_wait: options?.ack_wait ?? 500_000_000
         })
       )
     ),
@@ -76,9 +78,16 @@ export const makeTestConsumer = (
 export const makeTestStreamAndConsumer = (
   streamName: string = TEST_STREAM,
   consumerName: string = TEST_CONSUMER,
-  subjects: Array<string> = [TEST_SUBJECT]
+  subjects: Array<string> = [TEST_SUBJECT],
+  consumerOptions?: { ack_wait?: number }
 ) =>
   Effect.gen(function*() {
     yield* makeTestStream(streamName, subjects)
-    return yield* makeTestConsumer(streamName, consumerName)
+    return yield* makeTestConsumer(streamName, consumerName, consumerOptions)
   })
+
+// Helper to purge a stream
+export const purgeTestStream = (streamName: string = TEST_STREAM) =>
+  JetStreamManager.JetStreamManager.pipe(
+    Effect.flatMap((manager) => manager.streams.purge(streamName))
+  )

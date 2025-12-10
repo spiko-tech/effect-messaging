@@ -1,0 +1,139 @@
+/**
+ * @since 0.1.0
+ */
+import * as Publisher from "@effect-messaging/core/Publisher"
+import * as PublisherError from "@effect-messaging/core/PublisherError"
+import type * as JetStream from "@nats-io/jetstream"
+import type * as NATSCore from "@nats-io/nats-core"
+import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
+import * as Schedule from "effect/Schedule"
+import type * as Tracer from "effect/Tracer"
+import * as JetStreamClient from "./JetStreamClient.js"
+import * as NATSConnection from "./NATSConnection.js"
+import * as NATSError from "./NATSError.js"
+import * as NATSHeaders from "./NATSHeaders.js"
+
+/**
+ * @category type ids
+ * @since 0.1.0
+ */
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamPublisher")
+
+/**
+ * @category type ids
+ * @since 0.1.0
+ */
+export type TypeId = typeof TypeId
+
+/**
+ * @category models
+ * @since 0.1.0
+ */
+export interface JetStreamPublishMessage {
+  subject: string
+  payload: NATSCore.Payload
+  options?: Partial<JetStream.JetStreamPublishOptions>
+}
+
+/**
+ * @category models
+ * @since 0.1.0
+ */
+export interface JetStreamPublisher extends Publisher.Publisher<JetStreamPublishMessage> {
+  readonly [TypeId]: TypeId
+}
+
+const ATTR_SERVER_ADDRESS = "server.address" as const
+const ATTR_SERVER_PORT = "server.port" as const
+const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
+const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
+const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
+const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
+const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
+
+/** @internal */
+const publishEffect = (
+  client: JetStreamClient.JetStreamClient,
+  message: JetStreamPublishMessage,
+  span: Tracer.Span
+) => {
+  const headers = NATSHeaders.mergeNatsHeaders(message.options?.headers, NATSHeaders.encodeTraceContext(span))
+
+  return client.publish(
+    message.subject,
+    message.payload,
+    { ...message.options, headers }
+  ).pipe(Effect.asVoid)
+}
+
+/** @internal */
+const publish = (
+  client: JetStreamClient.JetStreamClient,
+  connectionInfo: NATSCore.ServerInfo,
+  retrySchedule: Schedule.Schedule<unknown, NATSError.JetStreamClientError>
+) =>
+(message: JetStreamPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
+  Effect.useSpan(
+    `nats.publish ${message.subject}`,
+    {
+      kind: "producer",
+      captureStackTrace: false,
+      attributes: {
+        [ATTR_SERVER_ADDRESS]: connectionInfo.host,
+        [ATTR_SERVER_PORT]: connectionInfo.port,
+        [ATTR_MESSAGING_SYSTEM]: "nats",
+        [ATTR_MESSAGING_OPERATION_NAME]: "publish",
+        [ATTR_MESSAGING_OPERATION_TYPE]: "send",
+        [ATTR_MESSAGING_DESTINATION_NAME]: message.subject,
+        [ATTR_MESSAGING_MESSAGE_ID]: message.options?.msgID
+      }
+    },
+    (span) =>
+      publishEffect(client, message, span).pipe(
+        Effect.retry(retrySchedule),
+        Effect.catchTag(
+          "JetStreamClientError",
+          (error) =>
+            Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
+        )
+      )
+  )
+
+/**
+ * @category constructors
+ * @since 0.1.0
+ */
+export interface JetStreamPublisherConfig {
+  readonly retrySchedule?: Schedule.Schedule<unknown, NATSError.JetStreamClientError>
+}
+
+/**
+ * @category constructors
+ * @since 0.1.0
+ */
+export const make = (
+  config?: JetStreamPublisherConfig
+): Effect.Effect<
+  JetStreamPublisher,
+  NATSError.JetStreamClientError | NATSError.NATSConnectionError,
+  JetStreamClient.JetStreamClient | NATSConnection.NATSConnection
+> =>
+  Effect.gen(function*() {
+    const client = yield* JetStreamClient.JetStreamClient
+    const connection = yield* NATSConnection.NATSConnection
+
+    // Get connection info for span attributes
+    const connectionInfo = yield* Option.match(connection.info, {
+      onNone: () => Effect.fail(new NATSError.NATSConnectionError({ reason: "Connection info not available" })),
+      onSome: Effect.succeed
+    })
+
+    const publisher: JetStreamPublisher = {
+      [TypeId]: TypeId,
+      [Publisher.TypeId]: Publisher.TypeId,
+      publish: publish(client, connectionInfo, config?.retrySchedule ?? Schedule.stop)
+    }
+
+    return publisher
+  })

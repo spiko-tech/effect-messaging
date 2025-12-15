@@ -38,18 +38,18 @@
   },
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
-    "@effect/platform": "^0.90.6",
+    "@effect/platform": "^0.93.8",
     "@nats-io/jetstream": "^3.2.0",
     "@nats-io/nats-core": "^3.2.0",
     "@nats-io/transport-node": "^3.2.0",
-    "effect": "^3.17.10"
+    "effect": "^3.19.12"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
-    "@effect/platform": "^0.90.6",
+    "@effect/platform": "^0.93.8",
     "@nats-io/jetstream": "^3.2.0",
     "@nats-io/nats-core": "^3.2.0",
     "@nats-io/transport-node": "^3.2.0",
-    "effect": "^3.17.10"
+    "effect": "^3.19.12"
   }
 }

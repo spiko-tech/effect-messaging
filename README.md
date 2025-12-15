@@ -179,8 +179,15 @@ Effect.runPromise(runnable)
 - [x] Integration tests
 - [x] Add examples & documentation
 
+### NATS implementation
+
+- [x] Effect wrappers for `@nats-io/nats-core` and `@nats-io/jetstream`
+- [x] Implement publisher and subscriber
+- [x] Integration tests
+- [ ] Add examples & documentation
+
 ### Implementation for other message brokers
 
 - [ ] Kafka
-- [ ] NATS
+- [x] NATS
 - [ ] Google PubSub

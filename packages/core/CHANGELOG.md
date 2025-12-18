@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.37
+
+### Patch Changes
+
+- [#105](https://github.com/spiko-tech/effect-messaging/pull/105) [`90904f8`](https://github.com/spiko-tech/effect-messaging/commit/90904f8ed54119393663b69814f0d1804f70eed2) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade effect to 3.19.12, @effect/platform to 0.93.8, and @effect/language-service to 0.62.3
+
 ## 0.2.36
 
 ### Patch Changes

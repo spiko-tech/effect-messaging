@@ -36,8 +36,8 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/language-service':
-        specifier: ^0.62.3
-        version: 0.62.3
+        specifier: ^0.62.4
+        version: 0.62.4
       '@effect/platform':
         specifier: ^0.93.8
         version: 0.93.8(effect@3.19.12)
@@ -137,14 +137,14 @@ importers:
         specifier: ^0.93.8
         version: 0.93.8(effect@3.19.12)
       '@nats-io/jetstream':
-        specifier: ^3.2.0
-        version: 3.2.0
+        specifier: ^3.3.0
+        version: 3.3.0
       '@nats-io/nats-core':
-        specifier: ^3.2.0
-        version: 3.2.0
+        specifier: ^3.3.0
+        version: 3.3.0
       '@nats-io/transport-node':
-        specifier: ^3.2.0
-        version: 3.2.0
+        specifier: ^3.3.0
+        version: 3.3.0
       effect:
         specifier: ^3.19.12
         version: 3.19.12
@@ -337,8 +337,8 @@ packages:
   '@effect/eslint-plugin@0.3.2':
     resolution: {integrity: sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g==}
 
-  '@effect/language-service@0.62.3':
-    resolution: {integrity: sha512-YL+YI2BbMcnSUtgESHrXWChByQH7SMhQ5DoQVhXQo2ahY9/NQGSjJ59S9Hizlfe4VneIcmpk2FkCrUZ9VwyA2Q==}
+  '@effect/language-service@0.62.4':
+    resolution: {integrity: sha512-IPe/oGOILtzUIUdhhaz6e2JcnGymPADnjI03f1xOe+LaPLDg/AsRmkY87jhbtb/6qg8NVzlU+ZK4s0JoIMW/yQ==}
     hasBin: true
 
   '@effect/markdown-toc@0.1.0':
@@ -805,11 +805,11 @@ packages:
   '@napi-rs/wasm-runtime@0.2.8':
     resolution: {integrity: sha512-OBlgKdX7gin7OIq4fadsjpg+cp2ZphvAIKucHsNfTdJiqdOmOEwQd/bHi0VwNrcw5xpBJyUw6cK/QilCqy1BSg==}
 
-  '@nats-io/jetstream@3.2.0':
-    resolution: {integrity: sha512-6H/vMjTMPsFEXKGK7dqScwHEtP1ZedZrwbCdRQuYDIVq4WLqZOD6ryeEZ/gMAP7YKLy82G6IixGUm2DVsDPCMw==}
+  '@nats-io/jetstream@3.3.0':
+    resolution: {integrity: sha512-SK6lSr+Wf9nd6mffV4gdd1yDZxlhILEUJg74bAaU9yjQ2kBOPIJDHlYc2yMzcuZnQxIUcTVI3L7ow2d4qEDslQ==}
 
-  '@nats-io/nats-core@3.2.0':
-    resolution: {integrity: sha512-yHMsS0RTkKRh80COCGY/kuhEj0KPU47qkVU6IPEXmqjmskH6mX2roykxY5CXCAQc78FKYrpKQp6EHv02dRAjDw==}
+  '@nats-io/nats-core@3.3.0':
+    resolution: {integrity: sha512-+ImSYab7NvOMvFFBSBbWl03a4s/OUXCpFFauZ4iRx8pp+5ptsaBQNpacyPXeg8jbjAMeEAWn2Zuyl7oJCUffJA==}
 
   '@nats-io/nkeys@2.0.3':
     resolution: {integrity: sha512-JVt56GuE6Z89KUkI4TXUbSI9fmIfAmk6PMPknijmuL72GcD+UgIomTcRWiNvvJKxA01sBbmIPStqJs5cMRBC3A==}
@@ -819,8 +819,8 @@ packages:
     resolution: {integrity: sha512-TpA3HEBna/qMVudy+3HZr5M3mo/L1JPofpVT4t0HkFGkz2Cn9wrlrQC8tvR8Md5Oa9//GtGG26eN0qEWF5Vqew==}
     engines: {node: '>= 18.x'}
 
-  '@nats-io/transport-node@3.2.0':
-    resolution: {integrity: sha512-foSEx0KHRIjuVtb0teEnkax2elrWR4MxijBPuFPtodSAprUh+6wiYk+v5qCqhIdVl6cWGLTXCtlCHs1bkocGTg==}
+  '@nats-io/transport-node@3.3.0':
+    resolution: {integrity: sha512-A59+E0uL2FCzkvEbnhOPA4bKd4p1Ca6o5GwhVwVHzBPILjjGaSpgwgccaxnjwdsP+FBcMRrgXJ1wn6i1pf6nHQ==}
     engines: {node: '>= 18.0.0'}
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
@@ -3764,7 +3764,7 @@ snapshots:
       '@dprint/typescript': 0.91.8
       prettier-linter-helpers: 1.0.0
 
-  '@effect/language-service@0.62.3': {}
+  '@effect/language-service@0.62.4': {}
 
   '@effect/markdown-toc@0.1.0':
     dependencies:
@@ -4097,11 +4097,11 @@ snapshots:
       '@tybys/wasm-util': 0.9.0
     optional: true
 
-  '@nats-io/jetstream@3.2.0':
+  '@nats-io/jetstream@3.3.0':
     dependencies:
-      '@nats-io/nats-core': 3.2.0
+      '@nats-io/nats-core': 3.3.0
 
-  '@nats-io/nats-core@3.2.0':
+  '@nats-io/nats-core@3.3.0':
     dependencies:
       '@nats-io/nkeys': 2.0.3
       '@nats-io/nuid': 2.0.3
@@ -4112,9 +4112,9 @@ snapshots:
 
   '@nats-io/nuid@2.0.3': {}
 
-  '@nats-io/transport-node@3.2.0':
+  '@nats-io/transport-node@3.3.0':
     dependencies:
-      '@nats-io/nats-core': 3.2.0
+      '@nats-io/nats-core': 3.3.0
       '@nats-io/nkeys': 2.0.3
       '@nats-io/nuid': 2.0.3
 

@@ -42,7 +42,10 @@
       "@effect-messaging/amqp/test/*": ["./packages/amqp/test/*.js"],
       "@effect-messaging/core": ["./packages/core/src/index.js"],
       "@effect-messaging/core/*": ["./packages/core/src/*.js"],
-      "@effect-messaging/core/test/*": ["./packages/core/test/*.js"]
+      "@effect-messaging/core/test/*": ["./packages/core/test/*.js"],
+      "@effect-messaging/nats": ["./packages/nats/src/index.js"],
+      "@effect-messaging/nats/*": ["./packages/nats/src/*.js"],
+      "@effect-messaging/nats/test/*": ["./packages/nats/test/*.js"]
     }
   }
 }

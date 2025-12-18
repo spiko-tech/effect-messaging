@@ -1,5 +1,17 @@
 # @effect-messaging/nats
 
+## 0.6.0
+
+### Minor Changes
+
+- [#111](https://github.com/spiko-tech/effect-messaging/pull/111) [`e6dd444`](https://github.com/spiko-tech/effect-messaging/commit/e6dd444917557dfbc75c71f0afbacf11176be70e) Thanks [@wewelll](https://github.com/wewelll)! - Add NATSPublisher and NATSSubscriber for NATS Core (without JetStream)
+
+  - `NATSPublisher`: Implements the `Publisher` interface from `@effect-messaging/core` using NATS Core publish (fire-and-forget)
+  - `NATSSubscriber`: Implements the `Subscriber` interface from `@effect-messaging/core` using NATS Core subscriptions
+  - Both include OpenTelemetry tracing with distributed trace context propagation via headers
+  - `NATSSubscriber` supports `uninterruptible` and `handlerTimeout` options
+  - Note: NATS Core has no persistence - messages published before subscription starts are lost
+
 ## 0.5.2
 
 ### Patch Changes

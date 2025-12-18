@@ -1,5 +1,11 @@
 # @effect-messaging/nats
 
+## 0.5.2
+
+### Patch Changes
+
+- [#108](https://github.com/spiko-tech/effect-messaging/pull/108) [`1bd9628`](https://github.com/spiko-tech/effect-messaging/commit/1bd96288a17e658d91141329ec519b6b7e4080f1) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade @nats-io/jetstream, @nats-io/nats-core, and @nats-io/transport-node to 3.3.0
+
 ## 0.5.1
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.38
+
+### Patch Changes
+
+- [#113](https://github.com/spiko-tech/effect-messaging/pull/113) [`5f72eba`](https://github.com/spiko-tech/effect-messaging/commit/5f72ebafae4ac683c42a0798588108a0758e6de8) Thanks [@wewelll](https://github.com/wewelll)! - upgrade effect libraries to their latest version
+
 ## 0.2.37
 
 ### Patch Changes

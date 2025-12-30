@@ -1,24 +1,24 @@
 /**
  * @since 0.3.0
  */
-export * as Publisher from "./Publisher.js"
+export * as Consumer from "./Consumer.js"
 
 /**
  * @since 0.3.0
  */
-export * as PublisherError from "./PublisherError.js"
+export * as ConsumerApp from "./ConsumerApp.js"
 
 /**
  * @since 0.3.0
  */
-export * as Subscriber from "./Subscriber.js"
+export * as ConsumerError from "./ConsumerError.js"
 
 /**
  * @since 0.3.0
  */
-export * as SubscriberApp from "./SubscriberApp.js"
+export * as Producer from "./Producer.js"
 
 /**
  * @since 0.3.0
  */
-export * as SubscriberError from "./SubscriberError.js"
+export * as ProducerError from "./ProducerError.js"

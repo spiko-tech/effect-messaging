@@ -6,7 +6,7 @@ import * as Schema from "effect/Schema"
 /**
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/SubscriberError")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/ConsumerError")
 
 /**
  * @since 0.3.0
@@ -14,13 +14,13 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/Subscrib
 export type TypeId = typeof TypeId
 
 /**
- * Represents a generic Publisher Error
+ * Represents a generic Consumer Error
  *
  * @since 0.3.0
  * @category errors
  */
-export class SubscriberError extends Schema.TaggedError<SubscriberError>()(
-  "SubscriberError",
+export class ConsumerError extends Schema.TaggedError<ConsumerError>()(
+  "ConsumerError",
   { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
 ) {
   /**

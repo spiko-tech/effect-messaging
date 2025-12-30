@@ -4,7 +4,7 @@
 import type * as Effect from "effect/Effect"
 
 /**
- * Type alias for a subscriber handler function that processes messages.
+ * Type alias for a consumer handler function that processes messages.
  *
  * @typeParam A - The response type that the handler must return (e.g., acknowledgment response)
  * @typeParam M - The message type that the handler receives via Effect context
@@ -14,4 +14,4 @@ import type * as Effect from "effect/Effect"
  * @since 0.3.0
  * @category models
  */
-export type SubscriberApp<A, M, E = never, R = never> = Effect.Effect<A, E, R | M>
+export type ConsumerApp<A, M, E = never, R = never> = Effect.Effect<A, E, R | M>

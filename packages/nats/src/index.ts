@@ -21,6 +21,16 @@ export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
 /**
  * @since 0.1.0
  */
+export * as JetStreamConsumerMessages from "./JetStreamConsumerMessages.js"
+
+/**
+ * @since 0.7.0
+ */
+export * as JetStreamConsumerResponse from "./JetStreamConsumerResponse.js"
+
+/**
+ * @since 0.1.0
+ */
 export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
 
 /**
@@ -41,7 +51,7 @@ export * as JetStreamMessage from "./JetStreamMessage.js"
 /**
  * @since 0.1.0
  */
-export * as JetStreamPublisher from "./JetStreamPublisher.js"
+export * as JetStreamProducer from "./JetStreamProducer.js"
 
 /**
  * @since 0.1.0
@@ -61,17 +71,12 @@ export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 /**
  * @since 0.1.0
  */
-export * as JetStreamSubscriber from "./JetStreamSubscriber.js"
-
-/**
- * @since 0.7.0
- */
-export * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
-
-/**
- * @since 0.1.0
- */
 export * as NATSConnection from "./NATSConnection.js"
+
+/**
+ * @since 0.3.0
+ */
+export * as NATSConsumer from "./NATSConsumer.js"
 
 /**
  * @since 0.1.0
@@ -91,17 +96,12 @@ export * as NATSMessage from "./NATSMessage.js"
 /**
  * @since 0.3.0
  */
-export * as NATSPublisher from "./NATSPublisher.js"
+export * as NATSProducer from "./NATSProducer.js"
 
 /**
  * @since 0.1.0
  */
 export * as NATSQueuedIterator from "./NATSQueuedIterator.js"
-
-/**
- * @since 0.3.0
- */
-export * as NATSSubscriber from "./NATSSubscriber.js"
 
 /**
  * @since 0.1.0

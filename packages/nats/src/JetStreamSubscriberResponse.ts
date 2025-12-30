@@ -1,13 +1,12 @@
 /**
  * @since 0.7.0
  */
-import * as internal from "./internal/JetStreamSubscriberResponse.js"
 
 /**
  * @category type ids
  * @since 0.7.0
  */
-export const TypeId: unique symbol = internal.TypeId
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamSubscriberResponse")
 
 /**
  * @category type ids
@@ -66,27 +65,46 @@ export interface Term {
  */
 export type JetStreamSubscriberResponse = Ack | Nak | Term
 
-/**
- * @category constructors
- * @since 0.7.0
- */
-export const ack: () => JetStreamSubscriberResponse = internal.ack
+class AckImpl implements Ack {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Ack" as const
+}
+
+class NakImpl implements Nak {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Nak" as const
+
+  constructor(readonly millis?: number) {}
+}
+
+class TermImpl implements Term {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Term" as const
+
+  constructor(readonly reason?: string) {}
+}
 
 /**
  * @category constructors
  * @since 0.7.0
  */
-export const nak: (options?: NakOptions) => JetStreamSubscriberResponse = internal.nak
+export const ack = (): JetStreamSubscriberResponse => new AckImpl()
 
 /**
  * @category constructors
  * @since 0.7.0
  */
-export const term: (options?: TermOptions) => JetStreamSubscriberResponse = internal.term
+export const nak = (options?: NakOptions): JetStreamSubscriberResponse => new NakImpl(options?.millis)
+
+/**
+ * @category constructors
+ * @since 0.7.0
+ */
+export const term = (options?: TermOptions): JetStreamSubscriberResponse => new TermImpl(options?.reason)
 
 /**
  * @category guards
  * @since 0.7.0
  */
-export const isJetStreamSubscriberResponse: (u: unknown) => u is JetStreamSubscriberResponse =
-  internal.isJetStreamSubscriberResponse
+export const isJetStreamSubscriberResponse = (u: unknown): u is JetStreamSubscriberResponse =>
+  typeof u === "object" && u !== null && TypeId in u

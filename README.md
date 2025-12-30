@@ -9,6 +9,12 @@ A message broker toolkit for Effect.
 - 🧘 Seamless consumption continuation after reconnection
 - 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
+### NATS / JetStream features
+
+- 🔌 Effectful wrappers for NATS Connection and JetStream Client
+- 📦 Full JetStream support (streams, consumers, publishers, subscribers)
+- 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
+
 > [!WARNING]
 > This project is currently **under development**. Please note that future releases might introduce breaking changes.
 
@@ -113,7 +119,8 @@ import {
   AMQPChannel,
   AMQPConnection,
   AMQPConsumeMessage,
-  AMQPSubscriber
+  AMQPSubscriber,
+  AMQPSubscriberResponse
 } from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
@@ -122,13 +129,18 @@ const messageHandler = Effect.gen(function* (_) {
 
   // You can add your message processing logic here
   yield* Effect.logInfo(`Received message: ${message.content.toString()}`)
+
+  // Return a response to control message acknowledgment:
+  // - ack(): Acknowledge successful processing
+  // - nack({ allUpTo?, requeue? }): Negative acknowledge
+  // - reject({ requeue? }): Reject the message
+  return AMQPSubscriberResponse.ack()
 })
 
 const program = Effect.gen(function* (_) {
   const subscriber = yield* AMQPSubscriber.make("my-queue")
 
-  // The subscriber will automatically handle message ack and nack
-  // based on the success or failure of the message handler
+  // Subscribe to messages - on handler error, messages are nacked automatically
   yield* subscriber.subscribe(messageHandler)
 })
 
@@ -148,6 +160,103 @@ const runnable = program.pipe(
 )
 
 // Run the program
+Effect.runPromise(runnable)
+```
+
+### NATS JetStream with `@effect-messaging/nats`
+
+#### 1. Establish a Connection
+
+First, establish a connection to your NATS server:
+
+```typescript
+import { NATSConnection } from "@effect-messaging/nats"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* (_) {
+  const connection = yield* NATSConnection.NATSConnection
+
+  yield* Effect.logInfo(`Connected to NATS`)
+})
+
+const runnable = program.pipe(
+  Effect.provide(NATSConnection.layerNode({ servers: ["localhost:4222"] }))
+)
+
+Effect.runPromise(runnable)
+```
+
+#### 2. Create a JetStream Publisher
+
+To publish messages to a JetStream stream:
+
+```typescript
+import {
+  JetStreamClient,
+  JetStreamPublisher,
+  NATSConnection
+} from "@effect-messaging/nats"
+import { Effect } from "effect"
+
+const program = Effect.gen(function* (_) {
+  const publisher = yield* JetStreamPublisher.make()
+
+  yield* publisher.publish({
+    subject: "orders.created",
+    payload: new TextEncoder().encode('{ "orderId": "123" }')
+  })
+})
+
+const runnable = program.pipe(
+  Effect.provide(JetStreamClient.layer()),
+  Effect.provide(NATSConnection.layerNode({ servers: ["localhost:4222"] }))
+)
+
+Effect.runPromise(runnable)
+```
+
+#### 3. Create a JetStream Subscriber
+
+To consume messages from a JetStream consumer:
+
+```typescript
+import {
+  JetStreamClient,
+  JetStreamSubscriber,
+  JetStreamSubscriberResponse,
+  NATSConnection
+} from "@effect-messaging/nats"
+import { Effect } from "effect"
+
+const messageHandler = Effect.gen(function* (_) {
+  const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+
+  yield* Effect.logInfo(`Received: ${message.string()}`)
+
+  // Return a response to control message acknowledgment:
+  // - ack(): Acknowledge successful processing
+  // - nak({ millis? }): Negative acknowledge, optionally delay redelivery
+  // - term({ reason? }): Terminate message, stop redelivery
+  return JetStreamSubscriberResponse.ack()
+})
+
+const program = Effect.gen(function* (_) {
+  const client = yield* JetStreamClient.JetStreamClient
+
+  // Get an existing consumer (stream and consumer must already exist)
+  const consumer = yield* client.consumers.get("my-stream", "my-consumer")
+  const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+
+  // Subscribe to messages - on handler error, messages are nacked automatically
+  yield* subscriber.subscribe(messageHandler)
+})
+
+const runnable = program.pipe(
+  Effect.scoped,
+  Effect.provide(JetStreamClient.layer()),
+  Effect.provide(NATSConnection.layerNode({ servers: ["localhost:4222"] }))
+)
+
 Effect.runPromise(runnable)
 ```
 
@@ -184,7 +293,7 @@ Effect.runPromise(runnable)
 - [x] Effect wrappers for `@nats-io/nats-core` and `@nats-io/jetstream`
 - [x] Implement publisher and subscriber
 - [x] Integration tests
-- [ ] Add examples & documentation
+- [x] Add examples & documentation
 
 ### Implementation for other message brokers
 

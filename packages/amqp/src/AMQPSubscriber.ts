@@ -10,6 +10,7 @@ import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
+import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
@@ -121,24 +122,24 @@ const subscribe = (
                     })
                     : Function.identity
                 )
-                switch (response._tag) {
-                  case "Ack":
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                    yield* channel.ack(message)
-                    break
-                  case "Nack":
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                    yield* channel.nack(message, response.allUpTo, response.requeue)
-                    break
-                  case "Reject":
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
-                    yield* channel.reject(message, response.requeue)
-                    break
-                  default: {
-                    const _exhaustive: never = response
-                    return _exhaustive
-                  }
-                }
+                yield* Match.value(response).pipe(
+                  Match.tag("Ack", () =>
+                    Effect.gen(function*() {
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                      yield* channel.ack(message)
+                    })),
+                  Match.tag("Nack", (r) =>
+                    Effect.gen(function*() {
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                      yield* channel.nack(message, r.allUpTo, r.requeue)
+                    })),
+                  Match.tag("Reject", (r) =>
+                    Effect.gen(function*() {
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
+                      yield* channel.reject(message, r.requeue)
+                    })),
+                  Match.exhaustive
+                )
               }).pipe(
                 Effect.provide(AMQPConsumeMessage.layer(message)),
                 Effect.tapErrorCause((cause) =>

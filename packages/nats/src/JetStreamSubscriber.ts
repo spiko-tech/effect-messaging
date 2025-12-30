@@ -10,6 +10,7 @@ import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
 import * as Layer from "effect/Layer"
+import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
@@ -138,24 +139,24 @@ const subscribe = (
                   })
                   : Function.identity
               )
-              switch (response._tag) {
-                case "Ack":
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                  yield* message.ack
-                  break
-                case "Nak":
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                  yield* message.nak(response.millis)
-                  break
-                case "Term":
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
-                  yield* message.term(response.reason)
-                  break
-                default: {
-                  const _exhaustive: never = response
-                  return _exhaustive
-                }
-              }
+              yield* Match.value(response).pipe(
+                Match.tag("Ack", () =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                    yield* message.ack
+                  })),
+                Match.tag("Nak", (r) =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                    yield* message.nak(r.millis)
+                  })),
+                Match.tag("Term", (r) =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
+                    yield* message.term(r.reason)
+                  })),
+                Match.exhaustive
+              )
             }).pipe(
               Effect.provide(layer(message)),
               Effect.tapErrorCause((cause) =>

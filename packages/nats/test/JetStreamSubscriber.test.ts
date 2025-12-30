@@ -5,6 +5,7 @@ import * as JetStreamClient from "../src/JetStreamClient.js"
 import type * as JetStreamMessage from "../src/JetStreamMessage.js"
 import * as JetStreamPublisher from "../src/JetStreamPublisher.js"
 import * as JetStreamSubscriber from "../src/JetStreamSubscriber.js"
+import * as JetStreamSubscriberResponse from "../src/JetStreamSubscriberResponse.js"
 import { makeTestConsumer, makeTestStream, purgeTestStream, testJetStream } from "./dependencies.js"
 
 // Use unique names for this test file to avoid conflicts with other test files
@@ -67,6 +68,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
             const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
             onMessage(message)
+            return JetStreamSubscriberResponse.ack()
           })))
 
           // Message 1
@@ -114,6 +116,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
               onHandlingStarted(message)
               yield* Effect.sleep("500 millis")
               onHandlingFinished(message)
+              return JetStreamSubscriberResponse.ack()
             })
 
             const client = yield* JetStreamClient.JetStreamClient
@@ -173,6 +176,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             onHandlingStarted(message)
             yield* Effect.sleep("300 millis")
             onHandlingFinished(message)
+            return JetStreamSubscriberResponse.ack()
           })
 
           const client = yield* JetStreamClient.JetStreamClient
@@ -239,6 +243,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
                 yield* Effect.sleep("50 millis")
               }
               onHandlingFinished(message)
+              return JetStreamSubscriberResponse.ack()
             })
 
             const client = yield* JetStreamClient.JetStreamClient
@@ -299,6 +304,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             }
 
             onHandlingFinished(message)
+            return JetStreamSubscriberResponse.ack()
           })
 
           const client = yield* JetStreamClient.JetStreamClient

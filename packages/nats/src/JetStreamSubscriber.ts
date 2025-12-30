@@ -15,6 +15,7 @@ import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
 import type * as JetStreamConsumer from "./JetStreamConsumer.js"
 import type * as JetStreamMessage from "./JetStreamMessage.js"
+import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSHeaders from "./NATSHeaders.js"
@@ -33,9 +34,23 @@ export type TypeId = typeof TypeId
 
 /**
  * @category models
+ * @since 0.7.0
+ */
+export type JetStreamSubscriberApp<E, R> = Subscriber.SubscriberApp<
+  JetStreamSubscriberResponse.JetStreamSubscriberResponse,
+  JetStreamMessage.JetStreamMessage,
+  E,
+  R
+>
+
+/**
+ * @category models
  * @since 0.1.0
  */
-export interface JetStreamSubscriber extends Subscriber.Subscriber<void, JetStreamMessage.JetStreamMessage> {
+export interface JetStreamSubscriber
+  extends
+    Subscriber.Subscriber<JetStreamSubscriberResponse.JetStreamSubscriberResponse, JetStreamMessage.JetStreamMessage>
+{
   readonly [TypeId]: TypeId
 }
 
@@ -87,7 +102,7 @@ const subscribe = (
   options: JetStreamSubscriberOptions
 ) =>
 <E, R>(
-  handler: Effect.Effect<void, E, R | JetStreamMessage.JetStreamMessage>
+  app: JetStreamSubscriberApp<E, R>
 ): Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, JetStreamMessage.JetStreamMessage>> =>
   consumerMessages.stream.pipe(
     Stream.runForEach((message) =>
@@ -114,7 +129,7 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              yield* handler.pipe(
+              const response = yield* app.pipe(
                 options.handlerTimeout
                   ? Effect.timeoutFail({
                     duration: options.handlerTimeout,
@@ -123,14 +138,26 @@ const subscribe = (
                   })
                   : Function.identity
               )
-              span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-              yield* message.ack
+              switch (response._tag) {
+                case "Ack":
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                  yield* message.ack
+                  break
+                case "Nak":
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                  yield* message.nak(response.millis)
+                  break
+                case "Term":
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
+                  yield* message.term(response.reason)
+                  break
+              }
             }).pipe(
               Effect.provide(layer(message)),
               Effect.tapErrorCause((cause) =>
                 Effect.gen(function*() {
                   yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
                   span.attribute(
                     "error.type",
                     Cause.squashWith(cause, (_) =>

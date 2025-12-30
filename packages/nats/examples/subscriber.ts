@@ -1,4 +1,9 @@
-import { JetStreamClient, JetStreamSubscriber, NATSConnection } from "@effect-messaging/nats"
+import {
+  JetStreamClient,
+  JetStreamSubscriber,
+  JetStreamSubscriberResponse,
+  NATSConnection
+} from "@effect-messaging/nats"
 import { Effect } from "effect"
 
 const messageHandler = Effect.gen(function*() {
@@ -8,8 +13,11 @@ const messageHandler = Effect.gen(function*() {
   const data = message.string()
   yield* Effect.logInfo(`Received message on ${message.subject}: ${data}`)
 
-  // The subscriber will automatically handle message ack and nack
-  // based on the success or failure of the message handler
+  // Return a response to acknowledge, nak, or terminate the message
+  // - ack(): Acknowledge successful processing
+  // - nak({ millis? }): Negative acknowledge, optionally delay redelivery
+  // - term({ reason? }): Terminate message, stop redelivery
+  return JetStreamSubscriberResponse.ack()
 })
 
 const program = Effect.gen(function*() {

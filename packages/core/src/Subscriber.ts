@@ -17,13 +17,19 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/Subscrib
 export type TypeId = typeof TypeId
 
 /**
+ * @since 0.4.0
+ * @category models
+ */
+export type SubscriberApp<A, M, E = never, R = never> = Effect.Effect<A, E, R | M>
+
+/**
  * @category models
  * @since 0.3.0
  */
-export interface Subscriber<M> {
+export interface Subscriber<A, M> {
   readonly [TypeId]: TypeId
   readonly subscribe: <E, R>(
-    handler: Effect.Effect<void, E, R | M>
+    app: SubscriberApp<A, M, E, R>
   ) => Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, M>>
   readonly healthCheck: Effect.Effect<void, SubscriberError.SubscriberError, never>
 }

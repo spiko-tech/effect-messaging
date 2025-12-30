@@ -1,13 +1,12 @@
 /**
  * @since 0.5.0
  */
-import * as internal from "./internal/AMQPSubscriberResponse.js"
 
 /**
  * @category type ids
  * @since 0.5.0
  */
-export const TypeId: unique symbol = internal.TypeId
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPSubscriberResponse")
 
 /**
  * @category type ids
@@ -68,26 +67,49 @@ export interface Reject {
  */
 export type AMQPSubscriberResponse = Ack | Nack | Reject
 
-/**
- * @category constructors
- * @since 0.5.0
- */
-export const ack: () => AMQPSubscriberResponse = internal.ack
+class AckImpl implements Ack {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Ack" as const
+}
+
+class NackImpl implements Nack {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Nack" as const
+
+  constructor(
+    readonly allUpTo?: boolean,
+    readonly requeue?: boolean
+  ) {}
+}
+
+class RejectImpl implements Reject {
+  readonly [TypeId]: TypeId = TypeId
+  readonly _tag = "Reject" as const
+
+  constructor(readonly requeue?: boolean) {}
+}
 
 /**
  * @category constructors
  * @since 0.5.0
  */
-export const nack: (options?: NackOptions) => AMQPSubscriberResponse = internal.nack
+export const ack = (): AMQPSubscriberResponse => new AckImpl()
 
 /**
  * @category constructors
  * @since 0.5.0
  */
-export const reject: (options?: RejectOptions) => AMQPSubscriberResponse = internal.reject
+export const nack = (options?: NackOptions): AMQPSubscriberResponse => new NackImpl(options?.allUpTo, options?.requeue)
+
+/**
+ * @category constructors
+ * @since 0.5.0
+ */
+export const reject = (options?: RejectOptions): AMQPSubscriberResponse => new RejectImpl(options?.requeue)
 
 /**
  * @category guards
  * @since 0.5.0
  */
-export const isAMQPSubscriberResponse: (u: unknown) => u is AMQPSubscriberResponse = internal.isAMQPSubscriberResponse
+export const isAMQPSubscriberResponse = (u: unknown): u is AMQPSubscriberResponse =>
+  typeof u === "object" && u !== null && TypeId in u

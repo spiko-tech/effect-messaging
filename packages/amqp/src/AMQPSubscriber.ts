@@ -43,9 +43,15 @@ export interface AMQPPublishMessage {
 
 /**
  * @category models
+ * @since 0.4.0
+ */
+export type AMQPSubscriberApp<E, R> = Subscriber.SubscriberApp<void, AMQPConsumeMessage.AMQPConsumeMessage, E, R>
+
+/**
+ * @category models
  * @since 0.3.0
  */
-export interface AMQPSubscriber extends Subscriber.Subscriber<AMQPConsumeMessage.AMQPConsumeMessage> {
+export interface AMQPSubscriber extends Subscriber.Subscriber<void, AMQPConsumeMessage.AMQPConsumeMessage> {
   readonly [TypeId]: TypeId
 }
 
@@ -68,9 +74,7 @@ const subscribe = (
   connectionProperties: AMQPConnection.AMQPConnectionServerProperties,
   options: AMQPSubscriberOptions
 ) =>
-<E, R>(
-  handler: Effect.Effect<void, E, R | AMQPConsumeMessage.AMQPConsumeMessage>
-) =>
+<E, R>(app: AMQPSubscriberApp<E, R>) =>
   Effect.gen(function*() {
     const consumeStream = yield* channel.consume(queueName)
     return yield* consumeStream.pipe(
@@ -100,7 +104,7 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                yield* handler.pipe(
+                yield* app.pipe(
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,

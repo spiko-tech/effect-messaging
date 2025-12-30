@@ -35,7 +35,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.1.0
  */
-export interface JetStreamSubscriber extends Subscriber.Subscriber<JetStreamMessage.JetStreamMessage> {
+export interface JetStreamSubscriber extends Subscriber.Subscriber<void, JetStreamMessage.JetStreamMessage> {
   readonly [TypeId]: TypeId
 }
 

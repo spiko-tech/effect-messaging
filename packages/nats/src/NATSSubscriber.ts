@@ -35,7 +35,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.3.0
  */
-export interface NATSSubscriber extends Subscriber.Subscriber<NATSMessage.NATSMessage> {
+export interface NATSSubscriber extends Subscriber.Subscriber<void, NATSMessage.NATSMessage> {
   readonly [TypeId]: TypeId
 }
 

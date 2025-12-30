@@ -17,6 +17,13 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/Subscrib
 export type TypeId = typeof TypeId
 
 /**
+ * Type alias for a subscriber handler function that processes messages.
+ *
+ * @typeParam A - The response type that the handler must return (e.g., acknowledgment response)
+ * @typeParam M - The message type that the handler receives via Effect context
+ * @typeParam E - The error type that the handler may fail with
+ * @typeParam R - Additional dependencies required by the handler (excluding the message type M)
+ *
  * @since 0.3.0
  * @category models
  */

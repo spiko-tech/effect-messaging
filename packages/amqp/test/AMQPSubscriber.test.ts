@@ -322,4 +322,91 @@ describe("AMQPChannel", { sequential: true }, () => {
       { timeout: 30000 }
     )
   })
+
+  describe("explicit response types", () => {
+    it.effect("Should nack the message when handler returns nack()", () =>
+      Effect.gen(function*() {
+        yield* setup
+
+        const publisher = yield* AMQPPublisher.make()
+
+        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+        let attemptCount = 0
+
+        const handler = Effect.gen(function*() {
+          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          attemptCount++
+          onHandlingStarted(message)
+
+          if (attemptCount === 1) {
+            // First attempt: nack with requeue to trigger redelivery
+            return AMQPSubscriberResponse.nack({ requeue: true })
+          }
+
+          // Subsequent attempts: ack
+          return AMQPSubscriberResponse.ack()
+        })
+
+        const startSubscription = Effect.gen(function*() {
+          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+          yield* subscriber.subscribe(handler)
+        }).pipe(Effect.provide(AMQPChannel.layer()))
+
+        // Start the subscription
+        yield* Effect.fork(startSubscription)
+
+        yield* publisher.publish({
+          exchange: TEST_EXCHANGE,
+          routingKey: TEST_SUBJECT,
+          content: Buffer.from("Message that will be nacked first")
+        })
+
+        // Wait for message to be processed and redelivered
+        yield* Effect.sleep("1 second")
+
+        // The message should be processed twice: once nacked, once acked
+        expect(onHandlingStarted).toHaveBeenCalledTimes(2)
+      }).pipe(Effect.provide(testChannel), TestServices.provideLive), { timeout: 15000 })
+
+    it.effect("Should reject the message without requeue when handler returns reject()", () =>
+      Effect.gen(function*() {
+        yield* setup
+
+        const publisher = yield* AMQPPublisher.make()
+
+        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+        const handler = Effect.gen(function*() {
+          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          onHandlingStarted(message)
+
+          // Reject the message without requeue - message won't be redelivered
+          return AMQPSubscriberResponse.reject({ requeue: false })
+        })
+
+        const startSubscription = Effect.gen(function*() {
+          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+          yield* subscriber.subscribe(handler)
+        }).pipe(Effect.provide(AMQPChannel.layer()))
+
+        // Start the subscription
+        yield* Effect.fork(startSubscription)
+
+        yield* publisher.publish({
+          exchange: TEST_EXCHANGE,
+          routingKey: TEST_SUBJECT,
+          content: Buffer.from("Message that will be rejected")
+        })
+
+        // Wait for message to be processed
+        yield* Effect.sleep("500 millis")
+
+        // The message should be processed only once (reject without requeue prevents redelivery)
+        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+        // Wait a bit more to ensure no redelivery happens
+        yield* Effect.sleep("1 second")
+        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+      }).pipe(Effect.provide(testChannel), TestServices.provideLive), { timeout: 15000 })
+  })
 })

@@ -151,6 +151,10 @@ const subscribe = (
                   span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
                   yield* message.term(response.reason)
                   break
+                default: {
+                  const _exhaustive: never = response
+                  return _exhaustive
+                }
               }
             }).pipe(
               Effect.provide(layer(message)),

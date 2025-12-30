@@ -333,6 +333,101 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
       ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
   })
 
+  describe("explicit response types", () => {
+    it.effect("Should nak the message with delay when handler returns nak()", () =>
+      Effect.scoped(
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* JetStreamPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+          let attemptCount = 0
+
+          const handler = Effect.gen(function*() {
+            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            attemptCount++
+            onHandlingStarted(message)
+
+            if (attemptCount === 1) {
+              // First attempt: nak with delay to trigger redelivery
+              return JetStreamSubscriberResponse.nak({ millis: 100 })
+            }
+
+            // Subsequent attempts: ack
+            return JetStreamSubscriberResponse.ack()
+          })
+
+          const client = yield* JetStreamClient.JetStreamClient
+
+          const startSubscription = Effect.gen(function*() {
+            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+            yield* subscriber.subscribe(handler)
+          })
+
+          // Start the subscription
+          yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            subject: TEST_SUBJECT,
+            payload: new TextEncoder().encode("Message that will be nacked first")
+          })
+
+          // Wait for message to be processed and redelivered
+          yield* Effect.sleep("1 second")
+
+          // The message should be processed twice: once nacked, once acked
+          expect(onHandlingStarted).toHaveBeenCalledTimes(2)
+        })
+      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
+
+    it.effect("Should terminate the message when handler returns term()", () =>
+      Effect.scoped(
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* JetStreamPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            onHandlingStarted(message)
+
+            // Terminate the message with a reason - message won't be redelivered
+            return JetStreamSubscriberResponse.term({ reason: "Intentionally terminated for testing" })
+          })
+
+          const client = yield* JetStreamClient.JetStreamClient
+
+          const startSubscription = Effect.gen(function*() {
+            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+            yield* subscriber.subscribe(handler)
+          })
+
+          // Start the subscription
+          yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            subject: TEST_SUBJECT,
+            payload: new TextEncoder().encode("Message that will be terminated")
+          })
+
+          // Wait for message to be processed
+          yield* Effect.sleep("500 millis")
+
+          // The message should be processed only once (term prevents redelivery)
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Wait a bit more to ensure no redelivery happens
+          yield* Effect.sleep("1 second")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+        })
+      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
+  })
+
   describe("healthCheck", () => {
     it.effect("Should succeed when consumer is healthy", () =>
       Effect.scoped(

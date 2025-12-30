@@ -5,6 +5,7 @@ import * as AMQPChannel from "../src/AMQPChannel.js"
 import * as AMQPConsumeMessage from "../src/AMQPConsumeMessage.js"
 import * as AMQPPublisher from "../src/AMQPPublisher.js"
 import * as AMQPSubscriber from "../src/AMQPSubscriber.js"
+import * as AMQPSubscriberResponse from "../src/AMQPSubscriberResponse.js"
 import {
   assertTestExchange,
   assertTestQueue,
@@ -72,6 +73,7 @@ describe("AMQPChannel", { sequential: true }, () => {
         yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
           const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
           onMessage(message)
+          return AMQPSubscriberResponse.ack()
         })))
 
         // Message 1
@@ -166,6 +168,7 @@ describe("AMQPChannel", { sequential: true }, () => {
             onHandlingStarted(message)
             yield* Effect.sleep("500 millis")
             onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
           })
 
           const startSubscription = Effect.gen(function*() {
@@ -220,6 +223,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           onHandlingStarted(message)
           yield* Effect.sleep("300 millis")
           onHandlingFinished(message)
+          return AMQPSubscriberResponse.ack()
         })
 
         const startSubscription = Effect.gen(function*() {
@@ -274,6 +278,7 @@ describe("AMQPChannel", { sequential: true }, () => {
             // long running task
             yield* Effect.sleep("500 millis")
             onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
           })
 
           const startSubscription = Effect.gen(function*() {

@@ -17,6 +17,7 @@ import * as AMQPChannel from "./AMQPChannel.js"
 import type * as AMQPConnection from "./AMQPConnection.js"
 import * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
 import type * as AMQPError from "./AMQPError.js"
+import type * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.js"
 
 /**
  * @category type ids
@@ -45,13 +46,20 @@ export interface AMQPPublishMessage {
  * @category models
  * @since 0.4.0
  */
-export type AMQPSubscriberApp<E, R> = Subscriber.SubscriberApp<void, AMQPConsumeMessage.AMQPConsumeMessage, E, R>
+export type AMQPSubscriberApp<E, R> = Subscriber.SubscriberApp<
+  AMQPSubscriberResponse.AMQPSubscriberResponse,
+  AMQPConsumeMessage.AMQPConsumeMessage,
+  E,
+  R
+>
 
 /**
  * @category models
  * @since 0.3.0
  */
-export interface AMQPSubscriber extends Subscriber.Subscriber<void, AMQPConsumeMessage.AMQPConsumeMessage> {
+export interface AMQPSubscriber
+  extends Subscriber.Subscriber<AMQPSubscriberResponse.AMQPSubscriberResponse, AMQPConsumeMessage.AMQPConsumeMessage>
+{
   readonly [TypeId]: TypeId
 }
 
@@ -104,7 +112,7 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                yield* app.pipe(
+                const response = yield* app.pipe(
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,
@@ -113,8 +121,20 @@ const subscribe = (
                     })
                     : Function.identity
                 )
-                span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                yield* channel.ack(message)
+                switch (response._tag) {
+                  case "Ack":
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                    yield* channel.ack(message)
+                    break
+                  case "Nack":
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                    yield* channel.nack(message, response.allUpTo, response.requeue)
+                    break
+                  case "Reject":
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
+                    yield* channel.reject(message, response.requeue)
+                    break
+                }
               }).pipe(
                 Effect.provide(AMQPConsumeMessage.layer(message)),
                 Effect.tapErrorCause((cause) =>

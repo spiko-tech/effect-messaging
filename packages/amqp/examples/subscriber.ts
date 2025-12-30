@@ -1,4 +1,10 @@
-import { AMQPChannel, AMQPConnection, AMQPConsumeMessage, AMQPSubscriber } from "@effect-messaging/amqp"
+import {
+  AMQPChannel,
+  AMQPConnection,
+  AMQPConsumeMessage,
+  AMQPSubscriber,
+  AMQPSubscriberResponse
+} from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
 const messageHandler = Effect.gen(function*(_) {
@@ -6,13 +12,16 @@ const messageHandler = Effect.gen(function*(_) {
 
   // You can add your message processing logic here
   yield* Effect.logInfo(`Received message: ${message.content.toString()}`)
+
+  // Return the response to indicate how the message should be handled
+  return AMQPSubscriberResponse.ack()
 })
 
 const program = Effect.gen(function*(_) {
   const subscriber = yield* AMQPSubscriber.make("my-queue")
 
-  // The subscriber will automatically handle message ack and nack
-  // based on the success or failure of the message handler
+  // The subscriber will handle message ack/nack/reject based on the response returned by the handler
+  // On handler failure, the message will be nacked
   yield* subscriber.subscribe(messageHandler)
 })
 

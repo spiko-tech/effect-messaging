@@ -27,3 +27,8 @@ export * as AMQPPublisher from "./AMQPPublisher.js"
  * @since 0.3.0
  */
 export * as AMQPSubscriber from "./AMQPSubscriber.js"
+
+/**
+ * @since 0.4.0
+ */
+export * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.js"

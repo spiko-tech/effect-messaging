@@ -1,7 +1,7 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
 import { Effect, TestServices } from "effect"
-import type * as NATSMessage from "../src/NATSMessage.js"
+import * as NATSMessage from "../src/NATSMessage.js"
 import * as NATSPublisher from "../src/NATSPublisher.js"
 import * as NATSSubscriber from "../src/NATSSubscriber.js"
 import { testConnection } from "./dependencies.js"
@@ -46,7 +46,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
 
         // Start the subscription
         yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
-          const message = yield* NATSSubscriber.NATSConsumeMessage
+          const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
         })))
 
@@ -97,7 +97,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
 
         yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
-          const message = yield* NATSSubscriber.NATSConsumeMessage
+          const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
         })))
 
@@ -134,7 +134,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
 
           const handler = Effect.gen(function*() {
-            const message = yield* NATSSubscriber.NATSConsumeMessage
+            const message = yield* NATSMessage.NATSConsumeMessage
             onHandlingStarted(message)
             yield* Effect.sleep("500 millis")
             onHandlingFinished(message)
@@ -177,7 +177,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
 
         const handler = Effect.gen(function*() {
-          const message = yield* NATSSubscriber.NATSConsumeMessage
+          const message = yield* NATSMessage.NATSConsumeMessage
           onHandlingStarted(message)
           yield* Effect.sleep("300 millis")
           onHandlingFinished(message)
@@ -218,7 +218,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
 
           const handler = Effect.gen(function*() {
-            const message = yield* NATSSubscriber.NATSConsumeMessage
+            const message = yield* NATSMessage.NATSConsumeMessage
             onHandlingStarted(message)
             // This will timeout since handlerTimeout is 200ms
             yield* Effect.sleep("500 millis")
@@ -261,7 +261,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         let messageCount = 0
 
         const handler = Effect.gen(function*() {
-          const message = yield* NATSSubscriber.NATSConsumeMessage
+          const message = yield* NATSMessage.NATSConsumeMessage
           messageCount++
           onHandlingStarted(message)
 

@@ -2,7 +2,9 @@
  * @since 0.1.0
  */
 import type * as NATSCore from "@nats-io/nats-core"
+import * as Context from "effect/Context"
 import type * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
@@ -59,3 +61,23 @@ export const make = (msg: NATSCore.Msg): NATSMessage => ({
   string: wrap(() => msg.string(), "Failed to convert NATS message to string"),
   msg
 })
+
+/**
+ * Context tag for accessing the current NATS message in a handler
+ *
+ * @category tags
+ * @since 0.3.0
+ */
+export const NATSConsumeMessage = Context.GenericTag<NATSMessage>(
+  "@effect-messaging/nats/NATSConsumeMessage"
+)
+
+/**
+ * Layer for providing the current NATS message to a handler
+ *
+ * @category layers
+ * @since 0.3.0
+ */
+export const layer = (
+  message: NATSMessage
+): Layer.Layer<NATSMessage> => Layer.succeed(NATSConsumeMessage, message)

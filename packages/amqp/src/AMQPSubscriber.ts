@@ -113,7 +113,7 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                const response = yield* app.pipe(
+                return yield* app.pipe(
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,
@@ -122,48 +122,49 @@ const subscribe = (
                     })
                     : Function.identity
                 )
-                yield* Match.value(response).pipe(
-                  Match.tag("Ack", () =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                      yield* channel.ack(message)
-                    })),
-                  Match.tag("Nack", (r) =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                      yield* channel.nack(message, r.allUpTo, r.requeue)
-                    })),
-                  Match.tag("Reject", (r) =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
-                      yield* channel.reject(message, r.requeue)
-                    })),
-                  Match.exhaustive
-                )
               }).pipe(
                 Effect.provide(AMQPConsumeMessage.layer(message)),
-                Effect.tapErrorCause((cause) =>
-                  Effect.gen(function*() {
-                    yield* Effect.logError(Cause.pretty(cause))
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                    span.attribute(
-                      "error.type",
-                      Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                Effect.matchCauseEffect({
+                  onSuccess: (response) =>
+                    Match.valueTags(response, {
+                      Ack: () =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                          yield* channel.ack(message)
+                        }),
+                      Nack: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                          yield* channel.nack(message, r.allUpTo, r.requeue)
+                        }),
+                      Reject: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
+                          yield* channel.reject(message, r.requeue)
+                        })
+                    }),
+                  onFailure: (cause) =>
+                    Effect.gen(function*() {
+                      yield* Effect.logError(Cause.pretty(cause))
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                      span.attribute(
+                        "error.type",
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                        )
                       )
-                    )
-                    span.attribute("error.stack", Cause.pretty(cause))
-                    span.attribute(
-                      "error.message",
-                      Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                      span.attribute("error.stack", Cause.pretty(cause))
+                      span.attribute(
+                        "error.message",
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                        )
                       )
-                    )
-                    yield* channel.nack(message, false, false)
-                  })
-                ),
+                      yield* channel.nack(message)
+                    })
+                }),
                 options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
                 Effect.withParentSpan(span)
               )

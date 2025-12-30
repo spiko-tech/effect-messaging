@@ -1,9 +1,9 @@
 /**
  * @since 0.3.0
  */
-import * as Subscriber from "@effect-messaging/core/Subscriber"
-import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
-import * as SubscriberError from "@effect-messaging/core/SubscriberError"
+import * as Consumer from "@effect-messaging/core/Consumer"
+import type * as ConsumerApp from "@effect-messaging/core/ConsumerApp"
+import * as ConsumerError from "@effect-messaging/core/ConsumerError"
 import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Options } from "amqplib"
@@ -18,14 +18,14 @@ import * as Stream from "effect/Stream"
 import * as AMQPChannel from "./AMQPChannel.js"
 import type * as AMQPConnection from "./AMQPConnection.js"
 import * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
+import type * as AMQPConsumerResponse from "./AMQPConsumerResponse.js"
 import type * as AMQPError from "./AMQPError.js"
-import type * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.js"
 
 /**
  * @category type ids
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPSubscriber")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPConsumer")
 
 /**
  * @category type ids
@@ -48,8 +48,8 @@ export interface AMQPPublishMessage {
  * @category models
  * @since 0.5.0
  */
-export type AMQPSubscriberApp<E, R> = SubscriberApp.SubscriberApp<
-  AMQPSubscriberResponse.AMQPSubscriberResponse,
+export type AMQPConsumerApp<E, R> = ConsumerApp.ConsumerApp<
+  AMQPConsumerResponse.AMQPConsumerResponse,
   AMQPConsumeMessage.AMQPConsumeMessage,
   E,
   R
@@ -59,8 +59,8 @@ export type AMQPSubscriberApp<E, R> = SubscriberApp.SubscriberApp<
  * @category models
  * @since 0.3.0
  */
-export interface AMQPSubscriber
-  extends Subscriber.Subscriber<AMQPSubscriberResponse.AMQPSubscriberResponse, AMQPConsumeMessage.AMQPConsumeMessage>
+export interface AMQPConsumer
+  extends Consumer.Consumer<AMQPConsumerResponse.AMQPConsumerResponse, AMQPConsumeMessage.AMQPConsumeMessage>
 {
   readonly [TypeId]: TypeId
 }
@@ -82,9 +82,9 @@ const subscribe = (
   channel: AMQPChannel.AMQPChannel,
   queueName: string,
   connectionProperties: AMQPConnection.AMQPConnectionServerProperties,
-  options: AMQPSubscriberOptions
+  options: AMQPConsumerOptions
 ) =>
-<E, R>(app: AMQPSubscriberApp<E, R>) =>
+<E, R>(app: AMQPConsumerApp<E, R>) =>
   Effect.gen(function*() {
     const consumeStream = yield* channel.consume(queueName)
     return yield* consumeStream.pipe(
@@ -118,8 +118,7 @@ const subscribe = (
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,
-                      onTimeout: () =>
-                        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
+                      onTimeout: () => new ConsumerError.ConsumerError({ reason: `AMQPConsumer: handler timed out` })
                     })
                     : Function.identity
                 )
@@ -173,7 +172,7 @@ const subscribe = (
         )
       ),
       Effect.mapError((error) =>
-        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })
+        new ConsumerError.ConsumerError({ reason: `AMQPConsumer failed to subscribe`, cause: error })
       )
     )
   })
@@ -182,10 +181,10 @@ const subscribe = (
 const healthCheck = (
   channel: AMQPChannel.AMQPChannel,
   queueName: string
-): Effect.Effect<void, SubscriberError.SubscriberError, never> =>
+): Effect.Effect<void, ConsumerError.ConsumerError, never> =>
   channel.checkQueue(queueName).pipe(
     Effect.catchTag("AMQPChannelError", (error) =>
-      new SubscriberError.SubscriberError({ reason: `Healthcheck failed`, cause: error })),
+      new ConsumerError.ConsumerError({ reason: `Healthcheck failed`, cause: error })),
     Effect.asVoid
   )
 
@@ -193,7 +192,7 @@ const healthCheck = (
  * @category models
  * @since 0.5.0
  */
-export interface AMQPSubscriberOptions {
+export interface AMQPConsumerOptions {
   uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
 }
@@ -204,9 +203,9 @@ export interface AMQPSubscriberOptions {
  */
 export const make = (
   queueName: string,
-  options: AMQPSubscriberOptions = {}
+  options: AMQPConsumerOptions = {}
 ): Effect.Effect<
-  AMQPSubscriber,
+  AMQPConsumer,
   AMQPError.AMQPConnectionError,
   AMQPChannel.AMQPChannel
 > =>
@@ -214,12 +213,12 @@ export const make = (
     const channel = yield* AMQPChannel.AMQPChannel
     const serverProperties = yield* channel.connection.serverProperties
 
-    const subscriber: AMQPSubscriber = {
+    const consumer: AMQPConsumer = {
       [TypeId]: TypeId,
-      [Subscriber.TypeId]: Subscriber.TypeId,
-      subscribe: subscribe(channel, queueName, serverProperties, options),
+      [Consumer.TypeId]: Consumer.TypeId,
+      serve: subscribe(channel, queueName, serverProperties, options),
       healthCheck: healthCheck(channel, queueName)
     }
 
-    return subscriber
+    return consumer
   })

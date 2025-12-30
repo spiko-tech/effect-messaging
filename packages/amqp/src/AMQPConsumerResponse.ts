@@ -6,7 +6,7 @@
  * @category type ids
  * @since 0.5.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPSubscriberResponse")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPConsumerResponse")
 
 /**
  * @category type ids
@@ -65,7 +65,7 @@ export interface Reject {
  * @category models
  * @since 0.5.0
  */
-export type AMQPSubscriberResponse = Ack | Nack | Reject
+export type AMQPConsumerResponse = Ack | Nack | Reject
 
 class AckImpl implements Ack {
   readonly [TypeId]: TypeId = TypeId
@@ -93,23 +93,23 @@ class RejectImpl implements Reject {
  * @category constructors
  * @since 0.5.0
  */
-export const ack = (): AMQPSubscriberResponse => new AckImpl()
+export const ack = (): AMQPConsumerResponse => new AckImpl()
 
 /**
  * @category constructors
  * @since 0.5.0
  */
-export const nack = (options?: NackOptions): AMQPSubscriberResponse => new NackImpl(options?.allUpTo, options?.requeue)
+export const nack = (options?: NackOptions): AMQPConsumerResponse => new NackImpl(options?.allUpTo, options?.requeue)
 
 /**
  * @category constructors
  * @since 0.5.0
  */
-export const reject = (options?: RejectOptions): AMQPSubscriberResponse => new RejectImpl(options?.requeue)
+export const reject = (options?: RejectOptions): AMQPConsumerResponse => new RejectImpl(options?.requeue)
 
 /**
  * @category guards
  * @since 0.5.0
  */
-export const isAMQPSubscriberResponse = (u: unknown): u is AMQPSubscriberResponse =>
+export const isAMQPConsumerResponse = (u: unknown): u is AMQPConsumerResponse =>
   typeof u === "object" && u !== null && TypeId in u

@@ -16,4 +16,9 @@ export * as Subscriber from "./Subscriber.js"
 /**
  * @since 0.3.0
  */
+export * as SubscriberApp from "./SubscriberApp.js"
+
+/**
+ * @since 0.3.0
+ */
 export * as SubscriberError from "./SubscriberError.js"

@@ -2,6 +2,7 @@
  * @since 0.1.0
  */
 import * as Subscriber from "@effect-messaging/core/Subscriber"
+import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
@@ -35,7 +36,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.7.0
  */
-export type JetStreamSubscriberApp<E, R> = Subscriber.SubscriberApp<
+export type JetStreamSubscriberApp<E, R> = SubscriberApp.SubscriberApp<
   JetStreamSubscriberResponse.JetStreamSubscriberResponse,
   JetStreamMessage.JetStreamMessage,
   E,

@@ -2,6 +2,7 @@
  * @since 0.3.0
  */
 import * as Subscriber from "@effect-messaging/core/Subscriber"
+import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
@@ -47,7 +48,7 @@ export interface AMQPPublishMessage {
  * @category models
  * @since 0.5.0
  */
-export type AMQPSubscriberApp<E, R> = Subscriber.SubscriberApp<
+export type AMQPSubscriberApp<E, R> = SubscriberApp.SubscriberApp<
   AMQPSubscriberResponse.AMQPSubscriberResponse,
   AMQPConsumeMessage.AMQPConsumeMessage,
   E,
@@ -162,7 +163,7 @@ const subscribe = (
                           (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
                         )
                       )
-                      yield* channel.nack(message)
+                      yield* channel.nack(message, false, false)
                     })
                 }),
                 options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,

@@ -1,5 +1,5 @@
 ---
-"@effect-messaging/core": minor
+"@effect-messaging/core": patch
 "@effect-messaging/amqp": minor
 "@effect-messaging/nats": minor
 ---

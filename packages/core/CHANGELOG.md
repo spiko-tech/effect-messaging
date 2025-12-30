@@ -1,5 +1,17 @@
 # @effect-messaging/core
 
+## 0.2.39
+
+### Patch Changes
+
+- [#115](https://github.com/spiko-tech/effect-messaging/pull/115) [`2b26c0d`](https://github.com/spiko-tech/effect-messaging/commit/2b26c0d3a217616bed3d8a9d7eb03eba47f17646) Thanks [@wewelll](https://github.com/wewelll)! - Add subscriber response types for explicit message acknowledgment control
+
+  - Added response type parameter to Subscriber interface in core
+  - Added AMQPSubscriberResponse module with Ack, Nack, and Reject response types
+  - Added JetStreamSubscriberResponse module with Ack, Nak, and Term response types
+  - Subscribers now return a response to control message acknowledgment behavior
+  - On handler error, messages are still nacked/rejected automatically
+
 ## 0.2.38
 
 ### Patch Changes

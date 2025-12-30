@@ -1,6 +1,6 @@
 {
   "name": "@effect-messaging/core",
-  "version": "0.2.38",
+  "version": "0.2.39",
   "type": "module",
   "license": "MIT",
   "description": "Message broker abstractions for Effect",

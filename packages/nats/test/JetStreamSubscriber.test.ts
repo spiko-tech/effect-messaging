@@ -2,7 +2,7 @@ import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
 import { Effect, Schedule, TestServices } from "effect"
 import * as JetStreamClient from "../src/JetStreamClient.js"
-import type * as JetStreamMessage from "../src/JetStreamMessage.js"
+import * as JetStreamMessage from "../src/JetStreamMessage.js"
 import * as JetStreamPublisher from "../src/JetStreamPublisher.js"
 import * as JetStreamSubscriber from "../src/JetStreamSubscriber.js"
 import * as JetStreamSubscriberResponse from "../src/JetStreamSubscriberResponse.js"
@@ -66,7 +66,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
           // Start the subscription
           yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
-            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onMessage(message)
             return JetStreamSubscriberResponse.ack()
           })))
@@ -112,7 +112,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
             const handler = Effect.gen(function*() {
-              const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+              const message = yield* JetStreamMessage.JetStreamConsumeMessage
               onHandlingStarted(message)
               yield* Effect.sleep("500 millis")
               onHandlingFinished(message)
@@ -172,7 +172,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
           const handler = Effect.gen(function*() {
-            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onHandlingStarted(message)
             yield* Effect.sleep("300 millis")
             onHandlingFinished(message)
@@ -231,7 +231,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             let attemptCount = 0
 
             const handler = Effect.gen(function*() {
-              const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+              const message = yield* JetStreamMessage.JetStreamConsumeMessage
               attemptCount++
               onHandlingStarted(message)
 
@@ -294,7 +294,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           let errorCount = 0
 
           const handler = Effect.gen(function*() {
-            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onHandlingStarted(message)
 
             errorCount++
@@ -345,7 +345,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           let attemptCount = 0
 
           const handler = Effect.gen(function*() {
-            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            const message = yield* JetStreamMessage.JetStreamConsumeMessage
             attemptCount++
             onHandlingStarted(message)
 
@@ -392,7 +392,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
           const handler = Effect.gen(function*() {
-            const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+            const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onHandlingStarted(message)
 
             // Terminate the message with a reason - message won't be redelivered

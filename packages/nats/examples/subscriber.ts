@@ -1,5 +1,6 @@
 import {
   JetStreamClient,
+  JetStreamMessage,
   JetStreamSubscriber,
   JetStreamSubscriberResponse,
   NATSConnection
@@ -7,7 +8,7 @@ import {
 import { Effect } from "effect"
 
 const messageHandler = Effect.gen(function*() {
-  const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+  const message = yield* JetStreamMessage.JetStreamConsumeMessage
 
   // Parse and process the message
   const data = message.string()

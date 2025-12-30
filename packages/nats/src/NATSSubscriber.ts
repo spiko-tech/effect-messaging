@@ -5,18 +5,16 @@ import * as Subscriber from "@effect-messaging/core/Subscriber"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
-import * as Context from "effect/Context"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
-import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSHeaders from "./NATSHeaders.js"
-import type * as NATSMessage from "./NATSMessage.js"
+import * as NATSMessage from "./NATSMessage.js"
 import type * as NATSSubscription from "./NATSSubscription.js"
 
 /**
@@ -47,26 +45,6 @@ export interface NATSSubscriberOptions {
   uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
 }
-
-/**
- * Context tag for accessing the current NATS message in a handler
- *
- * @category tags
- * @since 0.3.0
- */
-export const NATSConsumeMessage = Context.GenericTag<NATSMessage.NATSMessage>(
-  "@effect-messaging/nats/NATSConsumeMessage"
-)
-
-/**
- * Layer for providing the current NATS message to a handler
- *
- * @category layers
- * @since 0.3.0
- */
-export const layer = (
-  message: NATSMessage.NATSMessage
-): Layer.Layer<NATSMessage.NATSMessage> => Layer.succeed(NATSConsumeMessage, message)
 
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
@@ -115,31 +93,35 @@ const subscribe = (
                   })
                   : Function.identity
               )
-              span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
             }).pipe(
-              Effect.provide(layer(message)),
-              Effect.tapErrorCause((cause) =>
-                Effect.gen(function*() {
-                  // Log the error - NATS Core has no ack/nak mechanism, so we just log and continue
-                  yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "error")
-                  span.attribute(
-                    "error.type",
-                    Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+              Effect.provide(NATSMessage.layer(message)),
+              Effect.matchCauseEffect({
+                onSuccess: () =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
+                  }),
+                onFailure: (cause) =>
+                  Effect.gen(function*() {
+                    // Log the error - NATS Core has no ack/nak mechanism, so we just log and continue
+                    yield* Effect.logError(Cause.pretty(cause))
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "error")
+                    span.attribute(
+                      "error.type",
+                      Cause.squashWith(
+                        cause,
+                        (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                      )
                     )
-                  )
-                  span.attribute("error.stack", Cause.pretty(cause))
-                  span.attribute(
-                    "error.message",
-                    Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                    span.attribute("error.stack", Cause.pretty(cause))
+                    span.attribute(
+                      "error.message",
+                      Cause.squashWith(
+                        cause,
+                        (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                      )
                     )
-                  )
-                })
-              ),
+                  })
+              }),
               options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
               Effect.withParentSpan(span)
             )

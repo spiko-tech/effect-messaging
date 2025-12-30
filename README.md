@@ -222,6 +222,7 @@ To consume messages from a JetStream consumer:
 ```typescript
 import {
   JetStreamClient,
+  JetStreamMessage,
   JetStreamSubscriber,
   JetStreamSubscriberResponse,
   NATSConnection
@@ -229,7 +230,7 @@ import {
 import { Effect } from "effect"
 
 const messageHandler = Effect.gen(function* (_) {
-  const message = yield* JetStreamSubscriber.JetStreamConsumeMessage
+  const message = yield* JetStreamMessage.JetStreamConsumeMessage
 
   yield* Effect.logInfo(`Received: ${message.string()}`)
 

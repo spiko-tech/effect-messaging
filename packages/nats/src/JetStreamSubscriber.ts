@@ -5,17 +5,15 @@ import * as Subscriber from "@effect-messaging/core/Subscriber"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
-import * as Context from "effect/Context"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
-import * as Layer from "effect/Layer"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
 import type * as JetStreamConsumer from "./JetStreamConsumer.js"
-import type * as JetStreamMessage from "./JetStreamMessage.js"
+import * as JetStreamMessage from "./JetStreamMessage.js"
 import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
@@ -64,26 +62,6 @@ export interface JetStreamSubscriberOptions {
   handlerTimeout?: Duration.DurationInput
 }
 
-/**
- * Context tag for accessing the current JetStream message in a handler
- *
- * @category tags
- * @since 0.1.0
- */
-export const JetStreamConsumeMessage = Context.GenericTag<JetStreamMessage.JetStreamMessage>(
-  "@effect-messaging/nats/JetStreamConsumeMessage"
-)
-
-/**
- * Layer for providing the current JetStream message to a handler
- *
- * @category layers
- * @since 0.1.0
- */
-export const layer = (
-  message: JetStreamMessage.JetStreamMessage
-): Layer.Layer<JetStreamMessage.JetStreamMessage> => Layer.succeed(JetStreamConsumeMessage, message)
-
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
 const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
@@ -130,7 +108,7 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              const response = yield* app.pipe(
+              return yield* app.pipe(
                 options.handlerTimeout
                   ? Effect.timeoutFail({
                     duration: options.handlerTimeout,
@@ -139,43 +117,46 @@ const subscribe = (
                   })
                   : Function.identity
               )
-              yield* Match.value(response).pipe(
-                Match.tag("Ack", () =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                    yield* message.ack
-                  })),
-                Match.tag("Nak", (r) =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                    yield* message.nak(r.millis)
-                  })),
-                Match.tag("Term", (r) =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
-                    yield* message.term(r.reason)
-                  })),
-                Match.exhaustive
-              )
             }).pipe(
-              Effect.provide(layer(message)),
-              Effect.tapErrorCause((cause) =>
-                Effect.gen(function*() {
-                  yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                  span.attribute(
-                    "error.type",
-                    Cause.squashWith(cause, (_) =>
-                      Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`)
-                  )
-                  span.attribute("error.stack", Cause.pretty(cause))
-                  span.attribute(
-                    "error.message",
-                    Cause.squashWith(cause, (_) =>
-                      Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`)
-                  )
-                  yield* message.nak()
-                })
+              Effect.provide(JetStreamMessage.layer(message)),
+              Effect.matchCauseEffect(
+                {
+                  onSuccess: (res) =>
+                    Match.valueTags(res, {
+                      Ack: () =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                          yield* message.ack
+                        }),
+                      Nak: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                          yield* message.nak(r.millis)
+                        }),
+                      Term: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
+                          yield* message.term(r.reason)
+                        })
+                    }),
+                  onFailure: (cause) =>
+                    Effect.gen(function*() {
+                      yield* Effect.logError(Cause.pretty(cause))
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                      span.attribute(
+                        "error.type",
+                        Cause.squashWith(cause, (_) =>
+                          Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`)
+                      )
+                      span.attribute("error.stack", Cause.pretty(cause))
+                      span.attribute(
+                        "error.message",
+                        Cause.squashWith(cause, (_) =>
+                          Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`)
+                      )
+                      yield* message.nak()
+                    })
+                }
               ),
               options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
               Effect.withParentSpan(span)

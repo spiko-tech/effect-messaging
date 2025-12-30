@@ -3,7 +3,9 @@
  */
 import type * as JetStream from "@nats-io/jetstream"
 import type * as NATSCore from "@nats-io/nats-core"
+import * as Context from "effect/Context"
 import type * as Effect from "effect/Effect"
+import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import { wrap, wrapAsync } from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
@@ -81,3 +83,23 @@ export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
   string: () => jsMsg.string(),
   jsMsg
 })
+
+/**
+ * Context tag for accessing the current JetStream message in a handler
+ *
+ * @category tags
+ * @since 0.1.0
+ */
+export const JetStreamConsumeMessage = Context.GenericTag<JetStreamMessage>(
+  "@effect-messaging/nats/JetStreamConsumeMessage"
+)
+
+/**
+ * Layer for providing the current JetStream message to a handler
+ *
+ * @category layers
+ * @since 0.1.0
+ */
+export const layer = (
+  message: JetStreamMessage
+): Layer.Layer<JetStreamMessage> => Layer.succeed(JetStreamConsumeMessage, message)

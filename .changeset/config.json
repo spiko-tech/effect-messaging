@@ -15,8 +15,5 @@
     "snapshot": {
         "useCalculatedVersion": false,
         "prereleaseTemplate": "{tag}-{commit}"
-    },
-    "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
-        "onlyUpdatePeerDependentsWhenOutOfRange": true
     }
 }

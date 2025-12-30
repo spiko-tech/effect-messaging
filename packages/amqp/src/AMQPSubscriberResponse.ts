@@ -1,23 +1,23 @@
 /**
- * @since 0.4.0
+ * @since 0.5.0
  */
 import * as internal from "./internal/AMQPSubscriberResponse.js"
 
 /**
  * @category type ids
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const TypeId: unique symbol = internal.TypeId
 
 /**
  * @category type ids
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type TypeId = typeof TypeId
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface Ack {
   readonly [TypeId]: TypeId
@@ -26,7 +26,7 @@ export interface Ack {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface NackOptions {
   readonly allUpTo?: boolean
@@ -35,7 +35,7 @@ export interface NackOptions {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface Nack {
   readonly [TypeId]: TypeId
@@ -46,7 +46,7 @@ export interface Nack {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface RejectOptions {
   readonly requeue?: boolean
@@ -54,7 +54,7 @@ export interface RejectOptions {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface Reject {
   readonly [TypeId]: TypeId
@@ -64,30 +64,30 @@ export interface Reject {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type AMQPSubscriberResponse = Ack | Nack | Reject
 
 /**
  * @category constructors
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const ack: () => AMQPSubscriberResponse = internal.ack
 
 /**
  * @category constructors
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const nack: (options?: NackOptions) => AMQPSubscriberResponse = internal.nack
 
 /**
  * @category constructors
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const reject: (options?: RejectOptions) => AMQPSubscriberResponse = internal.reject
 
 /**
  * @category guards
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const isAMQPSubscriberResponse: (u: unknown) => u is AMQPSubscriberResponse = internal.isAMQPSubscriberResponse

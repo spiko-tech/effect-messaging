@@ -17,7 +17,7 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/core/Subscrib
 export type TypeId = typeof TypeId
 
 /**
- * @since 0.4.0
+ * @since 0.3.0
  * @category models
  */
 export type SubscriberApp<A, M, E = never, R = never> = Effect.Effect<A, E, R | M>

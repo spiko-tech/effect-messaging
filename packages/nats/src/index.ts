@@ -64,6 +64,11 @@ export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
 export * as JetStreamSubscriber from "./JetStreamSubscriber.js"
 
 /**
+ * @since 0.7.0
+ */
+export * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
+
+/**
  * @since 0.1.0
  */
 export * as NATSConnection from "./NATSConnection.js"

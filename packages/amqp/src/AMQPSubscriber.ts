@@ -44,7 +44,7 @@ export interface AMQPPublishMessage {
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type AMQPSubscriberApp<E, R> = Subscriber.SubscriberApp<
   AMQPSubscriberResponse.AMQPSubscriberResponse,
@@ -184,7 +184,7 @@ const healthCheck = (
 
 /**
  * @category models
- * @since 0.4.0
+ * @since 0.5.0
  */
 export interface AMQPSubscriberOptions {
   uninterruptible?: boolean

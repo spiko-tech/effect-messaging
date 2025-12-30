@@ -134,6 +134,10 @@ const subscribe = (
                     span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
                     yield* channel.reject(message, response.requeue)
                     break
+                  default: {
+                    const _exhaustive: never = response
+                    return _exhaustive
+                  }
                 }
               }).pipe(
                 Effect.provide(AMQPConsumeMessage.layer(message)),

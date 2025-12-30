@@ -1,12 +1,12 @@
-import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
+import { AMQPChannel, AMQPConnection, AMQPProducer } from "@effect-messaging/amqp"
 import { Context, Effect } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<MyPublisher, AMQPPublisher.AMQPPublisher>() {}
+class MyProducer extends Context.Tag("MyProducer")<MyProducer, AMQPProducer.AMQPProducer>() {}
 
 const program = Effect.gen(function*(_) {
-  const publisher = yield* MyPublisher
+  const producer = yield* MyProducer
 
-  yield* publisher.publish({
+  yield* producer.send({
     exchange: "my-exchange",
     routingKey: "my-routing-key",
     content: Buffer.from("{ \"hello\": \"world\" }"),
@@ -22,7 +22,7 @@ const program = Effect.gen(function*(_) {
 })
 
 const runnable = program.pipe(
-  Effect.provideServiceEffect(MyPublisher, AMQPPublisher.make()),
+  Effect.provideServiceEffect(MyProducer, AMQPProducer.make()),
   // provide the AMQP Channel dependency
   Effect.provide(AMQPChannel.layer()),
   // provide the AMQP Connection dependency

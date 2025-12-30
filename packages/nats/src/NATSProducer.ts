@@ -1,8 +1,8 @@
 /**
  * @since 0.3.0
  */
-import * as Publisher from "@effect-messaging/core/Publisher"
-import * as PublisherError from "@effect-messaging/core/PublisherError"
+import * as Producer from "@effect-messaging/core/Producer"
+import * as ProducerError from "@effect-messaging/core/ProducerError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
@@ -16,7 +16,7 @@ import * as NATSHeaders from "./NATSHeaders.js"
  * @category type ids
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSPublisher")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSProducer")
 
 /**
  * @category type ids
@@ -38,7 +38,7 @@ export interface NATSPublishMessage {
  * @category models
  * @since 0.3.0
  */
-export interface NATSPublisher extends Publisher.Publisher<NATSPublishMessage> {
+export interface NATSProducer extends Producer.Producer<NATSPublishMessage> {
   readonly [TypeId]: TypeId
 }
 
@@ -70,7 +70,7 @@ const publish = (
   connectionInfo: NATSCore.ServerInfo,
   retrySchedule: Schedule.Schedule<unknown, NATSError.NATSConnectionError>
 ) =>
-(message: NATSPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
+(message: NATSPublishMessage): Effect.Effect<void, ProducerError.ProducerError, never> =>
   Effect.useSpan(
     `nats.publish ${message.subject}`,
     {
@@ -90,8 +90,7 @@ const publish = (
         Effect.retry(retrySchedule),
         Effect.catchTag(
           "NATSConnectionError",
-          (error) =>
-            Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
+          (error) => Effect.fail(new ProducerError.ProducerError({ reason: "Failed to publish message", cause: error }))
         )
       )
   )
@@ -100,7 +99,7 @@ const publish = (
  * @category constructors
  * @since 0.3.0
  */
-export interface NATSPublisherConfig {
+export interface NATSProducerConfig {
   readonly retrySchedule?: Schedule.Schedule<unknown, NATSError.NATSConnectionError>
 }
 
@@ -109,9 +108,9 @@ export interface NATSPublisherConfig {
  * @since 0.3.0
  */
 export const make = (
-  config?: NATSPublisherConfig
+  config?: NATSProducerConfig
 ): Effect.Effect<
-  NATSPublisher,
+  NATSProducer,
   NATSError.NATSConnectionError,
   NATSConnection.NATSConnection
 > =>
@@ -124,11 +123,11 @@ export const make = (
       onSome: Effect.succeed
     })
 
-    const publisher: NATSPublisher = {
+    const producer: NATSProducer = {
       [TypeId]: TypeId,
-      [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.stop)
+      [Producer.TypeId]: Producer.TypeId,
+      send: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.stop)
     }
 
-    return publisher
+    return producer
   })

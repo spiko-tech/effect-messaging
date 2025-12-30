@@ -1,8 +1,8 @@
 import {
   JetStreamClient,
+  JetStreamConsumer,
+  JetStreamConsumerResponse,
   JetStreamMessage,
-  JetStreamSubscriber,
-  JetStreamSubscriberResponse,
   NATSConnection
 } from "@effect-messaging/nats"
 import { Effect } from "effect"
@@ -18,7 +18,7 @@ const messageHandler = Effect.gen(function*() {
   // - ack(): Acknowledge successful processing
   // - nak({ millis? }): Negative acknowledge, optionally delay redelivery
   // - term({ reason? }): Terminate message, stop redelivery
-  return JetStreamSubscriberResponse.ack()
+  return JetStreamConsumerResponse.ack()
 })
 
 const program = Effect.gen(function*() {
@@ -26,10 +26,10 @@ const program = Effect.gen(function*() {
 
   // Get an existing consumer from a stream
   // Note: The stream and consumer must already exist in NATS
-  const consumer = yield* client.consumers.get("my-stream", "my-consumer")
+  const natsConsumer = yield* client.consumers.get("my-stream", "my-consumer")
 
-  // Create a subscriber from the consumer
-  const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, {
+  // Create a consumer from the NATS consumer
+  const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer, {
     // Optional: make message processing uninterruptible
     uninterruptible: true,
     // Optional: set a timeout for message processing
@@ -39,7 +39,7 @@ const program = Effect.gen(function*() {
   yield* Effect.logInfo("Starting to consume messages...")
 
   // Subscribe to messages - this will run until interrupted
-  yield* subscriber.subscribe(messageHandler)
+  yield* consumer.serve(messageHandler)
 })
 
 // Create layers for the NATS connection and JetStream client

@@ -7,7 +7,13 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 **Key modules:**
 
 - `NATSConnection` - Core NATS connection (publish/subscribe/request)
-- `JetStreamClient` - JetStream consumer and publisher
+- `JetStreamClient` - JetStream client for stream and consumer access
+- `JetStreamProducer` - Producer implementation for JetStream (implements `@effect-messaging/core/Producer`)
+- `JetStreamConsumer` - Consumer implementation for JetStream (implements `@effect-messaging/core/Consumer`)
+- `JetStreamConsumerMessages` - Low-level NATS consumer wrapper with Effect operations
+- `JetStreamConsumerResponse` - Response types for consumer message handling (ack/nak/term)
+- `NATSProducer` - Producer implementation for NATS Core (implements `@effect-messaging/core/Producer`)
+- `NATSConsumer` - Consumer implementation for NATS Core (implements `@effect-messaging/core/Consumer`)
 - `JetStreamConsumerAPI` - Consumer management API
 - `JetStreamStreamAPI` - Stream management API
 - `JetStreamDirectStreamAPI` - Direct stream API for low-latency reads

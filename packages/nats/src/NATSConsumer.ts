@@ -1,8 +1,8 @@
 /**
  * @since 0.3.0
  */
-import * as Subscriber from "@effect-messaging/core/Subscriber"
-import * as SubscriberError from "@effect-messaging/core/SubscriberError"
+import * as Consumer from "@effect-messaging/core/Consumer"
+import * as ConsumerError from "@effect-messaging/core/ConsumerError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
@@ -21,7 +21,7 @@ import type * as NATSSubscription from "./NATSSubscription.js"
  * @category type ids
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSSubscriber")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSConsumer")
 
 /**
  * @category type ids
@@ -33,7 +33,7 @@ export type TypeId = typeof TypeId
  * @category models
  * @since 0.3.0
  */
-export interface NATSSubscriber extends Subscriber.Subscriber<void, NATSMessage.NATSMessage> {
+export interface NATSConsumer extends Consumer.Consumer<void, NATSMessage.NATSMessage> {
   readonly [TypeId]: TypeId
 }
 
@@ -41,7 +41,7 @@ export interface NATSSubscriber extends Subscriber.Subscriber<void, NATSMessage.
  * @category models
  * @since 0.3.0
  */
-export interface NATSSubscriberOptions {
+export interface NATSConsumerOptions {
   uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
 }
@@ -58,11 +58,11 @@ const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
 const subscribe = (
   subscription: NATSSubscription.NATSSubscription,
   connectionInfo: NATSCore.ServerInfo,
-  options: NATSSubscriberOptions
+  options: NATSConsumerOptions
 ) =>
 <E, R>(
   handler: Effect.Effect<void, E, R | NATSMessage.NATSMessage>
-): Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, NATSMessage.NATSMessage>> =>
+): Effect.Effect<void, ConsumerError.ConsumerError, Exclude<R, NATSMessage.NATSMessage>> =>
   subscription.stream.pipe(
     Stream.runForEach((message) =>
       Effect.fork(
@@ -88,8 +88,7 @@ const subscribe = (
                 options.handlerTimeout
                   ? Effect.timeoutFail({
                     duration: options.handlerTimeout,
-                    onTimeout: () =>
-                      new SubscriberError.SubscriberError({ reason: "NATSSubscriber: handler timed out" })
+                    onTimeout: () => new ConsumerError.ConsumerError({ reason: "NATSConsumer: handler timed out" })
                   })
                   : Function.identity
               )
@@ -129,26 +128,26 @@ const subscribe = (
       )
     ),
     Effect.mapError((error) =>
-      new SubscriberError.SubscriberError({ reason: "NATSSubscriber failed to subscribe", cause: error })
+      new ConsumerError.ConsumerError({ reason: "NATSConsumer failed to subscribe", cause: error })
     )
   )
 
 /** @internal */
 const healthCheck = (
   subscription: NATSSubscription.NATSSubscription
-): Effect.Effect<void, SubscriberError.SubscriberError, never> =>
+): Effect.Effect<void, ConsumerError.ConsumerError, never> =>
   subscription.isClosed.pipe(
     Effect.flatMap((isClosed) =>
       isClosed
-        ? Effect.fail(new SubscriberError.SubscriberError({ reason: "Subscription is closed" }))
+        ? Effect.fail(new ConsumerError.ConsumerError({ reason: "Subscription is closed" }))
         : Effect.void
     ),
     Effect.catchTag("NATSSubscriptionError", (error) =>
-      new SubscriberError.SubscriberError({ reason: "Healthcheck failed", cause: error }))
+      new ConsumerError.ConsumerError({ reason: "Healthcheck failed", cause: error }))
   )
 
 /**
- * Create a NATSSubscriber from an existing NATSSubscription.
+ * Create a NATSConsumer from an existing NATSSubscription.
  *
  * Note: NATS Core subscriptions are fire-and-forget. Messages are not persisted
  * and there is no acknowledgment mechanism. If the handler fails or times out,
@@ -159,9 +158,9 @@ const healthCheck = (
  */
 export const fromSubscription = (
   subscription: NATSSubscription.NATSSubscription,
-  options: NATSSubscriberOptions = {}
+  options: NATSConsumerOptions = {}
 ): Effect.Effect<
-  NATSSubscriber,
+  NATSConsumer,
   NATSError.NATSConnectionError,
   NATSConnection.NATSConnection
 > =>
@@ -172,18 +171,18 @@ export const fromSubscription = (
       onSome: Effect.succeed
     })
 
-    const subscriber: NATSSubscriber = {
+    const consumer: NATSConsumer = {
       [TypeId]: TypeId,
-      [Subscriber.TypeId]: Subscriber.TypeId,
-      subscribe: subscribe(subscription, connectionInfo, options),
+      [Consumer.TypeId]: Consumer.TypeId,
+      serve: subscribe(subscription, connectionInfo, options),
       healthCheck: healthCheck(subscription)
     }
 
-    return subscriber
+    return consumer
   })
 
 /**
- * Create a NATSSubscriber by subscribing to a subject.
+ * Create a NATSConsumer by subscribing to a subject.
  *
  * This is a convenience constructor that internally calls `subscribe()` on the connection.
  *
@@ -197,9 +196,9 @@ export const fromSubscription = (
 export const make = (
   subject: string,
   subscriptionOptions?: NATSCore.SubscriptionOptions,
-  options: NATSSubscriberOptions = {}
+  options: NATSConsumerOptions = {}
 ): Effect.Effect<
-  NATSSubscriber,
+  NATSConsumer,
   NATSError.NATSConnectionError,
   NATSConnection.NATSConnection
 > =>

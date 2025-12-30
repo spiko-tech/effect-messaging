@@ -14,6 +14,16 @@ export * as AMQPConnection from "./AMQPConnection.js"
 export * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
 
 /**
+ * @since 0.3.0
+ */
+export * as AMQPConsumer from "./AMQPConsumer.js"
+
+/**
+ * @since 0.5.0
+ */
+export * as AMQPConsumerResponse from "./AMQPConsumerResponse.js"
+
+/**
  * @since 0.1.0
  */
 export * as AMQPError from "./AMQPError.js"
@@ -21,14 +31,4 @@ export * as AMQPError from "./AMQPError.js"
 /**
  * @since 0.3.0
  */
-export * as AMQPPublisher from "./AMQPPublisher.js"
-
-/**
- * @since 0.3.0
- */
-export * as AMQPSubscriber from "./AMQPSubscriber.js"
-
-/**
- * @since 0.5.0
- */
-export * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.js"
+export * as AMQPProducer from "./AMQPProducer.js"

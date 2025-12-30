@@ -7,13 +7,13 @@ A message broker toolkit for Effect.
 - 🔌 Effectful wrappers for AMQP Connection and Channel
 - 🔄 Auto-reconnect functionality when the connection is lost
 - 🧘 Seamless consumption continuation after reconnection
-- 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
+- 🔭 Distributed tracing support (spans propagate from producers to consumers)
 
 ### NATS / JetStream features
 
 - 🔌 Effectful wrappers for NATS Connection and JetStream Client
-- 📦 Full JetStream support (streams, consumers, publishers, subscribers)
-- 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
+- 📦 Full JetStream support (streams, consumers, producers)
+- 🔭 Distributed tracing support (spans propagate from producers to consumers)
 
 > [!WARNING]
 > This project is currently **under development**. Please note that future releases might introduce breaking changes.
@@ -55,27 +55,27 @@ const runnable = program.pipe(
 Effect.runPromise(runnable)
 ```
 
-#### 2. Create a Publisher
+#### 2. Create a Producer
 
-To send messages, create a publisher:
+To send messages, create a producer:
 
 ```typescript
 import {
   AMQPChannel,
   AMQPConnection,
-  AMQPPublisher
+  AMQPProducer
 } from "@effect-messaging/amqp"
 import { Context, Effect } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<
-  MyPublisher,
-  AMQPPublisher.AMQPPublisher
+class MyProducer extends Context.Tag("MyProducer")<
+  MyProducer,
+  AMQPProducer.AMQPProducer
 >() {}
 
 const program = Effect.gen(function* (_) {
-  const publisher = yield* MyPublisher
+  const producer = yield* MyProducer
 
-  yield* publisher.publish({
+  yield* producer.send({
     exchange: "my-exchange",
     routingKey: "my-routing-key",
     content: Buffer.from('{ "hello": "world" }'),
@@ -91,7 +91,7 @@ const program = Effect.gen(function* (_) {
 })
 
 const runnable = program.pipe(
-  Effect.provideServiceEffect(MyPublisher, AMQPPublisher.make()),
+  Effect.provideServiceEffect(MyProducer, AMQPProducer.make()),
   // provide the AMQP Channel dependency
   Effect.provide(AMQPChannel.layer),
   // provide the AMQP Connection dependency
@@ -110,17 +110,17 @@ const runnable = program.pipe(
 Effect.runPromise(runnable)
 ```
 
-#### 3. Create a Subscriber
+#### 3. Create a Consumer
 
-To receive messages, create a subscriber:
+To receive messages, create a consumer:
 
 ```typescript
 import {
   AMQPChannel,
   AMQPConnection,
   AMQPConsumeMessage,
-  AMQPSubscriber,
-  AMQPSubscriberResponse
+  AMQPConsumer,
+  AMQPConsumerResponse
 } from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
@@ -134,14 +134,14 @@ const messageHandler = Effect.gen(function* (_) {
   // - ack(): Acknowledge successful processing
   // - nack({ allUpTo?, requeue? }): Negative acknowledge
   // - reject({ requeue? }): Reject the message
-  return AMQPSubscriberResponse.ack()
+  return AMQPConsumerResponse.ack()
 })
 
 const program = Effect.gen(function* (_) {
-  const subscriber = yield* AMQPSubscriber.make("my-queue")
+  const consumer = yield* AMQPConsumer.make("my-queue")
 
-  // Subscribe to messages - on handler error, messages are nacked automatically
-  yield* subscriber.subscribe(messageHandler)
+  // Serve messages - on handler error, messages are nacked automatically
+  yield* consumer.serve(messageHandler)
 })
 
 const runnable = program.pipe(
@@ -186,22 +186,22 @@ const runnable = program.pipe(
 Effect.runPromise(runnable)
 ```
 
-#### 2. Create a JetStream Publisher
+#### 2. Create a JetStream Producer
 
 To publish messages to a JetStream stream:
 
 ```typescript
 import {
   JetStreamClient,
-  JetStreamPublisher,
+  JetStreamProducer,
   NATSConnection
 } from "@effect-messaging/nats"
 import { Effect } from "effect"
 
 const program = Effect.gen(function* (_) {
-  const publisher = yield* JetStreamPublisher.make()
+  const producer = yield* JetStreamProducer.make()
 
-  yield* publisher.publish({
+  yield* producer.send({
     subject: "orders.created",
     payload: new TextEncoder().encode('{ "orderId": "123" }')
   })
@@ -215,7 +215,7 @@ const runnable = program.pipe(
 Effect.runPromise(runnable)
 ```
 
-#### 3. Create a JetStream Subscriber
+#### 3. Create a JetStream Consumer
 
 To consume messages from a JetStream consumer:
 
@@ -223,8 +223,8 @@ To consume messages from a JetStream consumer:
 import {
   JetStreamClient,
   JetStreamMessage,
-  JetStreamSubscriber,
-  JetStreamSubscriberResponse,
+  JetStreamConsumer,
+  JetStreamConsumerResponse,
   NATSConnection
 } from "@effect-messaging/nats"
 import { Effect } from "effect"
@@ -238,18 +238,18 @@ const messageHandler = Effect.gen(function* (_) {
   // - ack(): Acknowledge successful processing
   // - nak({ millis? }): Negative acknowledge, optionally delay redelivery
   // - term({ reason? }): Terminate message, stop redelivery
-  return JetStreamSubscriberResponse.ack()
+  return JetStreamConsumerResponse.ack()
 })
 
 const program = Effect.gen(function* (_) {
   const client = yield* JetStreamClient.JetStreamClient
 
   // Get an existing consumer (stream and consumer must already exist)
-  const consumer = yield* client.consumers.get("my-stream", "my-consumer")
-  const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+  const natsConsumer = yield* client.consumers.get("my-stream", "my-consumer")
+  const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
 
-  // Subscribe to messages - on handler error, messages are nacked automatically
-  yield* subscriber.subscribe(messageHandler)
+  // Serve messages - on handler error, messages are nacked automatically
+  yield* consumer.serve(messageHandler)
 })
 
 const runnable = program.pipe(
@@ -267,8 +267,8 @@ Effect.runPromise(runnable)
 
 **Basic abstractions:**
 
-- [x] Add a `Publisher` interface
-- [x] Add a `Subscriber` interface
+- [x] Add a `Producer` interface
+- [x] Add a `Consumer` interface
 
 **Application-level API for consumer apps:**
 
@@ -278,21 +278,21 @@ Effect.runPromise(runnable)
 **Higher-level declarative API:**
 
 - [ ] Add declarative API to define messages schemas
-- [ ] Generate publisher based on message definitions
+- [ ] Generate producer based on message definitions
 - [ ] Generate consumer app based on message definitions
 - [ ] AsyncAPI specification generation
 
 ### AMQP implementation
 
 - [x] Effect wrappers for AMQP Connection & AMQP Channel
-- [x] Implement publisher and subscriber
+- [x] Implement producer and consumer
 - [x] Integration tests
 - [x] Add examples & documentation
 
 ### NATS implementation
 
 - [x] Effect wrappers for `@nats-io/nats-core` and `@nats-io/jetstream`
-- [x] Implement publisher and subscriber
+- [x] Implement producer and consumer
 - [x] Integration tests
 - [x] Add examples & documentation
 

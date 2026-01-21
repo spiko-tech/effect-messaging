@@ -35,6 +35,28 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 - Avoid `any` types - use proper type casting with internal types when needed
 - Never use `null` - always use `Option` from Effect for optional values
 
+## Consumer API Pattern
+
+Consumers (`JetStreamConsumer`, `NATSConsumer`) follow the `@effect-messaging/core/Consumer` interface with two methods for serving handlers:
+
+- `serve(handler)` - Returns a `Layer<never, ConsumerError, ...>`. Recommended for production as it integrates with the Effect Layer system for lifecycle management.
+- `serveEffect(handler)` - Returns an `Effect<void, ConsumerError, Scope | ...>`. Useful for scripts, tests, or when you need direct Effect control.
+
+Example usage:
+
+```typescript
+// Layer-based (production)
+const ConsumerLive = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+    return consumer.serve(messageHandler)
+  })
+)
+
+// Effect-based (scripts/tests)
+yield * consumer.serveEffect(messageHandler)
+```
+
 ## Testing
 
 - Tests require a running NATS server at `localhost:4222` (use `docker-compose up -d` from root)

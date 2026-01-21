@@ -112,7 +112,9 @@ Effect.runPromise(runnable)
 
 #### 3. Create a Consumer
 
-To receive messages, create a consumer:
+To receive messages, create a consumer. There are two approaches:
+
+**Option A: Using `serve()` (Layer-based, recommended for production)**
 
 ```typescript
 import {
@@ -122,7 +124,7 @@ import {
   AMQPConsumer,
   AMQPConsumerResponse
 } from "@effect-messaging/amqp"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 
 const messageHandler = Effect.gen(function* (_) {
   const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
@@ -137,26 +139,47 @@ const messageHandler = Effect.gen(function* (_) {
   return AMQPConsumerResponse.ack()
 })
 
+// Create a Layer that manages the consumer lifecycle
+const ConsumerLive = Layer.unwrapEffect(
+  Effect.gen(function* (_) {
+    const consumer = yield* AMQPConsumer.make("my-queue")
+    return consumer.serve(messageHandler)
+  })
+)
+
+const ConnectionLive = AMQPConnection.layer({
+  hostname: "localhost",
+  port: 5672,
+  username: "guest",
+  password: "guest",
+  heartbeat: 10
+})
+
+// Run the consumer as a long-running service
+Effect.runPromise(
+  Layer.launch(ConsumerLive).pipe(
+    Effect.provide(AMQPChannel.layer),
+    Effect.provide(ConnectionLive)
+  )
+)
+```
+
+**Option B: Using `serveEffect()` (Effect-based, useful for scripts or tests)**
+
+```typescript
 const program = Effect.gen(function* (_) {
   const consumer = yield* AMQPConsumer.make("my-queue")
 
   // Serve messages - on handler error, messages are nacked automatically
-  yield* consumer.serve(messageHandler)
+  yield* consumer.serveEffect(messageHandler)
 })
 
 const runnable = program.pipe(
+  Effect.scoped,
   // provide the AMQP Channel dependency
   Effect.provide(AMQPChannel.layer),
   // provide the AMQP Connection dependency
-  Effect.provide(
-    AMQPConnection.layer({
-      hostname: "localhost",
-      port: 5672,
-      username: "guest",
-      password: "guest",
-      heartbeat: 10
-    })
-  )
+  Effect.provide(ConnectionLive)
 )
 
 // Run the program
@@ -217,7 +240,9 @@ Effect.runPromise(runnable)
 
 #### 3. Create a JetStream Consumer
 
-To consume messages from a JetStream consumer:
+To consume messages from a JetStream consumer. There are two approaches:
+
+**Option A: Using `serve()` (Layer-based, recommended for production)**
 
 ```typescript
 import {
@@ -227,7 +252,7 @@ import {
   JetStreamConsumerResponse,
   NATSConnection
 } from "@effect-messaging/nats"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 
 const messageHandler = Effect.gen(function* (_) {
   const message = yield* JetStreamMessage.JetStreamConsumeMessage
@@ -241,6 +266,34 @@ const messageHandler = Effect.gen(function* (_) {
   return JetStreamConsumerResponse.ack()
 })
 
+// Create a Layer that manages the consumer lifecycle
+const ConsumerLive = Layer.unwrapEffect(
+  Effect.gen(function* (_) {
+    const client = yield* JetStreamClient.JetStreamClient
+
+    // Get an existing consumer (stream and consumer must already exist)
+    const natsConsumer = yield* client.consumers.get("my-stream", "my-consumer")
+    const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+
+    return consumer.serve(messageHandler)
+  })
+)
+
+const NATSLive = NATSConnection.layerNode({ servers: ["localhost:4222"] })
+const JetStreamLive = JetStreamClient.layer()
+
+// Run the consumer as a long-running service
+Effect.runPromise(
+  Layer.launch(ConsumerLive).pipe(
+    Effect.provide(JetStreamLive),
+    Effect.provide(NATSLive)
+  )
+)
+```
+
+**Option B: Using `serveEffect()` (Effect-based, useful for scripts or tests)**
+
+```typescript
 const program = Effect.gen(function* (_) {
   const client = yield* JetStreamClient.JetStreamClient
 
@@ -249,7 +302,7 @@ const program = Effect.gen(function* (_) {
   const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
 
   // Serve messages - on handler error, messages are nacked automatically
-  yield* consumer.serve(messageHandler)
+  yield* consumer.serveEffect(messageHandler)
 })
 
 const runnable = program.pipe(

@@ -2,12 +2,14 @@
  * @since 0.3.0
  */
 import * as Consumer from "@effect-messaging/core/Consumer"
+import type * as ConsumerApp from "@effect-messaging/core/ConsumerApp"
 import * as ConsumerError from "@effect-messaging/core/ConsumerError"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
+import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
@@ -28,6 +30,12 @@ export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSCons
  * @since 0.3.0
  */
 export type TypeId = typeof TypeId
+
+/**
+ * @category models
+ * @since 0.3.0
+ */
+export type NATSConsumerApp<E, R> = ConsumerApp.ConsumerApp<void, NATSMessage.NATSMessage, E, R>
 
 /**
  * @category models
@@ -55,14 +63,12 @@ const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
 const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
 
 /** @internal */
-const subscribe = (
+const serveEffect = (
   subscription: NATSSubscription.NATSSubscription,
   connectionInfo: NATSCore.ServerInfo,
   options: NATSConsumerOptions
 ) =>
-<E, R>(
-  handler: Effect.Effect<void, E, R | NATSMessage.NATSMessage>
-): Effect.Effect<void, ConsumerError.ConsumerError, Exclude<R, NATSMessage.NATSMessage>> =>
+<E, R>(app: NATSConsumerApp<E, R>) =>
   subscription.stream.pipe(
     Stream.runForEach((message) =>
       Effect.fork(
@@ -84,7 +90,7 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              yield* handler.pipe(
+              yield* app.pipe(
                 options.handlerTimeout
                   ? Effect.timeoutFail({
                     duration: options.handlerTimeout,
@@ -133,6 +139,16 @@ const subscribe = (
   )
 
 /** @internal */
+const serveLayer = (
+  subscription: NATSSubscription.NATSSubscription,
+  connectionInfo: NATSCore.ServerInfo,
+  options: NATSConsumerOptions
+) =>
+<E, R>(
+  handler: Effect.Effect<void, E, R | NATSMessage.NATSMessage>
+) => Layer.scopedDiscard(serveEffect(subscription, connectionInfo, options)(handler))
+
+/** @internal */
 const healthCheck = (
   subscription: NATSSubscription.NATSSubscription
 ): Effect.Effect<void, ConsumerError.ConsumerError, never> =>
@@ -174,7 +190,8 @@ export const fromSubscription = (
     const consumer: NATSConsumer = {
       [TypeId]: TypeId,
       [Consumer.TypeId]: Consumer.TypeId,
-      serve: subscribe(subscription, connectionInfo, options),
+      serve: serveLayer(subscription, connectionInfo, options),
+      serveEffect: serveEffect(subscription, connectionInfo, options),
       healthCheck: healthCheck(subscription)
     }
 

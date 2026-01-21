@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, TestServices } from "effect"
+import { Effect, Layer, TestServices } from "effect"
 import * as NATSConsumer from "../src/NATSConsumer.js"
 import * as NATSMessage from "../src/NATSMessage.js"
 import * as NATSProducer from "../src/NATSProducer.js"
@@ -44,11 +44,11 @@ describe("NATSConsumer", { sequential: true }, () => {
 
         const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
 
-        // Start the subscription
-        yield* Effect.fork(consumer.serve(Effect.gen(function*() {
+        // Start the subscription using Layer.launch
+        yield* Effect.fork(Layer.launch(consumer.serve(Effect.gen(function*() {
           const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
-        })))
+        }))))
 
         // Give the subscription time to start
         yield* Effect.sleep("100 millis")
@@ -76,7 +76,7 @@ describe("NATSConsumer", { sequential: true }, () => {
           content: new TextEncoder().encode("Message 3"),
           times: 3
         })
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.provide(testConnection), TestServices.provideLive))
 
     it.effect("Should NOT receive messages published before subscription started (no persistence)", () =>
       Effect.gen(function*() {
@@ -96,10 +96,10 @@ describe("NATSConsumer", { sequential: true }, () => {
         // Now start the consumer
         const consumer = yield* NATSConsumer.make(TEST_SUBJECT)
 
-        yield* Effect.fork(consumer.serve(Effect.gen(function*() {
+        yield* Effect.fork(Layer.launch(consumer.serve(Effect.gen(function*() {
           const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
-        })))
+        }))))
 
         // Give the subscription time to start
         yield* Effect.sleep("100 millis")
@@ -120,7 +120,7 @@ describe("NATSConsumer", { sequential: true }, () => {
         expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
           subject: TEST_SUBJECT
         }))
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.provide(testConnection), TestServices.provideLive))
   })
 
   describe("interruptable consumers", { sequential: true }, () => {
@@ -142,8 +142,8 @@ describe("NATSConsumer", { sequential: true }, () => {
 
           const consumer = yield* NATSConsumer.make(TEST_SUBJECT)
 
-          // Start the subscription
-          const subscriptionFiber = yield* Effect.fork(consumer.serve(handler))
+          // Start the subscription using Layer.launch
+          const subscriptionFiber = yield* Effect.fork(Layer.launch(consumer.serve(handler)))
 
           // Give the subscription time to start
           yield* Effect.sleep("100 millis")
@@ -165,7 +165,7 @@ describe("NATSConsumer", { sequential: true }, () => {
 
           // The message handling should be interrupted (not finished)
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+        }).pipe(Effect.provide(testConnection), TestServices.provideLive),
       { timeout: 15000 }
     )
 
@@ -185,8 +185,8 @@ describe("NATSConsumer", { sequential: true }, () => {
 
         const consumer = yield* NATSConsumer.make(TEST_SUBJECT, undefined, { uninterruptible: true })
 
-        // Start the subscription
-        const subscriptionFiber = yield* Effect.fork(consumer.serve(handler))
+        // Start the subscription using Layer.launch
+        const subscriptionFiber = yield* Effect.fork(Layer.launch(consumer.serve(handler)))
 
         // Give the subscription time to start
         yield* Effect.sleep("100 millis")
@@ -206,7 +206,7 @@ describe("NATSConsumer", { sequential: true }, () => {
         // The subscription should be uninterrupted - wait for the message to be consumed
         yield* Effect.sleep("300 millis")
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
+      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
 
     it.effect(
       "Should timeout the handler when handlerTimeout is set",
@@ -229,8 +229,8 @@ describe("NATSConsumer", { sequential: true }, () => {
             handlerTimeout: "200 millis"
           })
 
-          // Start the subscription
-          yield* Effect.fork(consumer.serve(handler))
+          // Start the subscription using Layer.launch
+          yield* Effect.fork(Layer.launch(consumer.serve(handler)))
 
           // Give the subscription time to start
           yield* Effect.sleep("100 millis")
@@ -246,7 +246,7 @@ describe("NATSConsumer", { sequential: true }, () => {
           // Handler started but did not finish due to timeout
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+        }).pipe(Effect.provide(testConnection), TestServices.provideLive),
       { timeout: 15000 }
     )
   })
@@ -275,8 +275,8 @@ describe("NATSConsumer", { sequential: true }, () => {
 
         const consumer = yield* NATSConsumer.make(TEST_SUBJECT)
 
-        // Start the subscription
-        yield* Effect.fork(consumer.serve(handler))
+        // Start the subscription using Layer.launch
+        yield* Effect.fork(Layer.launch(consumer.serve(handler)))
 
         // Give the subscription time to start
         yield* Effect.sleep("100 millis")
@@ -300,7 +300,7 @@ describe("NATSConsumer", { sequential: true }, () => {
         yield* Effect.sleep("200 millis")
         expect(onHandlingStarted).toHaveBeenCalledTimes(2)
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
+      }).pipe(Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
   })
 
   describe("healthCheck", () => {
@@ -310,6 +310,6 @@ describe("NATSConsumer", { sequential: true }, () => {
 
         // Health check should succeed
         yield* consumer.healthCheck
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.provide(testConnection), TestServices.provideLive))
   })
 })

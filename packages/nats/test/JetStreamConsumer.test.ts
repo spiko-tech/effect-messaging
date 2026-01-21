@@ -1,28 +1,28 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Layer, Schedule, TestServices } from "effect"
 import * as JetStreamClient from "../src/JetStreamClient.js"
+import * as JetStreamConsumer from "../src/JetStreamConsumer.js"
+import * as JetStreamConsumerResponse from "../src/JetStreamConsumerResponse.js"
 import * as JetStreamMessage from "../src/JetStreamMessage.js"
-import * as JetStreamPublisher from "../src/JetStreamPublisher.js"
-import * as JetStreamSubscriber from "../src/JetStreamSubscriber.js"
-import * as JetStreamSubscriberResponse from "../src/JetStreamSubscriberResponse.js"
+import * as JetStreamProducer from "../src/JetStreamProducer.js"
 import { makeTestConsumer, makeTestStream, purgeTestStream, testJetStream } from "./dependencies.js"
 
 // Use unique names for this test file to avoid conflicts with other test files
-const TEST_STREAM = "SUBSCRIBER_TEST_STREAM"
-const TEST_CONSUMER = "SUBSCRIBER_TEST_CONSUMER"
-const TEST_SUBJECT = "subscriber.test.subject"
+const TEST_STREAM = "CONSUMER_TEST_STREAM"
+const TEST_CONSUMER = "CONSUMER_TEST_CONSUMER"
+const TEST_SUBJECT = "consumer.test.subject"
 
 const publishAndAssertConsume = (
-  { content, onMessage, publisher, times }: {
-    publisher: JetStreamPublisher.JetStreamPublisher
+  { content, onMessage, producer, times }: {
+    producer: JetStreamProducer.JetStreamProducer
     onMessage: Mock<(message: JetStreamMessage.JetStreamMessage) => void>
     content: Uint8Array
     times: number
   }
 ) =>
   Effect.gen(function*() {
-    yield* publisher.publish({
+    yield* producer.send({
       subject: TEST_SUBJECT,
       payload: content
     })
@@ -44,14 +44,14 @@ const setup = Effect.gen(function*() {
   yield* purgeTestStream(TEST_STREAM)
 })
 
-describe("JetStreamSubscriber", { sequential: true }, () => {
-  describe("subscribe", () => {
+describe("JetStreamConsumer", { sequential: true }, () => {
+  describe("serve", () => {
     it.effect("Should consume published events", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* setup
 
-          const publisher = yield* JetStreamPublisher.make({
+          const producer = yield* JetStreamProducer.make({
             retrySchedule: Schedule.exponential("100 millis", 1.5).pipe(
               Schedule.jittered,
               Schedule.intersect(Schedule.recurs(10))
@@ -59,21 +59,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           })
 
           const client = yield* JetStreamClient.JetStreamClient
-          const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-          const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+          const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+          const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
 
           const onMessage = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
-          // Start the subscription
-          yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
+          // Start the subscription using Layer.launch
+          yield* Effect.fork(Layer.launch(consumer.serve(Effect.gen(function*() {
             const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onMessage(message)
-            return JetStreamSubscriberResponse.ack()
-          })))
+            return JetStreamConsumerResponse.ack()
+          }))))
 
           // Message 1
           yield* publishAndAssertConsume({
-            publisher,
+            producer,
             onMessage,
             content: new TextEncoder().encode("Message 1"),
             times: 1
@@ -81,7 +81,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
           // Message 2
           yield* publishAndAssertConsume({
-            publisher,
+            producer,
             onMessage,
             content: new TextEncoder().encode("Message 2"),
             times: 2
@@ -89,7 +89,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
           // Message 3
           yield* publishAndAssertConsume({
-            publisher,
+            producer,
             onMessage,
             content: new TextEncoder().encode("Message 3"),
             times: 3
@@ -98,7 +98,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
       ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
   })
 
-  describe("interruptable subscribers", { sequential: true }, () => {
+  describe("interruptable consumers", { sequential: true }, () => {
     it.effect(
       "Should interrupt the handler if the subscription fiber is interrupted, and the message should be consumed again",
       () =>
@@ -106,7 +106,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           Effect.gen(function*() {
             yield* setup
 
-            const publisher = yield* JetStreamPublisher.make()
+            const producer = yield* JetStreamProducer.make()
 
             const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
             const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
@@ -116,21 +116,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
               onHandlingStarted(message)
               yield* Effect.sleep("500 millis")
               onHandlingFinished(message)
-              return JetStreamSubscriberResponse.ack()
+              return JetStreamConsumerResponse.ack()
             })
 
             const client = yield* JetStreamClient.JetStreamClient
 
             const startSubscription = Effect.gen(function*() {
-              const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-              const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
-              yield* subscriber.subscribe(handler)
+              const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+              const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+              return yield* Layer.launch(consumer.serve(handler))
             })
 
             // Start the subscription
             const subscriptionFiber1 = yield* Effect.fork(startSubscription)
 
-            yield* publisher.publish({
+            yield* producer.send({
               subject: TEST_SUBJECT,
               payload: new TextEncoder().encode("My Message that will be interrupted")
             })
@@ -161,12 +161,12 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
       { timeout: 15000 }
     )
 
-    it.effect("Should not interrupt the handler if the subscriber is uninterruptible", () =>
+    it.effect("Should not interrupt the handler if the consumer is uninterruptible", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* setup
 
-          const publisher = yield* JetStreamPublisher.make()
+          const producer = yield* JetStreamProducer.make()
 
           const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
           const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
@@ -176,21 +176,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             onHandlingStarted(message)
             yield* Effect.sleep("300 millis")
             onHandlingFinished(message)
-            return JetStreamSubscriberResponse.ack()
+            return JetStreamConsumerResponse.ack()
           })
 
           const client = yield* JetStreamClient.JetStreamClient
 
           const startSubscription = Effect.gen(function*() {
-            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, { uninterruptible: true })
-            yield* subscriber.subscribe(handler)
+            const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer, { uninterruptible: true })
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
           const subscriptionFiber1 = yield* Effect.fork(startSubscription)
 
-          yield* publisher.publish({
+          yield* producer.send({
             subject: TEST_SUBJECT,
             payload: new TextEncoder().encode("My Message that will NOT be interrupted")
           })
@@ -224,7 +224,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           Effect.gen(function*() {
             yield* setup
 
-            const publisher = yield* JetStreamPublisher.make()
+            const producer = yield* JetStreamProducer.make()
 
             const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
             const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
@@ -243,23 +243,23 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
                 yield* Effect.sleep("50 millis")
               }
               onHandlingFinished(message)
-              return JetStreamSubscriberResponse.ack()
+              return JetStreamConsumerResponse.ack()
             })
 
             const client = yield* JetStreamClient.JetStreamClient
 
             const startSubscription = Effect.gen(function*() {
-              const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-              const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, {
+              const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+              const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer, {
                 handlerTimeout: "300 millis"
               })
-              yield* subscriber.subscribe(handler)
+              return yield* Layer.launch(consumer.serve(handler))
             })
 
             // Start the subscription
             yield* Effect.fork(startSubscription)
 
-            yield* publisher.publish({
+            yield* producer.send({
               subject: TEST_SUBJECT,
               payload: new TextEncoder().encode("My Message that will timeout on first attempt")
             })
@@ -287,7 +287,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
         Effect.gen(function*() {
           yield* setup
 
-          const publisher = yield* JetStreamPublisher.make()
+          const producer = yield* JetStreamProducer.make()
 
           const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
           const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
@@ -304,21 +304,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             }
 
             onHandlingFinished(message)
-            return JetStreamSubscriberResponse.ack()
+            return JetStreamConsumerResponse.ack()
           })
 
           const client = yield* JetStreamClient.JetStreamClient
 
           const startSubscription = Effect.gen(function*() {
-            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
-            yield* subscriber.subscribe(handler)
+            const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
           yield* Effect.fork(startSubscription)
 
-          yield* publisher.publish({
+          yield* producer.send({
             subject: TEST_SUBJECT,
             payload: new TextEncoder().encode("Message that will fail first time")
           })
@@ -339,7 +339,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
         Effect.gen(function*() {
           yield* setup
 
-          const publisher = yield* JetStreamPublisher.make()
+          const producer = yield* JetStreamProducer.make()
 
           const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
           let attemptCount = 0
@@ -351,25 +351,25 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
             if (attemptCount === 1) {
               // First attempt: nak with delay to trigger redelivery
-              return JetStreamSubscriberResponse.nak({ millis: 100 })
+              return JetStreamConsumerResponse.nak({ millis: 100 })
             }
 
             // Subsequent attempts: ack
-            return JetStreamSubscriberResponse.ack()
+            return JetStreamConsumerResponse.ack()
           })
 
           const client = yield* JetStreamClient.JetStreamClient
 
           const startSubscription = Effect.gen(function*() {
-            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
-            yield* subscriber.subscribe(handler)
+            const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
           yield* Effect.fork(startSubscription)
 
-          yield* publisher.publish({
+          yield* producer.send({
             subject: TEST_SUBJECT,
             payload: new TextEncoder().encode("Message that will be nacked first")
           })
@@ -387,7 +387,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
         Effect.gen(function*() {
           yield* setup
 
-          const publisher = yield* JetStreamPublisher.make()
+          const producer = yield* JetStreamProducer.make()
 
           const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
@@ -396,21 +396,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             onHandlingStarted(message)
 
             // Terminate the message with a reason - message won't be redelivered
-            return JetStreamSubscriberResponse.term({ reason: "Intentionally terminated for testing" })
+            return JetStreamConsumerResponse.term({ reason: "Intentionally terminated for testing" })
           })
 
           const client = yield* JetStreamClient.JetStreamClient
 
           const startSubscription = Effect.gen(function*() {
-            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
-            yield* subscriber.subscribe(handler)
+            const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+            const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
           yield* Effect.fork(startSubscription)
 
-          yield* publisher.publish({
+          yield* producer.send({
             subject: TEST_SUBJECT,
             payload: new TextEncoder().encode("Message that will be terminated")
           })
@@ -435,11 +435,11 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           yield* setup
 
           const client = yield* JetStreamClient.JetStreamClient
-          const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-          const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+          const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+          const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
 
           // Health check should succeed
-          yield* subscriber.healthCheck
+          yield* consumer.healthCheck
         })
       ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
   })

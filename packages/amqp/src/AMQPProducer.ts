@@ -1,8 +1,8 @@
 /**
  * @since 0.3.0
  */
-import * as Publisher from "@effect-messaging/core/Publisher"
-import * as PublisherError from "@effect-messaging/core/PublisherError"
+import * as Producer from "@effect-messaging/core/Producer"
+import * as ProducerError from "@effect-messaging/core/ProducerError"
 import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
 import * as Schedule from "effect/Schedule"
@@ -13,7 +13,7 @@ import type * as AMQPError from "./AMQPError.js"
  * @category type ids
  * @since 0.3.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPPublisher")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPProducer")
 
 /**
  * @category type ids
@@ -36,7 +36,7 @@ export interface AMQPPublishMessage {
  * @category models
  * @since 0.3.0
  */
-export interface AMQPPublisher extends Publisher.Publisher<AMQPPublishMessage> {
+export interface AMQPProducer extends Producer.Producer<AMQPPublishMessage> {
   readonly [TypeId]: TypeId
 }
 
@@ -45,12 +45,12 @@ const publish = (
   channel: AMQPChannel.AMQPChannel,
   retrySchedule: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
 ) =>
-(message: AMQPPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
+(message: AMQPPublishMessage): Effect.Effect<void, ProducerError.ProducerError, never> =>
   channel.publish(message.exchange, message.routingKey, message.content, message.options).pipe(
     Effect.retry(retrySchedule),
     Effect.catchTag(
       "AMQPChannelError",
-      (error) => Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
+      (error) => Effect.fail(new ProducerError.ProducerError({ reason: "Failed to publish message", cause: error }))
     ),
     Effect.map(() => undefined)
   )
@@ -59,7 +59,7 @@ const publish = (
  * @category constructors
  * @since 0.3.2
  */
-export interface AMQPPublisherConfig {
+export interface AMQPProducerConfig {
   readonly retrySchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
 }
 
@@ -67,15 +67,15 @@ export interface AMQPPublisherConfig {
  * @category constructors
  * @since 0.3.0
  */
-export const make = (config?: AMQPPublisherConfig): Effect.Effect<AMQPPublisher, never, AMQPChannel.AMQPChannel> =>
+export const make = (config?: AMQPProducerConfig): Effect.Effect<AMQPProducer, never, AMQPChannel.AMQPChannel> =>
   Effect.gen(function*() {
     const channel = yield* AMQPChannel.AMQPChannel
 
-    const publisher: AMQPPublisher = {
+    const producer: AMQPProducer = {
       [TypeId]: TypeId,
-      [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(channel, config?.retrySchedule ?? Schedule.stop)
+      [Producer.TypeId]: Producer.TypeId,
+      send: publish(channel, config?.retrySchedule ?? Schedule.stop)
     }
 
-    return publisher
+    return producer
   })

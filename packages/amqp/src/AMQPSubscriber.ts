@@ -150,18 +150,18 @@ const subscribe = (
                       span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
                       span.attribute(
                         "error.type",
-                        Cause.squashWith(
+                        String(Cause.squashWith(
                           cause,
-                          (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
-                        )
+                          (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
+                        ))
                       )
                       span.attribute("error.stack", Cause.pretty(cause))
                       span.attribute(
                         "error.message",
-                        Cause.squashWith(
+                        String(Cause.squashWith(
                           cause,
                           (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-                        )
+                        ))
                       )
                       yield* channel.nack(message, false, false)
                     })

@@ -1,5 +1,15 @@
 # @effect-messaging/amqp
 
+## 0.5.1
+
+### Patch Changes
+
+- [#120](https://github.com/spiko-tech/effect-messaging/pull/120) [`d439eed`](https://github.com/spiko-tech/effect-messaging/commit/d439eeded70ef26e57600bdac3acecf7c7455b9b) Thanks [@wewelll](https://github.com/wewelll)! - Fix error span attributes for Datadog error tracking
+
+  - Changed `tag` to `_tag` property check to correctly extract error type from Effect's TaggedError
+  - Wrapped `Cause.squashWith` calls in `String()` to ensure span attributes are always strings
+  - This ensures `error.type`, `error.message`, and `error.stack` are properly set for Datadog error tracking
+
 ## 0.5.0
 
 ### Minor Changes

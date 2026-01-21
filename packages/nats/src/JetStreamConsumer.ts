@@ -9,9 +9,11 @@ import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
+import * as Layer from "effect/Layer"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
+import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import type * as JetStreamConsumerMessages from "./JetStreamConsumerMessages.js"
 import type * as JetStreamConsumerResponse from "./JetStreamConsumerResponse.js"
@@ -75,14 +77,18 @@ const ATTR_MESSAGING_NATS_SEQUENCE_STREAM = "messaging.nats.sequence.stream" as 
 const ATTR_MESSAGING_NATS_SEQUENCE_CONSUMER = "messaging.nats.sequence.consumer" as const
 
 /** @internal */
-const subscribe = (
+const serveEffect = (
   consumerMessages: JetStreamConsumerMessages.ConsumerMessages,
   connectionInfo: NATSCore.ServerInfo,
   options: JetStreamConsumerOptions
 ) =>
 <E, R>(
   app: JetStreamConsumerApp<E, R>
-): Effect.Effect<void, ConsumerError.ConsumerError, Exclude<R, JetStreamMessage.JetStreamMessage>> =>
+): Effect.Effect<
+  void,
+  ConsumerError.ConsumerError,
+  Scope.Scope | Exclude<R, Consumer.Provided<JetStreamMessage.JetStreamMessage>>
+> =>
   consumerMessages.stream.pipe(
     Stream.runForEach((message) =>
       Effect.fork(
@@ -144,14 +150,18 @@ const subscribe = (
                       span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
                       span.attribute(
                         "error.type",
-                        Cause.squashWith(cause, (_) =>
-                          Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`)
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                        )
                       )
                       span.attribute("error.stack", Cause.pretty(cause))
                       span.attribute(
                         "error.message",
-                        Cause.squashWith(cause, (_) =>
-                          Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`)
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                        )
                       )
                       yield* message.nak()
                     })
@@ -167,6 +177,20 @@ const subscribe = (
       new ConsumerError.ConsumerError({ reason: "JetStreamConsumer failed to subscribe", cause: error })
     )
   )
+
+/** @internal */
+const serveLayer = (
+  consumerMessages: JetStreamConsumerMessages.ConsumerMessages,
+  connectionInfo: NATSCore.ServerInfo,
+  options: JetStreamConsumerOptions
+) =>
+<E, R>(
+  app: JetStreamConsumerApp<E, R>
+): Layer.Layer<
+  never,
+  ConsumerError.ConsumerError,
+  Exclude<R, Consumer.Provided<JetStreamMessage.JetStreamMessage>>
+> => Layer.scopedDiscard(serveEffect(consumerMessages, connectionInfo, options)(app))
 
 /** @internal */
 const healthCheck = (
@@ -206,7 +230,8 @@ export const fromConsumerMessages = (
     const consumer: JetStreamConsumer = {
       [TypeId]: TypeId,
       [Consumer.TypeId]: Consumer.TypeId,
-      serve: subscribe(consumerMessages, connectionInfo, options),
+      serve: serveLayer(consumerMessages, connectionInfo, options),
+      serveEffect: serveEffect(consumerMessages, connectionInfo, options),
       healthCheck: healthCheck(natsConsumer)
     }
 

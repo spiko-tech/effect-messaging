@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Layer, Schedule, TestServices } from "effect"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import * as JetStreamConsumer from "../src/JetStreamConsumer.js"
 import * as JetStreamConsumerResponse from "../src/JetStreamConsumerResponse.js"
@@ -64,12 +64,12 @@ describe("JetStreamConsumer", { sequential: true }, () => {
 
           const onMessage = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
-          // Start the subscription
-          yield* Effect.fork(consumer.serve(Effect.gen(function*() {
+          // Start the subscription using Layer.launch
+          yield* Effect.fork(Layer.launch(consumer.serve(Effect.gen(function*() {
             const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onMessage(message)
             return JetStreamConsumerResponse.ack()
-          })))
+          }))))
 
           // Message 1
           yield* publishAndAssertConsume({
@@ -124,7 +124,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
             const startSubscription = Effect.gen(function*() {
               const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
               const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
-              yield* consumer.serve(handler)
+              return yield* Layer.launch(consumer.serve(handler))
             })
 
             // Start the subscription
@@ -184,7 +184,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
           const startSubscription = Effect.gen(function*() {
             const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
             const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer, { uninterruptible: true })
-            yield* consumer.serve(handler)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
@@ -253,7 +253,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
               const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer, {
                 handlerTimeout: "300 millis"
               })
-              yield* consumer.serve(handler)
+              return yield* Layer.launch(consumer.serve(handler))
             })
 
             // Start the subscription
@@ -312,7 +312,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
           const startSubscription = Effect.gen(function*() {
             const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
             const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
-            yield* consumer.serve(handler)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
@@ -363,7 +363,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
           const startSubscription = Effect.gen(function*() {
             const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
             const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
-            yield* consumer.serve(handler)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription
@@ -404,7 +404,7 @@ describe("JetStreamConsumer", { sequential: true }, () => {
           const startSubscription = Effect.gen(function*() {
             const natsConsumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
             const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
-            yield* consumer.serve(handler)
+            return yield* Layer.launch(consumer.serve(handler))
           })
 
           // Start the subscription

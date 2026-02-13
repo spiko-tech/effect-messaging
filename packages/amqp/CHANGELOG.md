@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.6.0
+
+### Minor Changes
+
+- [#126](https://github.com/spiko-tech/effect-messaging/pull/126) [`f5de7a7`](https://github.com/spiko-tech/effect-messaging/commit/f5de7a701d73c34f636307ae3fd5a0ed17128e39) Thanks [@fondation451](https://github.com/fondation451)! - Add `prefetch` option to `AMQPChannel.consume()` (default: 50) and `concurrency` option to `AMQPSubscriberOptions` to override the channel prefetch value. Previously, subscribers used unlimited prefetch, which could overwhelm consumers when many messages were queued.
+
 ## 0.5.2
 
 ### Patch Changes

@@ -86,7 +86,10 @@ const subscribe = (
 ) =>
 <E, R>(app: AMQPSubscriberApp<E, R>) =>
   Effect.gen(function*() {
-    const consumeStream = yield* channel.consume(queueName, options.concurrency ? { prefetch: options.concurrency  } : undefined)
+    const consumeStream = yield* channel.consume(
+      queueName,
+      options.concurrency ? { prefetch: options.concurrency } : undefined
+    )
     return yield* consumeStream.pipe(
       Stream.runForEach((message) =>
         Effect.fork(

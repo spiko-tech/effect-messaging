@@ -16,6 +16,8 @@ import type { AMQPConnectionError } from "../AMQPError.js"
 import { AMQPChannelError } from "../AMQPError.js"
 import { closeStream, errorStream } from "./closeStream.js"
 
+const DEFAULT_PREFETCH = 50
+
 const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
 const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
@@ -200,19 +202,17 @@ const initiateConsumption = (
   channel: Channel,
   queueName: string,
   emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
-  options?: { readonly prefetch?: number }
+  options: { readonly prefetch?: number } 
 ) =>
   Effect.gen(function*() {
     yield* Effect.annotateCurrentSpan({
       [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName
     })
-    if (options?.prefetch !== undefined) {
-      yield* Effect.tryPromise({
-        try: () => channel.prefetch(options.prefetch!),
-        catch: (error) =>
-          new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
-      })
-    }
+    yield* Effect.tryPromise({
+      try: () => channel.prefetch(options.prefetch ?? DEFAULT_PREFETCH),
+      catch: (error) =>
+        new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
+    })
     yield* Effect.try({
       try: () => {
         channel.consume(queueName, async (message) => {

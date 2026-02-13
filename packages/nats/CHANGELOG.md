@@ -1,5 +1,11 @@
 # @effect-messaging/nats
 
+## 0.7.2
+
+### Patch Changes
+
+- [#123](https://github.com/spiko-tech/effect-messaging/pull/123) [`44cf628`](https://github.com/spiko-tech/effect-messaging/commit/44cf62824387dfe8432e718bf0abf0b81bf1f2b8) Thanks [@wewelll](https://github.com/wewelll)! - fix: revert `matchCauseEffect` to `tapErrorCause` in subscriber implementations to preserve the error channel. `matchCauseEffect` was incorrectly absorbing handler failures into the success channel, silently swallowing errors instead of propagating them.
+
 ## 0.7.1
 
 ### Patch Changes

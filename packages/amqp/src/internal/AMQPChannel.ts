@@ -202,7 +202,7 @@ const initiateConsumption = (
   channel: Channel,
   queueName: string,
   emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
-  options: { readonly prefetch?: number } 
+  options: { readonly prefetch?: number }
 ) =>
   Effect.gen(function*() {
     yield* Effect.annotateCurrentSpan({

@@ -34,7 +34,8 @@ export interface AMQPChannel {
   readonly [TypeId]: TypeId
   readonly connection: AMQPConnection.AMQPConnection
   readonly consume: (
-    queueName: string
+    queueName: string,
+    options?: { readonly prefetch?: number }
   ) => Effect.Effect<Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>>
   readonly ack: (...parameters: Parameters<Channel["ack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly ackAll: (...parameters: Parameters<Channel["ackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
@@ -135,7 +136,8 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
           return {
             [TypeId]: TypeId as TypeId,
             connection,
-            consume: (queueName: string) => internal.consume(queueName).pipe(provideInternal),
+            consume: (queueName: string, options?: { readonly prefetch?: number }) =>
+              internal.consume(queueName, options).pipe(provideInternal),
             ack: (...params: Parameters<Channel["ack"]>) =>
               internal.wrapChannelMethod("ack", async (channel) => channel.ack(...params)).pipe(provideInternal),
             ackAll: (...params: Parameters<Channel["ackAll"]>) =>

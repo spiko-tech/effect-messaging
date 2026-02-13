@@ -93,35 +93,31 @@ const subscribe = (
                   })
                   : Function.identity
               )
+              span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
             }).pipe(
               Effect.provide(NATSMessage.layer(message)),
-              Effect.matchCauseEffect({
-                onSuccess: () =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
-                  }),
-                onFailure: (cause) =>
-                  Effect.gen(function*() {
-                    // Log the error - NATS Core has no ack/nak mechanism, so we just log and continue
-                    yield* Effect.logError(Cause.pretty(cause))
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "error")
-                    span.attribute(
-                      "error.type",
-                      String(Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
-                      ))
-                    )
-                    span.attribute("error.stack", Cause.pretty(cause))
-                    span.attribute(
-                      "error.message",
-                      String(Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-                      ))
-                    )
-                  })
-              }),
+              Effect.tapErrorCause((cause) =>
+                Effect.gen(function*() {
+                  // Log the error - NATS Core has no ack/nak mechanism, so we just log and continue
+                  yield* Effect.logError(Cause.pretty(cause))
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "error")
+                  span.attribute(
+                    "error.type",
+                    String(Cause.squashWith(
+                      cause,
+                      (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
+                    ))
+                  )
+                  span.attribute("error.stack", Cause.pretty(cause))
+                  span.attribute(
+                    "error.message",
+                    String(Cause.squashWith(
+                      cause,
+                      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                    ))
+                  )
+                })
+              ),
               options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
               Effect.withParentSpan(span)
             )

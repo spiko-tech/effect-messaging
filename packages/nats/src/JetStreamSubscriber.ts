@@ -109,7 +109,7 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              return yield* app.pipe(
+              const response = yield* app.pipe(
                 options.handlerTimeout
                   ? Effect.timeoutFail({
                     duration: options.handlerTimeout,
@@ -118,46 +118,42 @@ const subscribe = (
                   })
                   : Function.identity
               )
+              yield* Match.valueTags(response, {
+                Ack: () =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                    yield* message.ack
+                  }),
+                Nak: (r) =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                    yield* message.nak(r.millis)
+                  }),
+                Term: (r) =>
+                  Effect.gen(function*() {
+                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
+                    yield* message.term(r.reason)
+                  })
+              })
             }).pipe(
               Effect.provide(JetStreamMessage.layer(message)),
-              Effect.matchCauseEffect(
-                {
-                  onSuccess: (res) =>
-                    Match.valueTags(res, {
-                      Ack: () =>
-                        Effect.gen(function*() {
-                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                          yield* message.ack
-                        }),
-                      Nak: (r) =>
-                        Effect.gen(function*() {
-                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                          yield* message.nak(r.millis)
-                        }),
-                      Term: (r) =>
-                        Effect.gen(function*() {
-                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
-                          yield* message.term(r.reason)
-                        })
-                    }),
-                  onFailure: (cause) =>
-                    Effect.gen(function*() {
-                      yield* Effect.logError(Cause.pretty(cause))
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                      span.attribute(
-                        "error.type",
-                        String(Cause.squashWith(cause, (_) =>
-                          Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`))
-                      )
-                      span.attribute("error.stack", Cause.pretty(cause))
-                      span.attribute(
-                        "error.message",
-                        String(Cause.squashWith(cause, (_) =>
-                          Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`))
-                      )
-                      yield* message.nak()
-                    })
-                }
+              Effect.tapErrorCause((cause) =>
+                Effect.gen(function*() {
+                  yield* Effect.logError(Cause.pretty(cause))
+                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                  span.attribute(
+                    "error.type",
+                    String(Cause.squashWith(cause, (_) =>
+                      Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`))
+                  )
+                  span.attribute("error.stack", Cause.pretty(cause))
+                  span.attribute(
+                    "error.message",
+                    String(Cause.squashWith(cause, (_) =>
+                      Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`))
+                  )
+                  yield* message.nak()
+                })
               ),
               options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
               Effect.withParentSpan(span)

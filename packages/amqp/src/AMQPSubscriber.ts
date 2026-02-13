@@ -164,6 +164,7 @@ const subscribe = (
                         ))
                       )
                       yield* channel.nack(message, false, false)
+                      return yield* Effect.failCause(cause)
                     })
                 }),
                 options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,

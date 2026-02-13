@@ -202,14 +202,14 @@ const initiateConsumption = (
   channel: Channel,
   queueName: string,
   emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
-  options: { readonly prefetch?: number }
+  options?: { readonly prefetch?: number }
 ) =>
   Effect.gen(function*() {
     yield* Effect.annotateCurrentSpan({
       [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName
     })
     yield* Effect.tryPromise({
-      try: () => channel.prefetch(options.prefetch ?? DEFAULT_PREFETCH),
+      try: () => channel.prefetch(options?.prefetch ?? DEFAULT_PREFETCH),
       catch: (error) =>
         new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
     })

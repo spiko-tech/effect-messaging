@@ -199,12 +199,20 @@ export const wrapChannelMethod = <A>(
 const initiateConsumption = (
   channel: Channel,
   queueName: string,
-  emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>
+  emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
+  options?: { readonly prefetch?: number }
 ) =>
   Effect.gen(function*() {
     yield* Effect.annotateCurrentSpan({
       [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName
     })
+    if (options?.prefetch !== undefined) {
+      yield* Effect.tryPromise({
+        try: () => channel.prefetch(options.prefetch!),
+        catch: (error) =>
+          new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
+      })
+    }
     yield* Effect.try({
       try: () => {
         channel.consume(queueName, async (message) => {
@@ -228,7 +236,7 @@ const initiateConsumption = (
   )
 
 /** @internal */
-export const consume = (queueName: string) =>
+export const consume = (queueName: string, options?: { readonly prefetch?: number }) =>
   Effect.gen(function*() {
     const { channelRef, retryConsumptionSchedule } = yield* InternalAMQPChannel
     return channelRef.changes.pipe(
@@ -236,7 +244,7 @@ export const consume = (queueName: string) =>
       Stream.flatMap(
         (channel) =>
           Stream.asyncPush<ConsumeMessage, AMQPChannelError>((emit) =>
-            initiateConsumption(channel, queueName, emit).pipe(
+            initiateConsumption(channel, queueName, emit, options).pipe(
               Effect.retry(retryConsumptionSchedule)
             )
           ),

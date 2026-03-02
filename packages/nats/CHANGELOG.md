@@ -1,5 +1,24 @@
 # @effect-messaging/nats
 
+## 0.7.3
+
+### Patch Changes
+
+- [#128](https://github.com/spiko-tech/effect-messaging/pull/128) [`462a8d4`](https://github.com/spiko-tech/effect-messaging/commit/462a8d4625d439c045091025ce816fd79b285a4c) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade dependencies:
+
+  - effect to 3.19.19
+  - @effect/platform to 0.94.5
+  - @effect/language-service to 0.77.0
+  - @nats-io/jetstream, @nats-io/nats-core, @nats-io/transport-node to 3.3.1
+  - glob to 13.0.6
+  - @changesets/changelog-github to 0.5.2
+  - @changesets/cli to 2.29.8
+  - typescript to 5.9.3
+  - typescript-eslint to 8.56.1
+
+- Updated dependencies [[`462a8d4`](https://github.com/spiko-tech/effect-messaging/commit/462a8d4625d439c045091025ce816fd79b285a4c)]:
+  - @effect-messaging/core@0.2.40
+
 ## 0.7.2
 
 ### Patch Changes

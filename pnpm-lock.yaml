@@ -36,14 +36,14 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/language-service':
-        specifier: ^0.62.4
-        version: 0.62.4
+        specifier: ^0.77.0
+        version: 0.77.0
       '@effect/platform':
-        specifier: ^0.94.0
-        version: 0.94.0(effect@3.19.13)
+        specifier: ^0.94.5
+        version: 0.94.5(effect@3.19.19)
       '@effect/vitest':
         specifier: ^0.27.0
-        version: 0.27.0(effect@3.19.13)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))
+        version: 0.27.0(effect@3.19.19)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -63,8 +63,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.19.13
-        version: 3.19.13
+        specifier: ^3.19.19
+        version: 3.19.19
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.94.0
-        version: 0.94.0(effect@3.19.13)
+        specifier: ^0.94.5
+        version: 0.94.5(effect@3.19.19)
       '@types/amqplib':
         specifier: 0.10.7
         version: 0.10.7
@@ -117,15 +117,15 @@ importers:
         specifier: ^0.10.9
         version: 0.10.9
       effect:
-        specifier: ^3.19.13
-        version: 3.19.13
+        specifier: ^3.19.19
+        version: 3.19.19
     publishDirectory: dist
 
   packages/core:
     devDependencies:
       effect:
-        specifier: ^3.19.13
-        version: 3.19.13
+        specifier: ^3.19.19
+        version: 3.19.19
     publishDirectory: dist
 
   packages/nats:
@@ -134,20 +134,20 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.94.0
-        version: 0.94.0(effect@3.19.13)
+        specifier: ^0.94.5
+        version: 0.94.5(effect@3.19.19)
       '@nats-io/jetstream':
-        specifier: ^3.3.0
-        version: 3.3.0
+        specifier: ^3.3.1
+        version: 3.3.1
       '@nats-io/nats-core':
-        specifier: ^3.3.0
-        version: 3.3.0
+        specifier: ^3.3.1
+        version: 3.3.1
       '@nats-io/transport-node':
-        specifier: ^3.3.0
-        version: 3.3.0
+        specifier: ^3.3.1
+        version: 3.3.1
       effect:
-        specifier: ^3.19.13
-        version: 3.19.13
+        specifier: ^3.19.19
+        version: 3.19.19
     publishDirectory: dist
 
 packages:
@@ -354,8 +354,8 @@ packages:
   '@effect/eslint-plugin@0.3.2':
     resolution: {integrity: sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g==}
 
-  '@effect/language-service@0.62.4':
-    resolution: {integrity: sha512-IPe/oGOILtzUIUdhhaz6e2JcnGymPADnjI03f1xOe+LaPLDg/AsRmkY87jhbtb/6qg8NVzlU+ZK4s0JoIMW/yQ==}
+  '@effect/language-service@0.77.0':
+    resolution: {integrity: sha512-QP2bri8DdcK7Eo+SqFS2yNeD0Ch9kKHYxq2jeE9CaPpBknevCNFb3+hT6qSsPt2P6yOkhNP83KMy5Uk7DGBXlg==}
     hasBin: true
 
   '@effect/markdown-toc@0.1.0':
@@ -363,10 +363,10 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/platform@0.94.0':
-    resolution: {integrity: sha512-oIATd3M+RUe2q+bu0Qpgt4/qSbXBM9OEGBrRW7SvtwXGOWkCYkN+LfOPnmPrbMB7jYjpIb7808T1bONM1Nwgfg==}
+  '@effect/platform@0.94.5':
+    resolution: {integrity: sha512-z05APUiDDPbodhTkH/RJqOLoCU11bU2IZLfcwLFrld03+ob1VeqRnELQlmueLIYm6NZifHAtjl32V+GRt34y4A==}
     peerDependencies:
-      effect: ^3.19.13
+      effect: ^3.19.17
 
   '@effect/vitest@0.27.0':
     resolution: {integrity: sha512-8bM7n9xlMUYw9GqPIVgXFwFm2jf27m/R7psI64PGpwU5+26iwyxp9eAXEsfT5S6lqztYfpQQ1Ubp5o6HfNYzJQ==}
@@ -674,11 +674,11 @@ packages:
   '@napi-rs/wasm-runtime@0.2.8':
     resolution: {integrity: sha512-OBlgKdX7gin7OIq4fadsjpg+cp2ZphvAIKucHsNfTdJiqdOmOEwQd/bHi0VwNrcw5xpBJyUw6cK/QilCqy1BSg==}
 
-  '@nats-io/jetstream@3.3.0':
-    resolution: {integrity: sha512-SK6lSr+Wf9nd6mffV4gdd1yDZxlhILEUJg74bAaU9yjQ2kBOPIJDHlYc2yMzcuZnQxIUcTVI3L7ow2d4qEDslQ==}
+  '@nats-io/jetstream@3.3.1':
+    resolution: {integrity: sha512-oTIxM47pQfv4zCMlLN7FtARxSclMlUUPPn9I3VxRwMH+N2jkj1WCApu+tSL778KuljxfG8txi/MPwoWSXqbbQQ==}
 
-  '@nats-io/nats-core@3.3.0':
-    resolution: {integrity: sha512-+ImSYab7NvOMvFFBSBbWl03a4s/OUXCpFFauZ4iRx8pp+5ptsaBQNpacyPXeg8jbjAMeEAWn2Zuyl7oJCUffJA==}
+  '@nats-io/nats-core@3.3.1':
+    resolution: {integrity: sha512-myFXGTo4cCfKrsLDjkoEz7FjjjvSfBRjun7Qx3n3Z5OzW4JUY8Ou7VQsGAdXLQxHN3ae/XNXvmXxshDoFPex4w==}
 
   '@nats-io/nkeys@2.0.3':
     resolution: {integrity: sha512-JVt56GuE6Z89KUkI4TXUbSI9fmIfAmk6PMPknijmuL72GcD+UgIomTcRWiNvvJKxA01sBbmIPStqJs5cMRBC3A==}
@@ -688,8 +688,8 @@ packages:
     resolution: {integrity: sha512-TpA3HEBna/qMVudy+3HZr5M3mo/L1JPofpVT4t0HkFGkz2Cn9wrlrQC8tvR8Md5Oa9//GtGG26eN0qEWF5Vqew==}
     engines: {node: '>= 18.x'}
 
-  '@nats-io/transport-node@3.3.0':
-    resolution: {integrity: sha512-A59+E0uL2FCzkvEbnhOPA4bKd4p1Ca6o5GwhVwVHzBPILjjGaSpgwgccaxnjwdsP+FBcMRrgXJ1wn6i1pf6nHQ==}
+  '@nats-io/transport-node@3.3.1':
+    resolution: {integrity: sha512-GBvY0VcvyQEILgy5bjpqU1GpDYmSF06bW59I7cewZuNGS9u3AoV/gf+a+3ep45T/Z+UC661atq/b7x+QV12w+Q==}
     engines: {node: '>= 18.0.0'}
 
   '@nicolo-ribaudo/chokidar-2@2.1.8-no-fsevents.3':
@@ -1539,8 +1539,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.19.13:
-    resolution: {integrity: sha512-8MZ783YuHRwHZX2Mmm+bpGxq+7XPd88sWwYAz2Ysry80sEKpftDZXs2Hg9ZyjESi1IBTNHF0oDKe0zJRkUlyew==}
+  effect@3.19.19:
+    resolution: {integrity: sha512-Yc8U/SVXo2dHnaP7zNBlAo83h/nzSJpi7vph6Hzyl4ulgMBIgPmz3UzOjb9sBgpFE00gC0iETR244sfXDNLHRg==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -3613,7 +3613,7 @@ snapshots:
       '@dprint/typescript': 0.91.8
       prettier-linter-helpers: 1.0.0
 
-  '@effect/language-service@0.62.4': {}
+  '@effect/language-service@0.77.0': {}
 
   '@effect/markdown-toc@0.1.0':
     dependencies:
@@ -3630,16 +3630,16 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.94.0(effect@3.19.13)':
+  '@effect/platform@0.94.5(effect@3.19.19)':
     dependencies:
-      effect: 3.19.13
+      effect: 3.19.19
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
 
-  '@effect/vitest@0.27.0(effect@3.19.13)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))':
+  '@effect/vitest@0.27.0(effect@3.19.19)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))':
     dependencies:
-      effect: 3.19.13
+      effect: 3.19.19
       vitest: 4.0.16(@types/node@24.9.1)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -3876,11 +3876,11 @@ snapshots:
       '@tybys/wasm-util': 0.9.0
     optional: true
 
-  '@nats-io/jetstream@3.3.0':
+  '@nats-io/jetstream@3.3.1':
     dependencies:
-      '@nats-io/nats-core': 3.3.0
+      '@nats-io/nats-core': 3.3.1
 
-  '@nats-io/nats-core@3.3.0':
+  '@nats-io/nats-core@3.3.1':
     dependencies:
       '@nats-io/nkeys': 2.0.3
       '@nats-io/nuid': 2.0.3
@@ -3891,9 +3891,9 @@ snapshots:
 
   '@nats-io/nuid@2.0.3': {}
 
-  '@nats-io/transport-node@3.3.0':
+  '@nats-io/transport-node@3.3.1':
     dependencies:
-      '@nats-io/nats-core': 3.3.0
+      '@nats-io/nats-core': 3.3.1
       '@nats-io/nkeys': 2.0.3
       '@nats-io/nuid': 2.0.3
 
@@ -4762,7 +4762,7 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.19.13:
+  effect@3.19.19:
     dependencies:
       '@standard-schema/spec': 1.0.0
       fast-check: 3.23.2

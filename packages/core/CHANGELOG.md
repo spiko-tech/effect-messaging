@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.41
+
+### Patch Changes
+
+- [#130](https://github.com/spiko-tech/effect-messaging/pull/130) [`45f957e`](https://github.com/spiko-tech/effect-messaging/commit/45f957e0b5aac4e165d842d1957e006bfb0551a7) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade @effect/language-service to ^0.78.0
+
 ## 0.2.40
 
 ### Patch Changes

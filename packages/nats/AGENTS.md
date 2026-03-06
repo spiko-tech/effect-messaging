@@ -7,7 +7,13 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 **Key modules:**
 
 - `NATSConnection` - Core NATS connection (publish/subscribe/request)
-- `JetStreamClient` - JetStream consumer and publisher
+- `JetStreamClient` - JetStream client for stream and consumer access
+- `JetStreamProducer` - Producer implementation for JetStream (implements `@effect-messaging/core/Producer`)
+- `JetStreamConsumer` - Consumer implementation for JetStream (implements `@effect-messaging/core/Consumer`)
+- `JetStreamConsumerMessages` - Low-level NATS consumer wrapper with Effect operations
+- `JetStreamConsumerResponse` - Response types for consumer message handling (ack/nak/term)
+- `NATSProducer` - Producer implementation for NATS Core (implements `@effect-messaging/core/Producer`)
+- `NATSConsumer` - Consumer implementation for NATS Core (implements `@effect-messaging/core/Consumer`)
 - `JetStreamConsumerAPI` - Consumer management API
 - `JetStreamStreamAPI` - Stream management API
 - `JetStreamDirectStreamAPI` - Direct stream API for low-latency reads
@@ -28,6 +34,28 @@ Effect bindings for NATS and JetStream. This package mimics the architecture of 
 - Use `Parameters<>` utility type for API method signatures to match upstream types
 - Avoid `any` types - use proper type casting with internal types when needed
 - Never use `null` - always use `Option` from Effect for optional values
+
+## Consumer API Pattern
+
+Consumers (`JetStreamConsumer`, `NATSConsumer`) follow the `@effect-messaging/core/Consumer` interface with two methods for serving handlers:
+
+- `serve(handler)` - Returns a `Layer<never, ConsumerError, ...>`. Recommended for production as it integrates with the Effect Layer system for lifecycle management.
+- `serveEffect(handler)` - Returns an `Effect<void, ConsumerError, Scope | ...>`. Useful for scripts, tests, or when you need direct Effect control.
+
+Example usage:
+
+```typescript
+// Layer-based (production)
+const ConsumerLive = Layer.unwrapEffect(
+  Effect.gen(function* () {
+    const consumer = yield* JetStreamConsumer.fromConsumer(natsConsumer)
+    return consumer.serve(messageHandler)
+  })
+)
+
+// Effect-based (scripts/tests)
+yield * consumer.serveEffect(messageHandler)
+```
 
 ## Testing
 

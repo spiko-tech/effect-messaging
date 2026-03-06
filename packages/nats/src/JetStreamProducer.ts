@@ -1,8 +1,8 @@
 /**
  * @since 0.1.0
  */
-import * as Publisher from "@effect-messaging/core/Publisher"
-import * as PublisherError from "@effect-messaging/core/PublisherError"
+import * as Producer from "@effect-messaging/core/Producer"
+import * as ProducerError from "@effect-messaging/core/ProducerError"
 import type * as JetStream from "@nats-io/jetstream"
 import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
@@ -18,7 +18,7 @@ import * as NATSHeaders from "./NATSHeaders.js"
  * @category type ids
  * @since 0.1.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamPublisher")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamProducer")
 
 /**
  * @category type ids
@@ -40,7 +40,7 @@ export interface JetStreamPublishMessage {
  * @category models
  * @since 0.1.0
  */
-export interface JetStreamPublisher extends Publisher.Publisher<JetStreamPublishMessage> {
+export interface JetStreamProducer extends Producer.Producer<JetStreamPublishMessage> {
   readonly [TypeId]: TypeId
 }
 
@@ -73,7 +73,7 @@ const publish = (
   connectionInfo: NATSCore.ServerInfo,
   retrySchedule: Schedule.Schedule<unknown, NATSError.JetStreamClientError>
 ) =>
-(message: JetStreamPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
+(message: JetStreamPublishMessage): Effect.Effect<void, ProducerError.ProducerError, never> =>
   Effect.useSpan(
     `nats.publish ${message.subject}`,
     {
@@ -94,8 +94,7 @@ const publish = (
         Effect.retry(retrySchedule),
         Effect.catchTag(
           "JetStreamClientError",
-          (error) =>
-            Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
+          (error) => Effect.fail(new ProducerError.ProducerError({ reason: "Failed to publish message", cause: error }))
         )
       )
   )
@@ -104,7 +103,7 @@ const publish = (
  * @category constructors
  * @since 0.1.0
  */
-export interface JetStreamPublisherConfig {
+export interface JetStreamProducerConfig {
   readonly retrySchedule?: Schedule.Schedule<unknown, NATSError.JetStreamClientError>
 }
 
@@ -113,9 +112,9 @@ export interface JetStreamPublisherConfig {
  * @since 0.1.0
  */
 export const make = (
-  config?: JetStreamPublisherConfig
+  config?: JetStreamProducerConfig
 ): Effect.Effect<
-  JetStreamPublisher,
+  JetStreamProducer,
   NATSError.JetStreamClientError | NATSError.NATSConnectionError,
   JetStreamClient.JetStreamClient | NATSConnection.NATSConnection
 > =>
@@ -129,11 +128,11 @@ export const make = (
       onSome: Effect.succeed
     })
 
-    const publisher: JetStreamPublisher = {
+    const producer: JetStreamProducer = {
       [TypeId]: TypeId,
-      [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(client, connectionInfo, config?.retrySchedule ?? Schedule.stop)
+      [Producer.TypeId]: Producer.TypeId,
+      send: publish(client, connectionInfo, config?.retrySchedule ?? Schedule.stop)
     }
 
-    return publisher
+    return producer
   })

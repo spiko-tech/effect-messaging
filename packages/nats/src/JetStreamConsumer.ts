@@ -1,366 +1,261 @@
 /**
  * @since 0.1.0
  */
-import type * as JetStream from "@nats-io/jetstream"
+import * as Consumer from "@effect-messaging/core/Consumer"
+import type * as ConsumerApp from "@effect-messaging/core/ConsumerApp"
+import * as ConsumerError from "@effect-messaging/core/ConsumerError"
+import type * as NATSCore from "@nats-io/nats-core"
+import * as Cause from "effect/Cause"
+import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Function from "effect/Function"
+import * as Layer from "effect/Layer"
+import * as Match from "effect/Match"
 import * as Option from "effect/Option"
+import * as Predicate from "effect/Predicate"
+import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.js"
+import type * as JetStreamConsumerMessages from "./JetStreamConsumerMessages.js"
+import type * as JetStreamConsumerResponse from "./JetStreamConsumerResponse.js"
 import * as JetStreamMessage from "./JetStreamMessage.js"
+import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
-import * as NATSQueuedIterator from "./NATSQueuedIterator.js"
-
-const wrap = utils.wrap(NATSError.JetStreamConsumerError)
-const wrapAsync = utils.wrapAsync(NATSError.JetStreamConsumerError)
+import * as NATSHeaders from "./NATSHeaders.js"
 
 /**
  * @category type ids
  * @since 0.1.0
  */
-export const CloseTypeId: unique symbol = Symbol.for("@effect-messaging/nats/Close")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamConsumer")
 
 /**
  * @category type ids
  * @since 0.1.0
  */
-export type CloseTypeId = typeof CloseTypeId
+export type TypeId = typeof TypeId
 
 /**
- * Represents closeable resources
- *
+ * @category models
+ * @since 0.7.0
+ */
+export type JetStreamConsumerApp<E, R> = ConsumerApp.ConsumerApp<
+  JetStreamConsumerResponse.JetStreamConsumerResponse,
+  JetStreamMessage.JetStreamMessage,
+  E,
+  R
+>
+
+/**
  * @category models
  * @since 0.1.0
  */
-export interface Close {
-  readonly [CloseTypeId]: CloseTypeId
-  readonly close: Effect.Effect<void, NATSError.JetStreamConsumerError>
-  readonly closed: Effect.Effect<void, NATSError.JetStreamConsumerError>
+export interface JetStreamConsumer
+  extends Consumer.Consumer<JetStreamConsumerResponse.JetStreamConsumerResponse, JetStreamMessage.JetStreamMessage>
+{
+  readonly [TypeId]: TypeId
 }
 
+/**
+ * @category models
+ * @since 0.1.0
+ */
+export interface JetStreamConsumerOptions {
+  uninterruptible?: boolean
+  handlerTimeout?: Duration.DurationInput
+}
+
+const ATTR_SERVER_ADDRESS = "server.address" as const
+const ATTR_SERVER_PORT = "server.port" as const
+const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
+const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
+const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
+const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
+const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
+const ATTR_MESSAGING_NATS_STREAM = "messaging.nats.stream" as const
+const ATTR_MESSAGING_NATS_CONSUMER = "messaging.nats.consumer" as const
+const ATTR_MESSAGING_NATS_SEQUENCE_STREAM = "messaging.nats.sequence.stream" as const
+const ATTR_MESSAGING_NATS_SEQUENCE_CONSUMER = "messaging.nats.sequence.consumer" as const
+
 /** @internal */
-export const makeClose = (closeable: JetStream.Close): Close => ({
-  [CloseTypeId]: CloseTypeId,
-  close: wrapAsync(() => closeable.close(), "Failed to close resource").pipe(
-    Effect.flatMap((result) =>
-      result instanceof Error
-        ? Effect.fail(new NATSError.JetStreamConsumerError({ reason: "Failed to close resource", cause: result }))
-        : Effect.void
-    )
-  ),
-  closed: wrapAsync(() => closeable.closed(), "Failed to check closed status").pipe(
-    Effect.flatMap((result) =>
-      result instanceof Error
-        ? Effect.fail(new NATSError.JetStreamConsumerError({ reason: "Resource closed with error", cause: result }))
-        : Effect.void
+const serveEffect = (
+  consumerMessages: JetStreamConsumerMessages.ConsumerMessages,
+  connectionInfo: NATSCore.ServerInfo,
+  options: JetStreamConsumerOptions
+) =>
+<E, R>(
+  app: JetStreamConsumerApp<E, R>
+): Effect.Effect<
+  void,
+  ConsumerError.ConsumerError,
+  Scope.Scope | Exclude<R, Consumer.Provided<JetStreamMessage.JetStreamMessage>>
+> =>
+  consumerMessages.stream.pipe(
+    Stream.runForEach((message) =>
+      Effect.fork(
+        Effect.useSpan(
+          `nats.consume ${message.subject}`,
+          {
+            parent: Option.getOrUndefined(NATSHeaders.decodeTraceContextOptional(message.headers)),
+            kind: "consumer",
+            captureStackTrace: false,
+            attributes: {
+              [ATTR_SERVER_ADDRESS]: connectionInfo.host,
+              [ATTR_SERVER_PORT]: connectionInfo.port,
+              [ATTR_MESSAGING_SYSTEM]: "nats",
+              [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
+              [ATTR_MESSAGING_DESTINATION_NAME]: message.subject,
+              [ATTR_MESSAGING_MESSAGE_ID]: message.seq,
+              [ATTR_MESSAGING_NATS_STREAM]: message.info.stream,
+              [ATTR_MESSAGING_NATS_CONSUMER]: message.info.consumer,
+              [ATTR_MESSAGING_NATS_SEQUENCE_STREAM]: message.info.streamSequence,
+              [ATTR_MESSAGING_NATS_SEQUENCE_CONSUMER]: message.info.deliverySequence
+            }
+          },
+          (span) =>
+            Effect.gen(function*() {
+              yield* Effect.logDebug(`nats.consume ${message.subject}`)
+              return yield* app.pipe(
+                options.handlerTimeout
+                  ? Effect.timeoutFail({
+                    duration: options.handlerTimeout,
+                    onTimeout: () => new ConsumerError.ConsumerError({ reason: "JetStreamConsumer: handler timed out" })
+                  })
+                  : Function.identity
+              )
+            }).pipe(
+              Effect.provide(JetStreamMessage.layer(message)),
+              Effect.matchCauseEffect(
+                {
+                  onSuccess: (res) =>
+                    Match.valueTags(res, {
+                      Ack: () =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                          yield* message.ack
+                        }),
+                      Nak: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                          yield* message.nak(r.millis)
+                        }),
+                      Term: (r) =>
+                        Effect.gen(function*() {
+                          span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
+                          yield* message.term(r.reason)
+                        })
+                    }),
+                  onFailure: (cause) =>
+                    Effect.gen(function*() {
+                      yield* Effect.logError(Cause.pretty(cause))
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
+                      span.attribute(
+                        "error.type",
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "tag") ? _.tag : _ instanceof Error ? _.name : `${_}`
+                        )
+                      )
+                      span.attribute("error.stack", Cause.pretty(cause))
+                      span.attribute(
+                        "error.message",
+                        Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                        )
+                      )
+                      yield* message.nak()
+                    })
+                }
+              ),
+              options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+              Effect.withParentSpan(span)
+            )
+        )
+      )
+    ),
+    Effect.mapError((error) =>
+      new ConsumerError.ConsumerError({ reason: "JetStreamConsumer failed to subscribe", cause: error })
     )
   )
-})
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const ConsumerMessagesTypeId: unique symbol = Symbol.for("@effect-messaging/nats/ConsumerMessages")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type ConsumerMessagesTypeId = typeof ConsumerMessagesTypeId
-
-/**
- * Represents consumer messages
- *
- * @category models
- * @since 0.1.0
- */
-export interface ConsumerMessages extends
-  Omit<
-    NATSQueuedIterator.NATSQueuedIterator<JetStreamMessage.JetStreamMessage, NATSError.JetStreamConsumerError>,
-    "iterator"
-  >,
-  Close
-{
-  readonly [ConsumerMessagesTypeId]: ConsumerMessagesTypeId
-  readonly status: Effect.Effect<
-    Stream.Stream<JetStream.ConsumerNotification, NATSError.JetStreamConsumerError>,
-    NATSError.JetStreamConsumerError
-  >
-
-  /** @internal */
-  readonly consumerMessages: JetStream.ConsumerMessages
-}
 
 /** @internal */
-export const makeConsumerMessages = (consumerMessages: JetStream.ConsumerMessages): ConsumerMessages => {
-  const qi = NATSQueuedIterator.make(NATSError.JetStreamConsumerError)(consumerMessages)
-  const close = makeClose(consumerMessages)
-  return {
-    ...qi,
-    ...close,
-    [ConsumerMessagesTypeId]: ConsumerMessagesTypeId,
-    stream: Stream.map(qi.stream, JetStreamMessage.make),
-    status: wrap(
-      () =>
-        Stream.fromAsyncIterable(
-          consumerMessages.status(),
-          (error) =>
-            new NATSError.JetStreamConsumerError({
-              reason: "An error occurred in consumer status async iterable",
-              cause: error
-            })
-        ),
-      "Failed to get status stream"
-    ),
-    consumerMessages
-  }
-}
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const ConsumerKindTypeId: unique symbol = Symbol.for("@effect-messaging/nats/ConsumerKind")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type ConsumerKindTypeId = typeof ConsumerKindTypeId
-
-/**
- * Represents consumer kind
- *
- * @category models
- * @since 0.1.0
- */
-export interface ConsumerKind {
-  readonly [ConsumerKindTypeId]: ConsumerKindTypeId
-  readonly isPullConsumer: Effect.Effect<boolean, NATSError.JetStreamConsumerError>
-  readonly isPushConsumer: Effect.Effect<boolean, NATSError.JetStreamConsumerError>
-}
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const ExportedConsumerTypeId: unique symbol = Symbol.for("@effect-messaging/nats/ExportedConsumer")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type ExportedConsumerTypeId = typeof ExportedConsumerTypeId
-
-/**
- * Represents an exported consumer
- *
- * @category models
- * @since 0.1.0
- */
-export interface ExportedConsumer extends ConsumerKind {
-  readonly [ExportedConsumerTypeId]: ExportedConsumerTypeId
-  readonly next: (
-    ...args: Parameters<JetStream.Consumer["next"]>
-  ) => Effect.Effect<Option.Option<JetStreamMessage.JetStreamMessage>, NATSError.JetStreamConsumerError>
-  readonly fetch: (
-    ...args: Parameters<JetStream.Consumer["fetch"]>
-  ) => Effect.Effect<ConsumerMessages, NATSError.JetStreamConsumerError>
-  readonly consume: (
-    ...args: Parameters<JetStream.Consumer["consume"]>
-  ) => Effect.Effect<ConsumerMessages, NATSError.JetStreamConsumerError>
-}
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const InfoableConsumerTypeId: unique symbol = Symbol.for("@effect-messaging/nats/InfoableConsumer")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type InfoableConsumerTypeId = typeof InfoableConsumerTypeId
-
-/**
- * Represents an infoable consumer
- *
- * @category models
- * @since 0.1.0
- */
-export interface InfoableConsumer {
-  readonly [InfoableConsumerTypeId]: InfoableConsumerTypeId
-  readonly info: (
-    ...args: Parameters<JetStream.Consumer["info"]>
-  ) => Effect.Effect<JetStream.ConsumerInfo, NATSError.JetStreamConsumerError>
-}
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const DeleteableConsumerTypeId: unique symbol = Symbol.for("@effect-messaging/nats/DeleteableConsumer")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type DeleteableConsumerTypeId = typeof DeleteableConsumerTypeId
-
-/**
- * Represents a deleteable consumer
- *
- * @category models
- * @since 0.1.0
- */
-export interface DeleteableConsumer {
-  readonly [DeleteableConsumerTypeId]: DeleteableConsumerTypeId
-  readonly delete: Effect.Effect<boolean, NATSError.JetStreamConsumerError>
-}
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const ConsumerTypeId: unique symbol = Symbol.for("@effect-messaging/nats/Consumer")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type ConsumerTypeId = typeof ConsumerTypeId
-
-/**
- * Represents a consumer
- *
- * @category models
- * @since 0.1.0
- */
-export interface Consumer extends ExportedConsumer, InfoableConsumer, DeleteableConsumer {
-  readonly [ConsumerTypeId]: ConsumerTypeId
-
-  /** @internal */
-  readonly consumer: JetStream.Consumer
-}
+const serveLayer = (
+  consumerMessages: JetStreamConsumerMessages.ConsumerMessages,
+  connectionInfo: NATSCore.ServerInfo,
+  options: JetStreamConsumerOptions
+) =>
+<E, R>(
+  app: JetStreamConsumerApp<E, R>
+): Layer.Layer<
+  never,
+  ConsumerError.ConsumerError,
+  Exclude<R, Consumer.Provided<JetStreamMessage.JetStreamMessage>>
+> => Layer.scopedDiscard(serveEffect(consumerMessages, connectionInfo, options)(app))
 
 /** @internal */
-export const makeConsumer = (consumer: JetStream.Consumer): Consumer => ({
-  [ConsumerTypeId]: ConsumerTypeId,
-  [ExportedConsumerTypeId]: ExportedConsumerTypeId,
-  [ConsumerKindTypeId]: ConsumerKindTypeId,
-  [InfoableConsumerTypeId]: InfoableConsumerTypeId,
-  [DeleteableConsumerTypeId]: DeleteableConsumerTypeId,
-  isPullConsumer: wrap(() => consumer.isPullConsumer(), "Failed to check if consumer is pull consumer"),
-  isPushConsumer: wrap(() => consumer.isPushConsumer(), "Failed to check if consumer is push consumer"),
-  next: (...args) =>
-    wrapAsync(() => consumer.next(...args), "Failed to get next message").pipe(
-      Effect.map((msg) => Option.fromNullable(msg ? JetStreamMessage.make(msg) : null))
-    ),
-  fetch: (...args) =>
-    wrapAsync(() => consumer.fetch(...args), "Failed to fetch messages").pipe(Effect.map(makeConsumerMessages)),
-  consume: (...args) =>
-    wrapAsync(() => consumer.consume(...args), "Failed to consume messages").pipe(Effect.map(makeConsumerMessages)),
-  info: (...args) => wrapAsync(() => consumer.info(...args), "Failed to get consumer info"),
-  delete: wrapAsync(() => consumer.delete(), "Failed to delete consumer"),
-  consumer
-})
+const healthCheck = (
+  consumer: JetStreamConsumerMessages.InfoableConsumer
+): Effect.Effect<void, ConsumerError.ConsumerError, never> =>
+  consumer.info().pipe(
+    Effect.catchTag("JetStreamConsumerError", (error) =>
+      new ConsumerError.ConsumerError({ reason: "Healthcheck failed", cause: error })),
+    Effect.asVoid
+  )
 
 /**
- * @category type ids
- * @since 0.1.0
- */
-export const PushConsumerTypeId: unique symbol = Symbol.for("@effect-messaging/nats/PushConsumer")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type PushConsumerTypeId = typeof PushConsumerTypeId
-
-/**
- * Represents a push consumer
+ * Create a JetStreamConsumer from an existing ConsumerMessages and Consumer.
  *
- * @category models
- * @since 0.1.0
- */
-export interface PushConsumer extends InfoableConsumer, DeleteableConsumer, ConsumerKind {
-  readonly [PushConsumerTypeId]: PushConsumerTypeId
-  readonly consume: (
-    ...args: Parameters<JetStream.PushConsumer["consume"]>
-  ) => Effect.Effect<ConsumerMessages, NATSError.JetStreamConsumerError>
-
-  /** @internal */
-  readonly pushConsumer: JetStream.PushConsumer
-}
-
-/** @internal */
-export const makePushConsumer = (pushConsumer: JetStream.PushConsumer): PushConsumer => ({
-  [PushConsumerTypeId]: PushConsumerTypeId,
-  [ConsumerKindTypeId]: ConsumerKindTypeId,
-  [InfoableConsumerTypeId]: InfoableConsumerTypeId,
-  [DeleteableConsumerTypeId]: DeleteableConsumerTypeId,
-  isPullConsumer: wrap(() => pushConsumer.isPullConsumer(), "Failed to check if consumer is pull consumer"),
-  isPushConsumer: wrap(() => pushConsumer.isPushConsumer(), "Failed to check if consumer is push consumer"),
-  consume: (...args) =>
-    wrapAsync(() => pushConsumer.consume(...args), "Failed to consume messages").pipe(Effect.map(makeConsumerMessages)),
-  info: (...args) => wrapAsync(() => pushConsumer.info(...args), "Failed to get consumer info"),
-  delete: wrapAsync(() => pushConsumer.delete(), "Failed to delete consumer"),
-  pushConsumer
-})
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const ConsumersTypeId: unique symbol = Symbol.for("@effect-messaging/nats/Consumers")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type ConsumersTypeId = typeof ConsumersTypeId
-
-/**
- * Represents consumers API
+ * This constructor is useful when you want to control the consumer lifecycle
+ * separately from the consumer.
  *
- * @category models
+ * @category constructors
  * @since 0.1.0
  */
-export interface Consumers {
-  readonly [ConsumersTypeId]: ConsumersTypeId
-  readonly get: (
-    ...args: Parameters<JetStream.Consumers["get"]>
-  ) => Effect.Effect<Consumer, NATSError.JetStreamConsumerError>
-  readonly getConsumerFromInfo: (
-    ...args: Parameters<JetStream.Consumers["getConsumerFromInfo"]>
-  ) => Effect.Effect<Consumer, NATSError.JetStreamConsumerError>
-  readonly getPushConsumer: (
-    ...args: Parameters<JetStream.Consumers["getPushConsumer"]>
-  ) => Effect.Effect<PushConsumer, NATSError.JetStreamConsumerError>
-  readonly getBoundPushConsumer: (
-    ...args: Parameters<JetStream.Consumers["getBoundPushConsumer"]>
-  ) => Effect.Effect<PushConsumer, NATSError.JetStreamConsumerError>
+export const fromConsumerMessages = (
+  consumerMessages: JetStreamConsumerMessages.ConsumerMessages,
+  natsConsumer: JetStreamConsumerMessages.InfoableConsumer,
+  options: JetStreamConsumerOptions = {}
+): Effect.Effect<
+  JetStreamConsumer,
+  NATSError.NATSConnectionError,
+  NATSConnection.NATSConnection
+> =>
+  Effect.gen(function*() {
+    const connection = yield* NATSConnection.NATSConnection
+    const connectionInfo = yield* Option.match(connection.info, {
+      onNone: () => Effect.fail(new NATSError.NATSConnectionError({ reason: "Connection info not available" })),
+      onSome: Effect.succeed
+    })
 
-  /** @internal */
-  readonly consumers: JetStream.Consumers
-}
+    const consumer: JetStreamConsumer = {
+      [TypeId]: TypeId,
+      [Consumer.TypeId]: Consumer.TypeId,
+      serve: serveLayer(consumerMessages, connectionInfo, options),
+      serveEffect: serveEffect(consumerMessages, connectionInfo, options),
+      healthCheck: healthCheck(natsConsumer)
+    }
 
-/** @internal */
-export const makeConsumers = (consumers: JetStream.Consumers): Consumers => ({
-  [ConsumersTypeId]: ConsumersTypeId,
-  get: (...args) => wrapAsync(() => consumers.get(...args), "Failed to get consumer").pipe(Effect.map(makeConsumer)),
-  getConsumerFromInfo: (...args) =>
-    wrap(() => (consumers.getConsumerFromInfo(...args)), "Failed to get consumer from info").pipe(
-      Effect.map(makeConsumer)
-    ),
-  getPushConsumer: (...args) =>
-    wrapAsync(() => consumers.getPushConsumer(...args), "Failed to get push consumer").pipe(
-      Effect.map(makePushConsumer)
-    ),
-  getBoundPushConsumer: (...args) =>
-    wrapAsync(() => consumers.getBoundPushConsumer(...args), "Failed to get bound push consumer").pipe(
-      Effect.map(makePushConsumer)
-    ),
-  consumers
-})
+    return consumer
+  })
+
+/**
+ * Create a JetStreamConsumer from an existing Consumer.
+ *
+ * This is a convenience constructor that internally calls `consume()` on the consumer.
+ *
+ * @category constructors
+ * @since 0.1.0
+ */
+export const fromConsumer = (
+  natsConsumer: JetStreamConsumerMessages.Consumer,
+  options: JetStreamConsumerOptions = {},
+  consumeOptions?: Parameters<JetStreamConsumerMessages.Consumer["consume"]>[0]
+): Effect.Effect<
+  JetStreamConsumer,
+  NATSError.JetStreamConsumerError | NATSError.NATSConnectionError,
+  NATSConnection.NATSConnection
+> =>
+  Effect.gen(function*() {
+    const consumerMessages = yield* natsConsumer.consume(consumeOptions)
+    return yield* fromConsumerMessages(consumerMessages, natsConsumer, options)
+  })

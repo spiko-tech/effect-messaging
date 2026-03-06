@@ -6,7 +6,7 @@
  * @category type ids
  * @since 0.7.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamSubscriberResponse")
+export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamConsumerResponse")
 
 /**
  * @category type ids
@@ -63,7 +63,7 @@ export interface Term {
  * @category models
  * @since 0.7.0
  */
-export type JetStreamSubscriberResponse = Ack | Nak | Term
+export type JetStreamConsumerResponse = Ack | Nak | Term
 
 class AckImpl implements Ack {
   readonly [TypeId]: TypeId = TypeId
@@ -88,23 +88,23 @@ class TermImpl implements Term {
  * @category constructors
  * @since 0.7.0
  */
-export const ack = (): JetStreamSubscriberResponse => new AckImpl()
+export const ack = (): JetStreamConsumerResponse => new AckImpl()
 
 /**
  * @category constructors
  * @since 0.7.0
  */
-export const nak = (options?: NakOptions): JetStreamSubscriberResponse => new NakImpl(options?.millis)
+export const nak = (options?: NakOptions): JetStreamConsumerResponse => new NakImpl(options?.millis)
 
 /**
  * @category constructors
  * @since 0.7.0
  */
-export const term = (options?: TermOptions): JetStreamSubscriberResponse => new TermImpl(options?.reason)
+export const term = (options?: TermOptions): JetStreamConsumerResponse => new TermImpl(options?.reason)
 
 /**
  * @category guards
  * @since 0.7.0
  */
-export const isJetStreamSubscriberResponse = (u: unknown): u is JetStreamSubscriberResponse =>
+export const isJetStreamConsumerResponse = (u: unknown): u is JetStreamConsumerResponse =>
   typeof u === "object" && u !== null && TypeId in u

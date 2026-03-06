@@ -5,7 +5,7 @@ import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as utils from "./internal/utils.js"
-import * as JetStreamConsumers from "./JetStreamConsumer.js"
+import * as JetStreamConsumerMessages from "./JetStreamConsumerMessages.js"
 import * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
 import * as NATSError from "./NATSError.js"
 
@@ -48,7 +48,7 @@ export interface JetStreamStream {
   readonly best: Effect.Effect<JetStreamStream, NATSError.JetStreamStreamError>
   readonly getConsumer: (
     ...args: Parameters<JetStream.Stream["getConsumer"]>
-  ) => Effect.Effect<JetStreamConsumers.Consumer, NATSError.JetStreamStreamError>
+  ) => Effect.Effect<JetStreamConsumerMessages.Consumer, NATSError.JetStreamStreamError>
 
   /** @internal */
   readonly stream: JetStream.Stream
@@ -69,7 +69,7 @@ export const makeJetStreamStream = (stream: JetStream.Stream): JetStreamStream =
   best: wrapAsync(() => stream.best(), "Failed to get best stream").pipe(Effect.map(makeJetStreamStream)),
   getConsumer: (...args) =>
     wrapAsync(() => stream.getConsumer(...args), "Failed to get consumer").pipe(
-      Effect.map(JetStreamConsumers.makeConsumer)
+      Effect.map(JetStreamConsumerMessages.makeConsumer)
     ),
   stream
 })

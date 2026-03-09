@@ -112,17 +112,19 @@ const subscribe = (
             // them through a shared Deferred. Daemon fibers are used so they
             // don't block scope cleanup when the finalizer returns.
             const done = yield* Deferred.make<void>()
-            yield* Effect.forkDaemon(
+            const awaitEmptyFiber = yield* Effect.forkDaemon(
               FiberSet.awaitEmpty(fiberSet).pipe(
                 Effect.andThen(Deferred.succeed(done, undefined))
               )
             )
-            yield* Effect.forkDaemon(
+            const sleepFiber = yield* Effect.forkDaemon(
               Effect.sleep(options.drainTimeout).pipe(
                 Effect.andThen(Deferred.succeed(done, undefined))
               )
             )
             yield* Deferred.await(done)
+            yield* Fiber.interruptFork(awaitEmptyFiber)
+            yield* Fiber.interruptFork(sleepFiber)
           } else {
             yield* FiberSet.awaitEmpty(fiberSet)
           }

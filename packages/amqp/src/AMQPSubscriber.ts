@@ -8,9 +8,11 @@ import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Options } from "amqplib"
 import * as Cause from "effect/Cause"
+import * as Deferred from "effect/Deferred"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
+import * as FiberSet from "effect/FiberSet"
 import * as Function from "effect/Function"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
@@ -87,13 +89,51 @@ const subscribe = (
 ) =>
 <E, R>(app: AMQPSubscriberApp<E, R>) =>
   Effect.gen(function*() {
+    const fiberSet = yield* FiberSet.make<void>()
+
+    // When handlers are uninterruptible, wait for all in-flight message
+    // handlers to finish their ack/nack before allowing the channel to close.
+    // When handlers are interruptible (default), skip the drain and let
+    // handlers be interrupted for fast shutdown (messages will be redelivered).
+    if (options.uninterruptible) {
+      yield* Effect.addFinalizer(() =>
+        Effect.gen(function*() {
+          yield* Effect.logDebug("AMQPSubscriber: draining in-flight handlers")
+          if (options.drainTimeout) {
+            // Finalizers run in an uninterruptible context, so Effect.timeout
+            // (which relies on interruption) does not work here. Instead, fork
+            // two independent daemon fibers – one that waits for in-flight
+            // handlers and one that sleeps for the drain timeout – and race
+            // them through a shared Deferred. Daemon fibers are used so they
+            // don't block scope cleanup when the finalizer returns.
+            const done = yield* Deferred.make<void>()
+            yield* Effect.forkDaemon(
+              FiberSet.awaitEmpty(fiberSet).pipe(
+                Effect.andThen(Deferred.succeed(done, undefined))
+              )
+            )
+            yield* Effect.forkDaemon(
+              Effect.sleep(options.drainTimeout).pipe(
+                Effect.andThen(Deferred.succeed(done, undefined))
+              )
+            )
+            yield* Deferred.await(done)
+          } else {
+            yield* FiberSet.awaitEmpty(fiberSet)
+          }
+          yield* Effect.logDebug("AMQPSubscriber: all in-flight handlers drained")
+        })
+      )
+    }
+
     const consumeStream = yield* channel.consume(
       queueName,
       options.concurrency ? { prefetch: options.concurrency } : undefined
     )
     return yield* consumeStream.pipe(
       Stream.runForEach((message) =>
-        Effect.fork(
+        FiberSet.run(
+          fiberSet,
           Effect.useSpan(
             `amqp.consume ${message.fields.routingKey}`,
             {
@@ -196,16 +236,18 @@ const subscribe = (
                   })
                 ),
                 options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
-                Effect.withParentSpan(span)
+                options.uninterruptible && options.drainTimeout ? Effect.disconnect : Function.identity,
+                Effect.withParentSpan(span),
+                Effect.catchAllCause(() => Effect.void)
               )
           )
-        )
+        ).pipe(Effect.asVoid)
       ),
       Effect.mapError((error) =>
         new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })
       )
     )
-  })
+  }).pipe(Effect.scoped)
 
 /** @internal */
 const healthCheck = (
@@ -225,6 +267,7 @@ const healthCheck = (
 export interface AMQPSubscriberOptions {
   uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
+  drainTimeout?: Duration.DurationInput
   concurrency?: number
 }
 

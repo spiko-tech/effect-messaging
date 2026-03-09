@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Fiber, Schedule, TestServices } from "effect"
 import * as AMQPChannel from "../src/AMQPChannel.js"
 import * as AMQPConsumeMessage from "../src/AMQPConsumeMessage.js"
 import * as AMQPPublisher from "../src/AMQPPublisher.js"
@@ -491,14 +491,20 @@ describe("AMQPChannel", { sequential: true }, () => {
           // Interrupt the subscription fiber (simulating SIGTERM)
           yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
 
-          // Wait for handlerTimeout (300ms) + buffer. If handlerTimeout works,
-          // the handler should have timed out and been nacked by now. The drain
-          // should also complete because FiberSet becomes empty after timeout.
-          yield* Effect.sleep("800 millis")
+          // Wait long enough that, without a timeout, the handler would have
+          // completed its 2-second sleep. If handlerTimeout works, the handler
+          // will have been interrupted before finishing and onHandlingFinished
+          // will never be called.
+          yield* Effect.sleep("2500 millis")
 
-          // handlerTimeout should have fired — handler should NOT have finished
-          // its 2-second sleep, but should have been timed out at 300ms
+          // Now we can assert that the handler did not complete because it was
+          // timed out / interrupted, not just because it was still sleeping.
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+          // Additionally ensure that the subscription fiber has fully drained.
+          // If handlerTimeout were broken and the handler were stuck, this await
+          // would hang until the test-level timeout.
+          yield* Fiber.await(subscriptionFiber)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 15000 }
     )

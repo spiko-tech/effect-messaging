@@ -17,6 +17,7 @@ import * as Function from "effect/Function"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
+import * as Ref from "effect/Ref"
 import * as Stream from "effect/Stream"
 import * as AMQPChannel from "./AMQPChannel.js"
 import type * as AMQPConnection from "./AMQPConnection.js"
@@ -90,6 +91,9 @@ const subscribe = (
 <E, R>(app: AMQPSubscriberApp<E, R>) =>
   Effect.gen(function*() {
     const fiberSet = yield* FiberSet.make<void>()
+    // Gate that prevents new messages from being processed during drain.
+    // Only used when handlers are uninterruptible.
+    const draining = yield* Ref.make(false)
 
     // When handlers are uninterruptible, wait for all in-flight message
     // handlers to finish their ack/nack before allowing the channel to close.
@@ -98,6 +102,7 @@ const subscribe = (
     if (options.uninterruptible) {
       yield* Effect.addFinalizer(() =>
         Effect.gen(function*() {
+          yield* Ref.set(draining, true)
           yield* Effect.logDebug("AMQPSubscriber: draining in-flight handlers")
           if (options.drainTimeout) {
             // Finalizers run in an uninterruptible context, so Effect.timeout
@@ -132,116 +137,124 @@ const subscribe = (
     )
     return yield* consumeStream.pipe(
       Stream.runForEach((message) =>
-        FiberSet.run(
-          fiberSet,
-          Effect.useSpan(
-            `amqp.consume ${message.fields.routingKey}`,
-            {
-              parent: Option.getOrUndefined(
-                HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
-              ),
-              kind: "consumer",
-              captureStackTrace: false,
-              attributes: {
-                [ATTR_SERVER_ADDRESS]: connectionProperties.host,
-                [ATTR_SERVER_PORT]: connectionProperties.port,
-                [ATTR_MESSAGING_MESSAGE_ID]: message.properties.messageId,
-                [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
-                [ATTR_MESSAGING_SYSTEM]: connectionProperties.product,
-                [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
-                [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
-                [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
-                [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
-                [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
-              }
-            },
-            (span) =>
-              Effect.gen(function*() {
-                yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                const response = yield* (
-                  options.uninterruptible && options.handlerTimeout
-                    // Effect.timeoutFail relies on interruption internally,
-                    // which does not work inside Effect.uninterruptible. Use a
-                    // Deferred-based race instead: fork the app in an
-                    // interruptible region so the timeout can interrupt it.
-                    ? Effect.gen(function*() {
-                      const appFiber = yield* Effect.fork(Effect.interruptible(app))
-                      const timerFiber = yield* Effect.fork(
-                        Effect.sleep(options.handlerTimeout!).pipe(
-                          Effect.andThen(Fiber.interrupt(appFiber))
-                        )
-                      )
-                      return yield* Fiber.join(appFiber).pipe(
-                        Effect.onExit(() => Fiber.interrupt(timerFiber)),
-                        Effect.mapErrorCause((cause) =>
-                          Cause.isInterruptedOnly(cause)
-                            ? Cause.fail(
-                              new SubscriberError.SubscriberError({
-                                reason: `AMQPSubscriber: handler timed out`
-                              }) as E & SubscriberError.SubscriberError
-                            )
-                            : cause
-                        )
-                      )
-                    })
-                    : app.pipe(
-                      options.handlerTimeout
-                        ? Effect.timeoutFail({
-                          duration: options.handlerTimeout,
-                          onTimeout: () =>
-                            new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
-                        })
-                        : Function.identity
-                    )
-                )
-                yield* Match.valueTags(response, {
-                  Ack: () =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                      yield* channel.ack(message)
-                    }),
-                  Nack: (r) =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                      yield* channel.nack(message, r.allUpTo, r.requeue)
-                    }),
-                  Reject: (r) =>
-                    Effect.gen(function*() {
-                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
-                      yield* channel.reject(message, r.requeue)
-                    })
-                })
-              }).pipe(
-                Effect.provide(AMQPConsumeMessage.layer(message)),
-                Effect.tapErrorCause((cause) =>
-                  Effect.gen(function*() {
-                    yield* Effect.logError(Cause.pretty(cause))
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
-                    span.attribute(
-                      "error.type",
-                      String(Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
-                      ))
-                    )
-                    span.attribute("error.stack", Cause.pretty(cause))
-                    span.attribute(
-                      "error.message",
-                      String(Cause.squashWith(
-                        cause,
-                        (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-                      ))
-                    )
-                    yield* channel.nack(message, false, false)
-                  })
+        Effect.gen(function*() {
+          // If we are draining, reject new messages so they are requeued
+          // for another consumer instance to pick up.
+          if (options.uninterruptible && (yield* Ref.get(draining))) {
+            yield* channel.nack(message, false, true)
+            return
+          }
+          yield* FiberSet.run(
+            fiberSet,
+            Effect.useSpan(
+              `amqp.consume ${message.fields.routingKey}`,
+              {
+                parent: Option.getOrUndefined(
+                  HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
                 ),
-                options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
-                options.uninterruptible && options.drainTimeout ? Effect.disconnect : Function.identity,
-                Effect.withParentSpan(span),
-                Effect.catchAllCause(() => Effect.void)
-              )
-          )
-        ).pipe(Effect.asVoid)
+                kind: "consumer",
+                captureStackTrace: false,
+                attributes: {
+                  [ATTR_SERVER_ADDRESS]: connectionProperties.host,
+                  [ATTR_SERVER_PORT]: connectionProperties.port,
+                  [ATTR_MESSAGING_MESSAGE_ID]: message.properties.messageId,
+                  [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
+                  [ATTR_MESSAGING_SYSTEM]: connectionProperties.product,
+                  [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
+                  [ATTR_MESSAGING_DESTINATION_NAME]: queueName,
+                  [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
+                  [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
+                  [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
+                }
+              },
+              (span) =>
+                Effect.gen(function*() {
+                  yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
+                  const response = yield* (
+                    options.uninterruptible && options.handlerTimeout
+                      // Effect.timeoutFail relies on interruption internally,
+                      // which does not work inside Effect.uninterruptible. Use a
+                      // Deferred-based race instead: fork the app in an
+                      // interruptible region so the timeout can interrupt it.
+                      ? Effect.gen(function*() {
+                        const appFiber = yield* Effect.fork(Effect.interruptible(app))
+                        const timerFiber = yield* Effect.fork(
+                          Effect.sleep(options.handlerTimeout!).pipe(
+                            Effect.andThen(Fiber.interrupt(appFiber))
+                          )
+                        )
+                        return yield* Fiber.join(appFiber).pipe(
+                          Effect.onExit(() => Fiber.interrupt(timerFiber)),
+                          Effect.mapErrorCause((cause) =>
+                            Cause.isInterruptedOnly(cause)
+                              ? Cause.fail(
+                                new SubscriberError.SubscriberError({
+                                  reason: `AMQPSubscriber: handler timed out`
+                                }) as E & SubscriberError.SubscriberError
+                              )
+                              : cause
+                          )
+                        )
+                      })
+                      : app.pipe(
+                        options.handlerTimeout
+                          ? Effect.timeoutFail({
+                            duration: options.handlerTimeout,
+                            onTimeout: () =>
+                              new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
+                          })
+                          : Function.identity
+                      )
+                  )
+                  yield* Match.valueTags(response, {
+                    Ack: () =>
+                      Effect.gen(function*() {
+                        span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
+                        yield* channel.ack(message)
+                      }),
+                    Nack: (r) =>
+                      Effect.gen(function*() {
+                        span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                        yield* channel.nack(message, r.allUpTo, r.requeue)
+                      }),
+                    Reject: (r) =>
+                      Effect.gen(function*() {
+                        span.attribute(ATTR_MESSAGING_OPERATION_NAME, "reject")
+                        yield* channel.reject(message, r.requeue)
+                      })
+                  })
+                }).pipe(
+                  Effect.provide(AMQPConsumeMessage.layer(message)),
+                  Effect.tapErrorCause((cause) =>
+                    Effect.gen(function*() {
+                      yield* Effect.logError(Cause.pretty(cause))
+                      span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nack")
+                      span.attribute(
+                        "error.type",
+                        String(Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
+                        ))
+                      )
+                      span.attribute("error.stack", Cause.pretty(cause))
+                      span.attribute(
+                        "error.message",
+                        String(Cause.squashWith(
+                          cause,
+                          (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+                        ))
+                      )
+                      yield* channel.nack(message, false, false)
+                    })
+                  ),
+                  options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+                  options.uninterruptible && options.drainTimeout ? Effect.disconnect : Function.identity,
+                  Effect.withParentSpan(span),
+                  Effect.catchAllCause(() => Effect.void)
+                )
+            )
+          ).pipe(Effect.asVoid)
+        })
       ),
       Effect.mapError((error) =>
         new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })

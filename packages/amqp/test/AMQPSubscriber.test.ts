@@ -308,16 +308,19 @@ describe("AMQPChannel", { sequential: true }, () => {
 
           // wait for the handler to timeout
           yield* Effect.sleep("300 millis")
-          // The handler should timeout and should be interrupted
+          // The handler should timeout — the 500ms sleep was interrupted at 300ms
+          // so onHandlingFinished should never be called
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
 
           // Start the subscription again (with a new channel)
           yield* Effect.fork(startSubscription)
 
           yield* Effect.sleep("700 millis")
-          // The same message should not be consumed again because the has timed out and was nacked
+          // The same message should not be consumed again because it was nacked (without requeue)
+          // when the handler timed out
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+          // The handler timed out at 300ms so onHandlingFinished was never called
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 30000 }
     )

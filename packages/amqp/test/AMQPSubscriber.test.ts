@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Fiber, Schedule, TestServices } from "effect"
 import * as AMQPChannel from "../src/AMQPChannel.js"
 import * as AMQPConsumeMessage from "../src/AMQPConsumeMessage.js"
 import * as AMQPPublisher from "../src/AMQPPublisher.js"
@@ -323,6 +323,269 @@ describe("AMQPChannel", { sequential: true }, () => {
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 30000 }
+    )
+  })
+
+  describe("graceful drain", { sequential: true }, () => {
+    it.effect(
+      "Should drain in-flight handlers on interruption when uninterruptible, and message should not be redelivered",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            yield* Effect.sleep("500 millis")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, { uninterruptible: true })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          // Start the subscription
+          const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message that should be drained")
+          })
+
+          // Wait for the handler to start processing
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+          // Interrupt the subscription fiber (simulating SIGTERM)
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Wait for the drain to complete - the handler should finish
+          yield* Effect.sleep("600 millis")
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+
+          // Start a new subscription to verify the message is NOT redelivered
+          const onRedelivery = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const redeliverySubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+            yield* subscriber.subscribe(Effect.gen(function*() {
+              const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+              onRedelivery(message)
+              return AMQPSubscriberResponse.ack()
+            }))
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          yield* Effect.fork(redeliverySubscription)
+          yield* Effect.sleep("500 millis")
+
+          // Message should NOT be redelivered because it was acked during drain
+          expect(onRedelivery).not.toHaveBeenCalled()
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+
+    it.effect(
+      "Should stop draining when drainTimeout is reached",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            // Very long running task that exceeds the drain timeout
+            yield* Effect.sleep("2 seconds")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
+              uninterruptible: true,
+              drainTimeout: "300 millis"
+            })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          // Start the subscription
+          const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message with drain timeout")
+          })
+
+          // Wait for the handler to start
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Interrupt the subscription fiber
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Wait for the drain timeout to expire (300ms) plus some buffer
+          yield* Effect.sleep("600 millis")
+
+          // The handler should NOT have finished because the drain timeout expired
+          // and the FiberSet scope closed, interrupting the handler
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+
+    it.effect(
+      "Should timeout the handler via handlerTimeout even when uninterruptible with drainTimeout",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            // Handler takes 2 seconds but handlerTimeout is 300ms
+            yield* Effect.sleep("2 seconds")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
+              uninterruptible: true,
+              handlerTimeout: "300 millis",
+              drainTimeout: "3 seconds"
+            })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          // Start the subscription
+          const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message with handler timeout")
+          })
+
+          // Wait for the handler to start
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Interrupt the subscription fiber (simulating SIGTERM)
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Wait long enough that, without a timeout, the handler would have
+          // completed its 2-second sleep. If handlerTimeout works, the handler
+          // will have been interrupted before finishing and onHandlingFinished
+          // will never be called.
+          yield* Effect.sleep("2500 millis")
+
+          // Now we can assert that the handler did not complete because it was
+          // timed out / interrupted, not just because it was still sleeping.
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+          // Additionally ensure that the subscription fiber has fully drained.
+          // If handlerTimeout were broken and the handler were stuck, this await
+          // would hang until the test-level timeout.
+          yield* Fiber.await(subscriptionFiber)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+
+    it.effect(
+      "Should nack new messages with requeue during the drain window instead of processing them",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            yield* Effect.sleep("800 millis")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, { uninterruptible: true })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          // Start the subscription
+          const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+          // Publish message 1 — will be picked up and start processing
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message 1 - should be drained")
+          })
+
+          // Wait for the handler to start processing message 1
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Interrupt the subscription (triggers drain, sets draining gate)
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Give a moment for the finalizer to set the draining flag
+          yield* Effect.sleep("100 millis")
+
+          // Publish message 2 — arrives while draining, should be nacked with requeue
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message 2 - should be requeued")
+          })
+
+          // Wait for the drain to complete (message 1 handler finishes)
+          yield* Effect.sleep("900 millis")
+
+          // Message 1 should have completed normally during drain
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+          // Message 2 should NOT have been processed by this subscriber
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Start a new subscriber to verify message 2 was requeued
+          const onRedelivery = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const redeliverySubscription = Effect.gen(function*() {
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+            yield* subscriber.subscribe(Effect.gen(function*() {
+              const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+              onRedelivery(message)
+              return AMQPSubscriberResponse.ack()
+            }))
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          yield* Effect.fork(redeliverySubscription)
+          yield* Effect.sleep("500 millis")
+
+          // Message 2 should be redelivered to the new subscriber
+          expect(onRedelivery).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
     )
   })
 

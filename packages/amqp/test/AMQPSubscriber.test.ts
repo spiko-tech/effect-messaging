@@ -510,7 +510,7 @@ describe("AMQPChannel", { sequential: true }, () => {
     )
 
     it.effect(
-      "Should nack new messages with requeue during the drain window instead of processing them",
+      "Should cancel the consumer during drain so new messages are not delivered",
       () =>
         Effect.gen(function*() {
           yield* setup
@@ -547,17 +547,18 @@ describe("AMQPChannel", { sequential: true }, () => {
           yield* Effect.sleep("200 millis")
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
-          // Interrupt the subscription (triggers drain, sets draining gate)
+          // Interrupt the subscription (triggers drain, cancels the consumer)
           yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
 
-          // Give a moment for the finalizer to set the draining flag
+          // Give a moment for the finalizer to cancel the consumer
           yield* Effect.sleep("100 millis")
 
-          // Publish message 2 — arrives while draining, should be nacked with requeue
+          // Publish message 2 — arrives while draining, should not be
+          // delivered because the consumer has been cancelled
           yield* publisher.publish({
             exchange: TEST_EXCHANGE,
             routingKey: TEST_SUBJECT,
-            content: Buffer.from("Message 2 - should be requeued")
+            content: Buffer.from("Message 2 - should stay in queue")
           })
 
           // Wait for the drain to complete (message 1 handler finishes)
@@ -568,7 +569,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           // Message 2 should NOT have been processed by this subscriber
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
-          // Start a new subscriber to verify message 2 was requeued
+          // Start a new subscriber to verify message 2 is still in the queue
           const onRedelivery = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
           const redeliverySubscription = Effect.gen(function*() {
             const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
@@ -582,7 +583,7 @@ describe("AMQPChannel", { sequential: true }, () => {
           yield* Effect.fork(redeliverySubscription)
           yield* Effect.sleep("500 millis")
 
-          // Message 2 should be redelivered to the new subscriber
+          // Message 2 should be delivered to the new subscriber
           expect(onRedelivery).toHaveBeenCalledTimes(1)
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 15000 }

@@ -36,7 +36,10 @@ export interface AMQPChannel {
   readonly consume: (
     queueName: string,
     options?: { readonly prefetch?: number }
-  ) => Effect.Effect<Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>>
+  ) => Effect.Effect<{
+    readonly stream: Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>
+    readonly cancelConsumer: Effect.Effect<void, AMQPError.AMQPChannelError>
+  }>
   readonly ack: (...parameters: Parameters<Channel["ack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly ackAll: (...parameters: Parameters<Channel["ackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly nack: (...parameters: Parameters<Channel["nack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>

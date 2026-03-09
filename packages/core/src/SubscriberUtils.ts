@@ -10,7 +10,6 @@ import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
 import * as FiberSet from "effect/FiberSet"
-import * as Ref from "effect/Ref"
 import type * as Scope from "effect/Scope"
 import * as SubscriberError from "./SubscriberError.js"
 
@@ -23,6 +22,13 @@ import * as SubscriberError from "./SubscriberError.js"
 export interface HandlerRunnerOptions {
   readonly uninterruptible?: boolean | undefined
   readonly drainTimeout?: Duration.DurationInput | undefined
+  /**
+   * An effect to run when the drain starts, before waiting for in-flight
+   * handlers. Typically used to signal the transport to stop delivering
+   * new messages (e.g. cancel an AMQP consumer, drain a NATS subscription).
+   * Errors are logged and ignored so they don't prevent drain completion.
+   */
+  readonly onDrain?: Effect.Effect<void, any, never> | undefined
 }
 
 /**
@@ -34,16 +40,9 @@ export interface HandlerRunnerOptions {
  */
 export interface HandlerRunner {
   /**
-   * Run a handler effect in the FiberSet. Returns `true` if the handler
-   * was accepted, `false` if the runner is draining and new handlers are
-   * rejected.
+   * Run a handler effect in the FiberSet.
    */
-  readonly run: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<boolean, never, R>
-  /**
-   * Whether the runner is currently draining (waiting for in-flight
-   * handlers to finish before shutdown).
-   */
-  readonly isDraining: Ref.Ref<boolean>
+  readonly run: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<void, never, R>
 }
 
 /**
@@ -51,7 +50,7 @@ export interface HandlerRunner {
  * handler fibers and supports graceful drain on scope finalization.
  *
  * When `uninterruptible` is `true`, a finalizer is registered that:
- * 1. Sets a draining gate to reject new handlers
+ * 1. Calls `onDrain` to signal the transport to stop delivering messages
  * 2. Waits for all in-flight handlers to complete (optionally with a timeout)
  *
  * When `uninterruptible` is `false` (default), handlers are forked
@@ -74,12 +73,13 @@ export const makeHandlerRunner = (
 ): Effect.Effect<HandlerRunner, never, Scope.Scope> =>
   Effect.gen(function*() {
     const fiberSet = yield* FiberSet.make<void>()
-    const draining = yield* Ref.make(false)
 
     if (options.uninterruptible) {
       yield* Effect.addFinalizer(() =>
         Effect.gen(function*() {
-          yield* Ref.set(draining, true)
+          if (options.onDrain) {
+            yield* options.onDrain.pipe(Effect.ignoreLogged)
+          }
           yield* Effect.logDebug("SubscriberUtils: draining in-flight handlers")
           if (options.drainTimeout) {
             // Finalizers run in an uninterruptible context, so Effect.timeout
@@ -110,23 +110,17 @@ export const makeHandlerRunner = (
       )
     }
 
-    const run = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<boolean, never, R> =>
-      Effect.gen(function*() {
-        if (options.uninterruptible && (yield* Ref.get(draining))) {
-          return false
-        }
-        yield* FiberSet.run(
-          fiberSet,
-          effect.pipe(
-            options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
-            options.uninterruptible && options.drainTimeout ? Effect.disconnect : (_) => _,
-            Effect.catchAllCause(() => Effect.void)
-          )
+    const run = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<void, never, R> =>
+      FiberSet.run(
+        fiberSet,
+        effect.pipe(
+          options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+          options.uninterruptible && options.drainTimeout ? Effect.disconnect : (_) => _,
+          Effect.catchAllCause(() => Effect.void)
         )
-        return true
-      })
+      )
 
-    return { run, isDraining: draining } as HandlerRunner
+    return { run } as HandlerRunner
   })
 
 /**

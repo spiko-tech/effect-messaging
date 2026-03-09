@@ -10,6 +10,7 @@ import type { Options } from "amqplib"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Function from "effect/Function"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
@@ -117,14 +118,41 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                const response = yield* app.pipe(
-                  options.handlerTimeout
-                    ? Effect.timeoutFail({
-                      duration: options.handlerTimeout,
-                      onTimeout: () =>
-                        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
+                const response = yield* (
+                  options.uninterruptible && options.handlerTimeout
+                    // Effect.timeoutFail relies on interruption internally,
+                    // which does not work inside Effect.uninterruptible. Use a
+                    // Deferred-based race instead: fork the app in an
+                    // interruptible region so the timeout can interrupt it.
+                    ? Effect.gen(function*() {
+                      const appFiber = yield* Effect.fork(Effect.interruptible(app))
+                      const timerFiber = yield* Effect.fork(
+                        Effect.sleep(options.handlerTimeout!).pipe(
+                          Effect.andThen(Fiber.interrupt(appFiber))
+                        )
+                      )
+                      return yield* Fiber.join(appFiber).pipe(
+                        Effect.onExit(() => Fiber.interrupt(timerFiber)),
+                        Effect.mapErrorCause((cause) =>
+                          Cause.isInterruptedOnly(cause)
+                            ? Cause.fail(
+                              new SubscriberError.SubscriberError({
+                                reason: `AMQPSubscriber: handler timed out`
+                              }) as E & SubscriberError.SubscriberError
+                            )
+                            : cause
+                        )
+                      )
                     })
-                    : Function.identity
+                    : app.pipe(
+                      options.handlerTimeout
+                        ? Effect.timeoutFail({
+                          duration: options.handlerTimeout,
+                          onTimeout: () =>
+                            new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
+                        })
+                        : Function.identity
+                    )
                 )
                 yield* Match.valueTags(response, {
                   Ack: () =>

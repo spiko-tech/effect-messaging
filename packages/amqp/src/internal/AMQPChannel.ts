@@ -7,6 +7,7 @@ import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Function from "effect/Function"
 import * as Option from "effect/Option"
+import * as Ref from "effect/Ref"
 import * as Schedule from "effect/Schedule"
 import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
@@ -202,6 +203,7 @@ const initiateConsumption = (
   channel: Channel,
   queueName: string,
   emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
+  consumerTagRef: Ref.Ref<Option.Option<string>>,
   options?: { readonly prefetch?: number }
 ) =>
   Effect.gen(function*() {
@@ -213,24 +215,19 @@ const initiateConsumption = (
       catch: (error) =>
         new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
     })
-    yield* Effect.try({
-      try: () => {
+    const { consumerTag } = yield* Effect.tryPromise({
+      try: () =>
         channel.consume(queueName, async (message) => {
           if (!message) return
           emit.single(message)
-        }).catch((error) => {
-          emit.fail(
-            new AMQPChannelError({ reason: `Consumption from queue ${queueName} ended unexpectedly`, cause: error })
-          )
-        })
-
-        channel.on("close", () => {
-          emit.end()
-        })
-      },
+        }),
       catch: (error) => new AMQPChannelError({ reason: `Failed to consume from queue ${queueName}`, cause: error })
     })
-    yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName}`)
+    yield* Ref.set(consumerTagRef, Option.some(consumerTag))
+    channel.on("close", () => {
+      emit.end()
+    })
+    yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName} (consumerTag: ${consumerTag})`)
   }).pipe(
     Effect.withSpan("AMQPChannel.initiateConsumption")
   )
@@ -239,16 +236,38 @@ const initiateConsumption = (
 export const consume = (queueName: string, options?: { readonly prefetch?: number }) =>
   Effect.gen(function*() {
     const { channelRef, retryConsumptionSchedule } = yield* InternalAMQPChannel
-    return channelRef.changes.pipe(
+    const consumerTagRef = yield* Ref.make(Option.none<string>())
+
+    const stream = channelRef.changes.pipe(
       Stream.filterMap(Function.identity),
       Stream.flatMap(
         (channel) =>
           Stream.asyncPush<ConsumeMessage, AMQPChannelError>((emit) =>
-            initiateConsumption(channel, queueName, emit, options).pipe(
+            initiateConsumption(channel, queueName, emit, consumerTagRef, options).pipe(
               Effect.retry(retryConsumptionSchedule)
             )
           ),
         { concurrency: "unbounded" }
       )
     )
+
+    const cancelConsumer: Effect.Effect<void, AMQPChannelError> = Effect.gen(function*() {
+      const tag = yield* Ref.get(consumerTagRef)
+      if (Option.isSome(tag)) {
+        const channel = yield* SubscriptionRef.get(channelRef).pipe(
+          Effect.flatMap(Option.match({
+            onNone: () => Effect.fail(new AMQPChannelError({ reason: "Channel is not available" })),
+            onSome: Effect.succeed
+          }))
+        )
+        yield* Effect.tryPromise({
+          try: () => channel.cancel(tag.value),
+          catch: (error) => new AMQPChannelError({ reason: `Failed to cancel consumer ${tag.value}`, cause: error })
+        })
+        yield* Ref.set(consumerTagRef, Option.none())
+        yield* Effect.logDebug(`AMQPChannel: cancelled consumer ${tag.value}`)
+      }
+    }).pipe(Effect.withSpan("AMQPChannel.cancelConsumer"))
+
+    return { stream, cancelConsumer }
   })

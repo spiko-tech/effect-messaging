@@ -4,13 +4,13 @@
 import * as Subscriber from "@effect-messaging/core/Subscriber"
 import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
+import * as SubscriberUtils from "@effect-messaging/core/SubscriberUtils"
 import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Options } from "amqplib"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Function from "effect/Function"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
@@ -85,14 +85,21 @@ const subscribe = (
   options: AMQPSubscriberOptions
 ) =>
 <E, R>(app: AMQPSubscriberApp<E, R>) =>
-  Effect.gen(function*() {
-    const consumeStream = yield* channel.consume(
+  Effect.scoped(Effect.gen(function*() {
+    const { cancelConsumer, stream: consumeStream } = yield* channel.consume(
       queueName,
       options.concurrency ? { prefetch: options.concurrency } : undefined
     )
+
+    const runner = yield* SubscriberUtils.makeHandlerRunner({
+      uninterruptible: options.uninterruptible,
+      drainTimeout: options.drainTimeout,
+      onDrain: cancelConsumer
+    })
+
     return yield* consumeStream.pipe(
       Stream.runForEach((message) =>
-        Effect.fork(
+        runner.run(
           Effect.useSpan(
             `amqp.consume ${message.fields.routingKey}`,
             {
@@ -119,12 +126,13 @@ const subscribe = (
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
                 const response = yield* app.pipe(
                   options.handlerTimeout
-                    ? Effect.timeoutFail({
-                      duration: options.handlerTimeout,
-                      onTimeout: () =>
-                        new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
-                    })
-                    : Function.identity
+                    ? (e) =>
+                      SubscriberUtils.withTimeout(e, {
+                        timeout: options.handlerTimeout!,
+                        uninterruptible: options.uninterruptible ?? false,
+                        timeoutMessage: "AMQPSubscriber: handler timed out"
+                      })
+                    : (_) => _
                 )
                 yield* Match.valueTags(response, {
                   Ack: () =>
@@ -167,7 +175,6 @@ const subscribe = (
                     yield* channel.nack(message, false, false)
                   })
                 ),
-                options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
                 Effect.withParentSpan(span)
               )
           )
@@ -177,7 +184,7 @@ const subscribe = (
         new SubscriberError.SubscriberError({ reason: `AMQPSubscriber failed to subscribe`, cause: error })
       )
     )
-  })
+  }))
 
 /** @internal */
 const healthCheck = (
@@ -197,6 +204,7 @@ const healthCheck = (
 export interface AMQPSubscriberOptions {
   uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
+  drainTimeout?: Duration.DurationInput
   concurrency?: number
 }
 

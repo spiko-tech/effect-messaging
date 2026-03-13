@@ -8,7 +8,7 @@ import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Function from "effect/Function"
+
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
@@ -59,7 +59,6 @@ export interface JetStreamSubscriber
  * @since 0.1.0
  */
 export interface JetStreamSubscriberOptions {
-  uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
 }
 
@@ -109,15 +108,16 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              const response = yield* app.pipe(
-                options.handlerTimeout
-                  ? Effect.timeoutFail({
+              const response = options.handlerTimeout
+                ? yield* app.pipe(
+                  Effect.interruptible,
+                  Effect.timeoutFail({
                     duration: options.handlerTimeout,
                     onTimeout: () =>
                       new SubscriberError.SubscriberError({ reason: "JetStreamSubscriber: handler timed out" })
                   })
-                  : Function.identity
-              )
+                )
+                : yield* app
               yield* Match.valueTags(response, {
                 Ack: () =>
                   Effect.gen(function*() {
@@ -155,7 +155,7 @@ const subscribe = (
                   yield* message.nak()
                 })
               ),
-              options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+              Effect.uninterruptible,
               Effect.withParentSpan(span)
             )
         )

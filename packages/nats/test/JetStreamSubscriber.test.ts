@@ -98,9 +98,9 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
       ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
   })
 
-  describe("interruptable subscribers", { sequential: true }, () => {
+  describe("handler behavior on interruption", { sequential: true }, () => {
     it.effect(
-      "Should interrupt the handler if the subscription fiber is interrupted, and the message should be consumed again",
+      "Should let in-flight handler complete on interrupt, acking the message so it is not redelivered",
       () =>
         Effect.scoped(
           Effect.gen(function*() {
@@ -114,7 +114,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             const handler = Effect.gen(function*() {
               const message = yield* JetStreamMessage.JetStreamConsumeMessage
               onHandlingStarted(message)
-              yield* Effect.sleep("500 millis")
+              yield* Effect.sleep("300 millis")
               onHandlingFinished(message)
               return JetStreamSubscriberResponse.ack()
             })
@@ -132,93 +132,35 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
             yield* publisher.publish({
               subject: TEST_SUBJECT,
-              payload: new TextEncoder().encode("My Message that will be interrupted")
+              payload: new TextEncoder().encode("My Message that will NOT be interrupted")
             })
 
             // Wait for the message to be consumed
-            yield* Effect.sleep("300 millis")
-            // Verify the message was consumed at least once
-            expect(onHandlingStarted.mock.calls.length).toBeGreaterThanOrEqual(1)
-            const startedCountBeforeInterrupt = onHandlingStarted.mock.calls.length
+            yield* Effect.sleep("200 millis")
+            // Verify the message was consumed
+            expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
+            // Interrupt the subscription fiber
             yield* subscriptionFiber1.interruptAsFork(subscriptionFiber1.id())
 
-            // Wait for the interruption to complete
+            // The handler should complete despite the interrupt (uninterruptible)
             yield* Effect.sleep("300 millis")
-
-            // The message handling should be interrupted (not finished yet for the first delivery)
-            expect(onHandlingFinished.mock.calls.length).toBeLessThan(startedCountBeforeInterrupt)
+            expect(onHandlingFinished).toHaveBeenCalledTimes(1)
 
             // Start the subscription again
             yield* Effect.fork(startSubscription)
 
-            // Wait for ack_wait to expire (500ms) + handler execution time + buffer
-            yield* Effect.sleep("1.5 seconds")
-            // The message should eventually be processed successfully
-            expect(onHandlingFinished.mock.calls.length).toBeGreaterThanOrEqual(1)
+            yield* Effect.sleep("500 millis")
+            // The same message should not be consumed again because the handler completed and acked
+            expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+            expect(onHandlingFinished).toHaveBeenCalledTimes(1)
           })
         ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
       { timeout: 15000 }
     )
 
-    it.effect("Should not interrupt the handler if the subscriber is uninterruptible", () =>
-      Effect.scoped(
-        Effect.gen(function*() {
-          yield* setup
-
-          const publisher = yield* JetStreamPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* JetStreamMessage.JetStreamConsumeMessage
-            onHandlingStarted(message)
-            yield* Effect.sleep("300 millis")
-            onHandlingFinished(message)
-            return JetStreamSubscriberResponse.ack()
-          })
-
-          const client = yield* JetStreamClient.JetStreamClient
-
-          const startSubscription = Effect.gen(function*() {
-            const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
-            const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, { uninterruptible: true })
-            yield* subscriber.subscribe(handler)
-          })
-
-          // Start the subscription
-          const subscriptionFiber1 = yield* Effect.fork(startSubscription)
-
-          yield* publisher.publish({
-            subject: TEST_SUBJECT,
-            payload: new TextEncoder().encode("My Message that will NOT be interrupted")
-          })
-
-          // Wait for the message to be consumed
-          yield* Effect.sleep("200 millis")
-          // Verify the message was consumed
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Interrupt the subscription fiber
-          yield* subscriptionFiber1.interruptAsFork(subscriptionFiber1.id())
-
-          // The subscription should be uninterrupted - wait for the message to be consumed
-          yield* Effect.sleep("300 millis")
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-
-          // Start the subscription again
-          yield* Effect.fork(startSubscription)
-
-          yield* Effect.sleep("500 millis")
-          // The same message should not be consumed again because the first subscription was uninterrupted and the message was acked
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
-
     it.effect(
-      "Should timeout the handler when handlerTimeout is set, and message should be nacked for redelivery",
+      "Should interrupt the handler when it exceeds the timeout, naking for redelivery",
       () =>
         Effect.scoped(
           Effect.gen(function*() {

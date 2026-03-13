@@ -198,13 +198,13 @@ export const wrapChannelMethod = <A>(
   }).pipe(Effect.withSpan(`AMQPChannel.${methodName}`))
 
 /** @internal */
-const initiateConsumption = (
-  channel: Channel,
-  queueName: string,
-  emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
-  options?: { readonly prefetch?: number }
-) =>
-  Effect.gen(function*() {
+const initiateConsumption = Effect.fn("initiateConsumption")(
+  function*(
+    channel: Channel,
+    queueName: string,
+    emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
+    options?: { readonly prefetch?: number }
+  ) {
     yield* Effect.annotateCurrentSpan({
       [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName
     })
@@ -213,27 +213,27 @@ const initiateConsumption = (
       catch: (error) =>
         new AMQPChannelError({ reason: `Failed to set prefetch on channel for queue ${queueName}`, cause: error })
     })
-    yield* Effect.try({
-      try: () => {
-        channel.consume(queueName, async (message) => {
+    const { consumerTag } = yield* Effect.tryPromise({
+      try: () =>
+        channel.consume(queueName, (message) => {
           if (!message) return
           emit.single(message)
-        }).catch((error) => {
-          emit.fail(
-            new AMQPChannelError({ reason: `Consumption from queue ${queueName} ended unexpectedly`, cause: error })
-          )
-        })
-
-        channel.on("close", () => {
-          emit.end()
-        })
-      },
+        }),
       catch: (error) => new AMQPChannelError({ reason: `Failed to consume from queue ${queueName}`, cause: error })
     })
-    yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName}`)
-  }).pipe(
-    Effect.withSpan("AMQPChannel.initiateConsumption")
-  )
+    yield* Effect.addFinalizer(() =>
+      Effect.tryPromise(() => channel.cancel(consumerTag)).pipe(
+        Effect.tap(Effect.logDebug(`AMQPChannel: consumer ${consumerTag} cancelled for queue ${queueName}`)),
+        Effect.ignore
+      )
+    )
+    channel.on("close", () => {
+      emit.end()
+    })
+    yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName} with consumer tag ${consumerTag}`)
+  },
+  Effect.withSpan("AMQPChannel.initiateConsumption")
+)
 
 /** @internal */
 export const consume = (queueName: string, options?: { readonly prefetch?: number }) =>

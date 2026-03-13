@@ -10,7 +10,6 @@ import type { Options } from "amqplib"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Function from "effect/Function"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
@@ -117,16 +116,17 @@ const subscribe = (
             (span) =>
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
-                const response = yield* app.pipe(
-                  options.handlerTimeout ? Effect.interruptible : Function.identity,
-                  options.handlerTimeout
-                    ? Effect.timeoutFail({
+                const response = options.handlerTimeout
+                  ? yield* app.pipe(
+                    Effect.interruptible,
+                    Effect.timeoutFail({
                       duration: options.handlerTimeout,
                       onTimeout: () =>
                         new SubscriberError.SubscriberError({ reason: `AMQPSubscriber: handler timed out` })
                     })
-                    : Function.identity
-                )
+                  )
+                  : yield* app
+
                 yield* Match.valueTags(response, {
                   Ack: () =>
                     Effect.gen(function*() {

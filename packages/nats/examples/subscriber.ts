@@ -30,8 +30,6 @@ const program = Effect.gen(function*() {
 
   // Create a subscriber from the consumer
   const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, {
-    // Optional: make message processing uninterruptible
-    uninterruptible: true,
     // Optional: set a timeout for message processing
     handlerTimeout: "30 seconds"
   })

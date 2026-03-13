@@ -123,9 +123,9 @@ describe("NATSSubscriber", { sequential: true }, () => {
       }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
   })
 
-  describe("interruptable subscribers", { sequential: true }, () => {
+  describe("handler behavior on interruption", { sequential: true }, () => {
     it.effect(
-      "Should interrupt the handler if the subscription fiber is interrupted",
+      "Should let in-flight handler complete on interrupt",
       () =>
         Effect.gen(function*() {
           const publisher = yield* NATSPublisher.make()
@@ -136,7 +136,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           const handler = Effect.gen(function*() {
             const message = yield* NATSMessage.NATSConsumeMessage
             onHandlingStarted(message)
-            yield* Effect.sleep("500 millis")
+            yield* Effect.sleep("300 millis")
             onHandlingFinished(message)
           })
 
@@ -150,66 +150,25 @@ describe("NATSSubscriber", { sequential: true }, () => {
 
           yield* publisher.publish({
             subject: TEST_SUBJECT,
-            payload: new TextEncoder().encode("My Message that will be interrupted")
+            payload: new TextEncoder().encode("My Message that will NOT be interrupted")
           })
 
-          // Wait for the message handling to start
+          // Wait for the message to be consumed
           yield* Effect.sleep("200 millis")
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber
           yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
 
-          // Wait for the interruption to take effect
-          yield* Effect.sleep("100 millis")
-
-          // The message handling should be interrupted (not finished)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+          // The handler should complete despite the interrupt (uninterruptible)
+          yield* Effect.sleep("300 millis")
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
         }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
       { timeout: 15000 }
     )
 
-    it.effect("Should not interrupt the handler if the subscriber is uninterruptible", () =>
-      Effect.gen(function*() {
-        const publisher = yield* NATSPublisher.make()
-
-        const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-        const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-
-        const handler = Effect.gen(function*() {
-          const message = yield* NATSMessage.NATSConsumeMessage
-          onHandlingStarted(message)
-          yield* Effect.sleep("300 millis")
-          onHandlingFinished(message)
-        })
-
-        const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT, undefined, { uninterruptible: true })
-
-        // Start the subscription
-        const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
-
-        // Give the subscription time to start
-        yield* Effect.sleep("100 millis")
-
-        yield* publisher.publish({
-          subject: TEST_SUBJECT,
-          payload: new TextEncoder().encode("My Message that will NOT be interrupted")
-        })
-
-        // Wait for the message to be consumed
-        yield* Effect.sleep("200 millis")
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-        // Interrupt the subscription fiber
-        yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
-
-        // The subscription should be uninterrupted - wait for the message to be consumed
-        yield* Effect.sleep("300 millis")
-        expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
-
     it.effect(
-      "Should timeout the handler when handlerTimeout is set",
+      "Should interrupt the handler when it exceeds the timeout",
       () =>
         Effect.gen(function*() {
           const publisher = yield* NATSPublisher.make()

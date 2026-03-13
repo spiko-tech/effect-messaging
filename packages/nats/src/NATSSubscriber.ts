@@ -7,7 +7,7 @@ import type * as NATSCore from "@nats-io/nats-core"
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
-import * as Function from "effect/Function"
+
 import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Stream from "effect/Stream"
@@ -42,7 +42,6 @@ export interface NATSSubscriber extends Subscriber.Subscriber<void, NATSMessage.
  * @since 0.3.0
  */
 export interface NATSSubscriberOptions {
-  uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
 }
 
@@ -84,15 +83,18 @@ const subscribe = (
           (span) =>
             Effect.gen(function*() {
               yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              yield* handler.pipe(
-                options.handlerTimeout
-                  ? Effect.timeoutFail({
+              if (options.handlerTimeout) {
+                yield* handler.pipe(
+                  Effect.interruptible,
+                  Effect.timeoutFail({
                     duration: options.handlerTimeout,
                     onTimeout: () =>
                       new SubscriberError.SubscriberError({ reason: "NATSSubscriber: handler timed out" })
                   })
-                  : Function.identity
-              )
+                )
+              } else {
+                yield* handler
+              }
               span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
             }).pipe(
               Effect.provide(NATSMessage.layer(message)),
@@ -118,7 +120,7 @@ const subscribe = (
                   )
                 })
               ),
-              options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+              Effect.uninterruptible,
               Effect.withParentSpan(span)
             )
         )

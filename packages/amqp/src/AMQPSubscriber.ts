@@ -118,6 +118,7 @@ const subscribe = (
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
                 const response = yield* app.pipe(
+                  options.uninterruptible && options.handlerTimeout ? Effect.interruptible : Function.identity,
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,

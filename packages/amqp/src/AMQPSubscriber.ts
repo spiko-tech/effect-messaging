@@ -118,7 +118,7 @@ const subscribe = (
               Effect.gen(function*() {
                 yield* Effect.logDebug(`amqp.consume ${message.fields.routingKey}`)
                 const response = yield* app.pipe(
-                  options.uninterruptible && options.handlerTimeout ? Effect.interruptible : Function.identity,
+                  options.handlerTimeout ? Effect.interruptible : Function.identity,
                   options.handlerTimeout
                     ? Effect.timeoutFail({
                       duration: options.handlerTimeout,
@@ -168,7 +168,7 @@ const subscribe = (
                     yield* channel.nack(message, false, false)
                   })
                 ),
-                options.uninterruptible ? Effect.uninterruptible : Effect.interruptible,
+                Effect.uninterruptible,
                 Effect.withParentSpan(span)
               )
           )
@@ -196,7 +196,6 @@ const healthCheck = (
  * @since 0.5.0
  */
 export interface AMQPSubscriberOptions {
-  uninterruptible?: boolean
   handlerTimeout?: Duration.DurationInput
   concurrency?: number
 }

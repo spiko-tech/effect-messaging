@@ -1,5 +1,14 @@
 # @effect-messaging/nats
 
+## 0.7.5
+
+### Patch Changes
+
+- [#135](https://github.com/spiko-tech/effect-messaging/pull/135) [`3b033ee`](https://github.com/spiko-tech/effect-messaging/commit/3b033ee951c56b76c1c08985caa61354667d1f2f) Thanks [@wewelll](https://github.com/wewelll)! - Make JetStreamSubscriber and NATSSubscriber handlers always uninterruptible, and fix `handlerTimeout`.
+
+  - Remove the `uninterruptible` option from `JetStreamSubscriberOptions` and `NATSSubscriberOptions`. Handlers are now always uninterruptible, ensuring in-flight message processing completes even when the subscription fiber is interrupted (e.g. SIGINT).
+  - Fix `handlerTimeout` not working: the timeout previously couldn't fire because `Effect.uninterruptible` prevented the internal interrupt. Fixed by wrapping the handler in `Effect.interruptible` before `timeoutFail`, allowing the timeout to interrupt while the outer `Effect.uninterruptible` still blocks external interrupts.
+
 ## 0.7.4
 
 ### Patch Changes

@@ -290,6 +290,89 @@ describe("AMQPChannel", { sequential: true }, () => {
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 15000 }
     )
+
+    it.effect(
+      "Should cancel individual consumer without affecting others on shared channel",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          // Track which messages each subscriber receives
+          const messagesA: Array<string> = []
+          const messagesB: Array<string> = []
+
+          const handlerA = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            messagesA.push(message.content.toString())
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const handlerB = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            messagesB.push(message.content.toString())
+            return AMQPSubscriberResponse.ack()
+          })
+
+          // Both subscribers share a SINGLE AMQPChannel (no individual AMQPChannel.layer() wrapping).
+          // Subscriber A is forked into its own fiber so it can be interrupted independently.
+          const sharedChannelProgram = Effect.gen(function*() {
+            const subscriberA = yield* AMQPSubscriber.make(TEST_QUEUE, { concurrency: 1 })
+            const subscriberB = yield* AMQPSubscriber.make(TEST_QUEUE, { concurrency: 1 })
+
+            // Fork subscriber A so we can interrupt it independently
+            const fiberA = yield* Effect.fork(subscriberA.subscribe(handlerA))
+
+            // Fork subscriber B — it should keep running after A is interrupted
+            yield* Effect.fork(subscriberB.subscribe(handlerB))
+
+            // Wait for both consumers to be registered with the broker
+            yield* Effect.sleep("200 millis")
+
+            // Publish a message and verify at least one subscriber processes it
+            yield* publisher.publish({
+              exchange: TEST_EXCHANGE,
+              routingKey: TEST_SUBJECT,
+              content: Buffer.from("Message 1")
+            })
+            yield* Effect.sleep("200 millis")
+            expect(messagesA.length + messagesB.length).toBe(1)
+
+            // Interrupt subscriber A — its consumer should be cancelled on the broker,
+            // but the shared channel (and subscriber B) should remain alive.
+            yield* fiberA.interruptAsFork(fiberA.id())
+            yield* Effect.sleep("200 millis")
+
+            // Publish 4 messages after interrupting A.
+            // Without addFinalizer: A's consumer tag is still registered on the broker,
+            // AMQP round-robins messages to it, they are delivered but never acked (dead consumer),
+            // so subscriber B only receives ~half the messages.
+            // With addFinalizer: A's consumer is properly cancelled, all messages go to B.
+            for (let i = 2; i <= 5; i++) {
+              yield* publisher.publish({
+                exchange: TEST_EXCHANGE,
+                routingKey: TEST_SUBJECT,
+                content: Buffer.from(`Message ${i}`)
+              })
+            }
+
+            yield* Effect.sleep("500 millis")
+
+            // Subscriber A should NOT have received any of the 4 new messages
+            // (it may have received Message 1 from round-robin, but nothing after interrupt)
+            const totalBeforeInterrupt = messagesA.length + messagesB.length - 4
+            expect(totalBeforeInterrupt).toBeLessThanOrEqual(1)
+
+            // All 4 new messages should have been received by B
+            // (total across both should be 5: 1 before interrupt + 4 after)
+            expect(messagesA.length + messagesB.length).toBe(5)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          yield* sharedChannelProgram
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
   })
 
   describe("explicit response types", () => {

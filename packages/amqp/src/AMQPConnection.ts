@@ -60,8 +60,26 @@ export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messag
  * @since 0.4.0
  */
 export type AMQPConnectionOptions = {
+  /**
+   * Schedule for retrying connection after disconnection.
+   * Default: retry forever with 1 second delay between attempts.
+   */
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
+  /**
+   * Timeout for waiting on an existing connection to become available
+   * (used by createChannel, serverProperties, etc. during reconnection).
+   * Default: 5 seconds.
+   */
   waitConnectionTimeout?: Duration.DurationInput
+  /**
+   * Timeout for establishing a new connection. This applies to both the
+   * TCP socket connection and the AMQP handshake. If the connection is
+   * not established within this time, an AMQPConnectionError is thrown.
+   * Default: 10 seconds.
+   *
+   * @since 0.7.0
+   */
+  connectionTimeout?: Duration.DurationInput
 }
 
 /**

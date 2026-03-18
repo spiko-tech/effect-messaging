@@ -25,16 +25,19 @@ export class InternalAMQPConnection
     url: ConnectionUrl
     retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
     waitConnectionTimeout: Duration.DurationInput
+    connectionTimeout: Duration.DurationInput
   }>()
 {
   private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
   private static defaultWaitConnectionTimeout = Duration.seconds(5)
+  private static defaultConnectionTimeout = Duration.seconds(10)
 
   static new = (
     url: ConnectionUrl,
     options: {
       retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
       waitConnectionTimeout?: Duration.DurationInput
+      connectionTimeout?: Duration.DurationInput
     }
   ): Effect.Effect<Context.Tag.Service<InternalAMQPConnection>> =>
     Effect.gen(function*() {
@@ -44,7 +47,8 @@ export class InternalAMQPConnection
         url,
         retryConnectionSchedule: options.retryConnectionSchedule ??
           InternalAMQPConnection.defaultRetryConnectionSchedule,
-        waitConnectionTimeout: options.waitConnectionTimeout ?? InternalAMQPConnection.defaultWaitConnectionTimeout
+        waitConnectionTimeout: options.waitConnectionTimeout ?? InternalAMQPConnection.defaultWaitConnectionTimeout,
+        connectionTimeout: options.connectionTimeout ?? InternalAMQPConnection.defaultConnectionTimeout
       }
     })
 }
@@ -76,12 +80,14 @@ const annotateSpanWithConnectionProps = (conn: ChannelModel) =>
 
 /** @internal */
 export const initiateConnection = Effect.gen(function*() {
-  const { connectionRef, url } = yield* InternalAMQPConnection
+  const { connectionRef, connectionTimeout, url } = yield* InternalAMQPConnection
   yield* Effect.annotateCurrentSpan({ url })
   yield* SubscriptionRef.updateEffect(connectionRef, () =>
     Effect.gen(function*() {
+      const normalizedUrl = Redacted.isRedacted(url) ? Redacted.value(url) : url
+      const socketOptions = { timeout: Duration.toMillis(connectionTimeout) }
       const connection = yield* Effect.tryPromise({
-        try: () => connect(Redacted.isRedacted(url) ? Redacted.value(url) : url),
+        try: () => connect(normalizedUrl, socketOptions),
         catch: (error) => new AMQPConnectionError({ reason: "Failed to establish connection", cause: error })
       })
       return Option.some(connection)

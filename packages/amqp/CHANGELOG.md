@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 0.6.4
+
+### Patch Changes
+
+- [#138](https://github.com/spiko-tech/effect-messaging/pull/138) [`6c3e80a`](https://github.com/spiko-tech/effect-messaging/commit/6c3e80a920e3166921c7990ad566edb5ad604615) Thanks [@adam-hotait](https://github.com/adam-hotait)! - Add `connectionTimeout` option to `AMQPConnectionOptions` for configuring TCP socket and AMQP handshake timeout (defaults to 10 seconds)
+
 ## 0.6.3
 
 ### Patch Changes

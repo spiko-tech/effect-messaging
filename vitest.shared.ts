@@ -25,6 +25,7 @@ const config: ViteUserConfig = {
     hookTimeout: 20000,
     include: ["test/**/*.test.ts"],
     alias: {
+      ...alias("core"),
       ...alias("amqp")
     }
   }

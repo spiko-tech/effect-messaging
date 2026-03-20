@@ -3,14 +3,12 @@
  */
 import * as Subscriber from "@effect-messaging/core/Subscriber"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
+import * as SubscriberOTel from "@effect-messaging/core/SubscriberOTel"
+import * as SubscriberRunner from "@effect-messaging/core/SubscriberRunner"
 import type * as NATSCore from "@nats-io/nats-core"
-import * as Cause from "effect/Cause"
-import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 
 import * as Option from "effect/Option"
-import * as Predicate from "effect/Predicate"
-import * as Stream from "effect/Stream"
 import * as NATSConnection from "./NATSConnection.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSHeaders from "./NATSHeaders.js"
@@ -41,17 +39,7 @@ export interface NATSSubscriber extends Subscriber.Subscriber<void, NATSMessage.
  * @category models
  * @since 0.3.0
  */
-export interface NATSSubscriberOptions {
-  handlerTimeout?: Duration.DurationInput
-}
-
-const ATTR_SERVER_ADDRESS = "server.address" as const
-const ATTR_SERVER_PORT = "server.port" as const
-const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
-const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
-const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
-const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
-const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
+export interface NATSSubscriberOptions extends SubscriberRunner.SubscriberRunnerOptions {}
 
 /** @internal */
 const subscribe = (
@@ -62,74 +50,29 @@ const subscribe = (
 <E, R>(
   handler: Effect.Effect<void, E, R | NATSMessage.NATSMessage>
 ): Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, NATSMessage.NATSMessage>> =>
-  subscription.stream.pipe(
-    Stream.runForEach((message) =>
-      Effect.fork(
-        Effect.useSpan(
-          `nats.consume ${message.subject}`,
-          {
-            parent: Option.getOrUndefined(NATSHeaders.decodeTraceContextOptional(message.headers)),
-            kind: "consumer",
-            captureStackTrace: false,
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: connectionInfo.host,
-              [ATTR_SERVER_PORT]: connectionInfo.port,
-              [ATTR_MESSAGING_SYSTEM]: "nats",
-              [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
-              [ATTR_MESSAGING_DESTINATION_NAME]: message.subject,
-              [ATTR_MESSAGING_MESSAGE_ID]: message.sid
-            }
-          },
-          (span) =>
-            Effect.gen(function*() {
-              yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              if (options.handlerTimeout) {
-                yield* handler.pipe(
-                  Effect.interruptible,
-                  Effect.timeoutFail({
-                    duration: options.handlerTimeout,
-                    onTimeout: () =>
-                      new SubscriberError.SubscriberError({ reason: "NATSSubscriber: handler timed out" })
-                  })
-                )
-              } else {
-                yield* handler
-              }
-              span.attribute(ATTR_MESSAGING_OPERATION_NAME, "process")
-            }).pipe(
-              Effect.provide(NATSMessage.layer(message)),
-              Effect.tapErrorCause((cause) =>
-                Effect.gen(function*() {
-                  // Log the error - NATS Core has no ack/nak mechanism, so we just log and continue
-                  yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "error")
-                  span.attribute(
-                    "error.type",
-                    String(Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
-                    ))
-                  )
-                  span.attribute("error.stack", Cause.pretty(cause))
-                  span.attribute(
-                    "error.message",
-                    String(Cause.squashWith(
-                      cause,
-                      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-                    ))
-                  )
-                })
-              ),
-              Effect.uninterruptible,
-              Effect.withParentSpan(span)
-            )
-        )
-      )
-    ),
-    Effect.mapError((error) =>
-      new SubscriberError.SubscriberError({ reason: "NATSSubscriber failed to subscribe", cause: error })
-    )
-  )
+  SubscriberRunner.runStream(subscription.stream, {
+    name: "NATSSubscriber",
+    spanName: (message) => `nats.consume ${message.subject}`,
+    parentSpan: (message) => Option.getOrUndefined(NATSHeaders.decodeTraceContextOptional(message.headers)),
+    spanAttributes: (message) => ({
+      [SubscriberOTel.SpanAttributes.SERVER_ADDRESS]: connectionInfo.host,
+      [SubscriberOTel.SpanAttributes.SERVER_PORT]: connectionInfo.port,
+      [SubscriberOTel.SpanAttributes.MESSAGING_SYSTEM]: "nats",
+      [SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_TYPE]: "receive",
+      [SubscriberOTel.SpanAttributes.MESSAGING_DESTINATION_NAME]: message.subject,
+      [SubscriberOTel.SpanAttributes.MESSAGING_MESSAGE_ID]: message.sid
+    }),
+    handler: (message) => handler.pipe(Effect.provide(NATSMessage.layer(message))),
+    options,
+    onSuccess: (_message, span) => () =>
+      Effect.sync(() => {
+        span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "process")
+      }),
+    onError: (_message, span) => () =>
+      Effect.sync(() => {
+        span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "error")
+      })
+  })
 
 /** @internal */
 const healthCheck = (

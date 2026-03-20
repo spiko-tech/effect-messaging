@@ -4,15 +4,13 @@
 import * as Subscriber from "@effect-messaging/core/Subscriber"
 import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
+import * as SubscriberOTel from "@effect-messaging/core/SubscriberOTel"
+import * as SubscriberRunner from "@effect-messaging/core/SubscriberRunner"
 import type * as NATSCore from "@nats-io/nats-core"
-import * as Cause from "effect/Cause"
-import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
-import * as Predicate from "effect/Predicate"
-import * as Stream from "effect/Stream"
 import type * as JetStreamConsumer from "./JetStreamConsumer.js"
 import * as JetStreamMessage from "./JetStreamMessage.js"
 import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
@@ -58,17 +56,8 @@ export interface JetStreamSubscriber
  * @category models
  * @since 0.1.0
  */
-export interface JetStreamSubscriberOptions {
-  handlerTimeout?: Duration.DurationInput
-}
+export interface JetStreamSubscriberOptions extends SubscriberRunner.SubscriberRunnerOptions {}
 
-const ATTR_SERVER_ADDRESS = "server.address" as const
-const ATTR_SERVER_PORT = "server.port" as const
-const ATTR_MESSAGING_DESTINATION_NAME = "messaging.destination.name" as const
-const ATTR_MESSAGING_OPERATION_NAME = "messaging.operation.name" as const
-const ATTR_MESSAGING_OPERATION_TYPE = "messaging.operation.type" as const
-const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
-const ATTR_MESSAGING_MESSAGE_ID = "messaging.message.id" as const
 const ATTR_MESSAGING_NATS_STREAM = "messaging.nats.stream" as const
 const ATTR_MESSAGING_NATS_CONSUMER = "messaging.nats.consumer" as const
 const ATTR_MESSAGING_NATS_SEQUENCE_STREAM = "messaging.nats.sequence.stream" as const
@@ -83,88 +72,48 @@ const subscribe = (
 <E, R>(
   app: JetStreamSubscriberApp<E, R>
 ): Effect.Effect<void, SubscriberError.SubscriberError, Exclude<R, JetStreamMessage.JetStreamMessage>> =>
-  consumerMessages.stream.pipe(
-    Stream.runForEach((message) =>
-      Effect.fork(
-        Effect.useSpan(
-          `nats.consume ${message.subject}`,
-          {
-            parent: Option.getOrUndefined(NATSHeaders.decodeTraceContextOptional(message.headers)),
-            kind: "consumer",
-            captureStackTrace: false,
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: connectionInfo.host,
-              [ATTR_SERVER_PORT]: connectionInfo.port,
-              [ATTR_MESSAGING_SYSTEM]: "nats",
-              [ATTR_MESSAGING_OPERATION_TYPE]: "receive",
-              [ATTR_MESSAGING_DESTINATION_NAME]: message.subject,
-              [ATTR_MESSAGING_MESSAGE_ID]: message.seq,
-              [ATTR_MESSAGING_NATS_STREAM]: message.info.stream,
-              [ATTR_MESSAGING_NATS_CONSUMER]: message.info.consumer,
-              [ATTR_MESSAGING_NATS_SEQUENCE_STREAM]: message.info.streamSequence,
-              [ATTR_MESSAGING_NATS_SEQUENCE_CONSUMER]: message.info.deliverySequence
-            }
-          },
-          (span) =>
-            Effect.gen(function*() {
-              yield* Effect.logDebug(`nats.consume ${message.subject}`)
-              const response = options.handlerTimeout
-                ? yield* app.pipe(
-                  Effect.interruptible,
-                  Effect.timeoutFail({
-                    duration: options.handlerTimeout,
-                    onTimeout: () =>
-                      new SubscriberError.SubscriberError({ reason: "JetStreamSubscriber: handler timed out" })
-                  })
-                )
-                : yield* app
-              yield* Match.valueTags(response, {
-                Ack: () =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "ack")
-                    yield* message.ack
-                  }),
-                Nak: (r) =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                    yield* message.nak(r.millis)
-                  }),
-                Term: (r) =>
-                  Effect.gen(function*() {
-                    span.attribute(ATTR_MESSAGING_OPERATION_NAME, "term")
-                    yield* message.term(r.reason)
-                  })
-              })
-            }).pipe(
-              Effect.provide(JetStreamMessage.layer(message)),
-              Effect.tapErrorCause((cause) =>
-                Effect.gen(function*() {
-                  yield* Effect.logError(Cause.pretty(cause))
-                  span.attribute(ATTR_MESSAGING_OPERATION_NAME, "nak")
-                  span.attribute(
-                    "error.type",
-                    String(Cause.squashWith(cause, (_) =>
-                      Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`))
-                  )
-                  span.attribute("error.stack", Cause.pretty(cause))
-                  span.attribute(
-                    "error.message",
-                    String(Cause.squashWith(cause, (_) =>
-                      Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`))
-                  )
-                  yield* message.nak()
-                })
-              ),
-              Effect.uninterruptible,
-              Effect.withParentSpan(span)
-            )
-        )
-      )
-    ),
-    Effect.mapError((error) =>
-      new SubscriberError.SubscriberError({ reason: "JetStreamSubscriber failed to subscribe", cause: error })
-    )
-  )
+  SubscriberRunner.runStream(consumerMessages.stream, {
+    name: "JetStreamSubscriber",
+    spanName: (message) => `nats.consume ${message.subject}`,
+    parentSpan: (message) => Option.getOrUndefined(NATSHeaders.decodeTraceContextOptional(message.headers)),
+    spanAttributes: (message) => ({
+      [SubscriberOTel.SpanAttributes.SERVER_ADDRESS]: connectionInfo.host,
+      [SubscriberOTel.SpanAttributes.SERVER_PORT]: connectionInfo.port,
+      [SubscriberOTel.SpanAttributes.MESSAGING_SYSTEM]: "nats",
+      [SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_TYPE]: "receive",
+      [SubscriberOTel.SpanAttributes.MESSAGING_DESTINATION_NAME]: message.subject,
+      [SubscriberOTel.SpanAttributes.MESSAGING_MESSAGE_ID]: message.seq,
+      [ATTR_MESSAGING_NATS_STREAM]: message.info.stream,
+      [ATTR_MESSAGING_NATS_CONSUMER]: message.info.consumer,
+      [ATTR_MESSAGING_NATS_SEQUENCE_STREAM]: message.info.streamSequence,
+      [ATTR_MESSAGING_NATS_SEQUENCE_CONSUMER]: message.info.deliverySequence
+    }),
+    handler: (message) => app.pipe(Effect.provide(JetStreamMessage.layer(message))),
+    options,
+    onSuccess: (_message, span) => (response) =>
+      Match.valueTags(response, {
+        Ack: () =>
+          Effect.gen(function*() {
+            span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "ack")
+            yield* _message.ack
+          }),
+        Nak: (r) =>
+          Effect.gen(function*() {
+            span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nak")
+            yield* _message.nak(r.millis)
+          }),
+        Term: (r) =>
+          Effect.gen(function*() {
+            span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "term")
+            yield* _message.term(r.reason)
+          })
+      }),
+    onError: (_message, span) => () =>
+      Effect.gen(function*() {
+        span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nak")
+        yield* _message.nak()
+      })
+  })
 
 /** @internal */
 const healthCheck = (

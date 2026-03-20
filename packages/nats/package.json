@@ -42,7 +42,7 @@
     "@nats-io/jetstream": "^3.3.1",
     "@nats-io/nats-core": "^3.3.1",
     "@nats-io/transport-node": "^3.3.1",
-    "effect": "^3.19.19"
+    "effect": "^3.20.0"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
@@ -50,6 +50,6 @@
     "@nats-io/jetstream": "^3.3.1",
     "@nats-io/nats-core": "^3.3.1",
     "@nats-io/transport-node": "^3.3.1",
-    "effect": "^3.19.19"
+    "effect": "^3.20.0"
   }
 }

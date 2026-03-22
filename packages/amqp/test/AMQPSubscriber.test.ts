@@ -373,6 +373,56 @@ describe("AMQPChannel", { sequential: true }, () => {
         }).pipe(Effect.provide(testChannel), TestServices.provideLive),
       { timeout: 15000 }
     )
+
+    it.effect(
+      "Should let in-flight handler finish even when handlerTimeout is configured and fiber is interrupted",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            // Long running task - shorter than the handlerTimeout so the timeout won't fire
+            yield* Effect.sleep("600 millis")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const startSubscription = Effect.gen(function*() {
+            // handlerTimeout is long enough that it won't fire — the only interrupt source is the fiber interrupt
+            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, { handlerTimeout: "2000 millis" })
+            yield* subscriber.subscribe(handler)
+          }).pipe(Effect.provide(AMQPChannel.layer()))
+
+          const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("Message A")
+          })
+
+          yield* Effect.sleep("100 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+          // Interrupt the fiber (simulating SIGINT / graceful shutdown)
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Wait long enough for the handler to finish if it were allowed to (600ms total, 100ms already elapsed)
+          yield* Effect.sleep("700 millis")
+
+          // The in-flight handler should have completed despite the interrupt
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
   })
 
   describe("explicit response types", () => {

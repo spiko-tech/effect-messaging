@@ -221,6 +221,61 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
         ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
       { timeout: 30000 }
     )
+
+    it.effect(
+      "Should let in-flight handler finish even when handlerTimeout is configured and fiber is interrupted",
+      () =>
+        Effect.scoped(
+          Effect.gen(function*() {
+            yield* setup
+
+            const publisher = yield* JetStreamPublisher.make()
+
+            const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+            const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+
+            const handler = Effect.gen(function*() {
+              const message = yield* JetStreamMessage.JetStreamConsumeMessage
+              onHandlingStarted(message)
+              // Shorter than handlerTimeout so timeout won't fire
+              yield* Effect.sleep("600 millis")
+              onHandlingFinished(message)
+              return JetStreamSubscriberResponse.ack()
+            })
+
+            const client = yield* JetStreamClient.JetStreamClient
+
+            const startSubscription = Effect.gen(function*() {
+              const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+              const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, {
+                handlerTimeout: "2000 millis"
+              })
+              yield* subscriber.subscribe(handler)
+            })
+
+            const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+            yield* publisher.publish({
+              subject: TEST_SUBJECT,
+              payload: new TextEncoder().encode("Message A")
+            })
+
+            yield* Effect.sleep("200 millis")
+            expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+            expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+            // Interrupt the fiber (simulating SIGINT / graceful shutdown)
+            yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+            // Wait long enough for the handler to finish
+            yield* Effect.sleep("700 millis")
+
+            // The in-flight handler should have completed despite the interrupt
+            expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+          })
+        ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
+      { timeout: 15000 }
+    )
   })
 
   describe("error handling", () => {

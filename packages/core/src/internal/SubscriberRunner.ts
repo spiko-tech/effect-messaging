@@ -14,6 +14,7 @@
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Stream from "effect/Stream"
 import type * as Tracer from "effect/Tracer"
 import * as SubscriberError from "../SubscriberError.js"
@@ -69,13 +70,35 @@ const executeHandler = <M, A, E, R, EX, RX>(
 ) =>
 (message: M, span: Tracer.Span): Effect.Effect<void, E | EX | SubscriberError.SubscriberError, R | RX> => {
   const handler = config.handler(message)
-  const handlerEffect = config.options.handlerTimeout
-    ? handler.pipe(
-      Effect.interruptible,
-      Effect.timeoutFail({
-        duration: config.options.handlerTimeout,
-        onTimeout: () => new SubscriberError.SubscriberError({ reason: `${config.name}: handler timed out` })
-      })
+
+  // When handlerTimeout is set, fork the handler into a detached (daemon) fiber
+  // so it is interruptible by the timeout but not by parent fiber interruption
+  // (e.g. SIGINT / graceful shutdown).
+  const handlerEffect: Effect.Effect<A, E | SubscriberError.SubscriberError, R> = config.options.handlerTimeout
+    ? Effect.forkDaemon(Effect.interruptible(handler)).pipe(
+      Effect.flatMap((handlerFiber) =>
+        Effect.forkDaemon(
+          Effect.interruptible(
+            Effect.andThen(
+              Effect.sleep(config.options.handlerTimeout!),
+              Fiber.interrupt(handlerFiber)
+            )
+          )
+        ).pipe(
+          Effect.flatMap((timerFiber) =>
+            Fiber.join(handlerFiber).pipe(
+              Effect.onExit(() => Fiber.interrupt(timerFiber)),
+              Effect.catchAllCause((cause): Effect.Effect<never, E | SubscriberError.SubscriberError> =>
+                Cause.isInterruptedOnly(cause)
+                  ? Effect.fail(
+                    new SubscriberError.SubscriberError({ reason: `${config.name}: handler timed out` })
+                  )
+                  : Effect.failCause(cause)
+              )
+            )
+          )
+        )
+      )
     )
     : handler
 

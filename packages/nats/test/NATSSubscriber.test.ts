@@ -208,6 +208,53 @@ describe("NATSSubscriber", { sequential: true }, () => {
         }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
       { timeout: 15000 }
     )
+
+    it.effect(
+      "Should let in-flight handler finish even when handlerTimeout is configured and fiber is interrupted",
+      () =>
+        Effect.gen(function*() {
+          const publisher = yield* NATSPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* NATSMessage.NATSConsumeMessage
+            onHandlingStarted(message)
+            // Shorter than handlerTimeout so timeout won't fire
+            yield* Effect.sleep("600 millis")
+            onHandlingFinished(message)
+          })
+
+          const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT, undefined, {
+            handlerTimeout: "2000 millis"
+          })
+
+          const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
+
+          // Give the subscription time to start
+          yield* Effect.sleep("100 millis")
+
+          yield* publisher.publish({
+            subject: TEST_SUBJECT,
+            payload: new TextEncoder().encode("Message A")
+          })
+
+          yield* Effect.sleep("100 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
+
+          // Interrupt the fiber (simulating SIGINT / graceful shutdown)
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Wait long enough for the handler to finish
+          yield* Effect.sleep("700 millis")
+
+          // The in-flight handler should have completed despite the interrupt
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+      { timeout: 15000 }
+    )
   })
 
   describe("error handling", () => {

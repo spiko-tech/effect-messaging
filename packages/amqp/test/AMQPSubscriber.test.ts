@@ -210,6 +210,54 @@ describe("AMQPChannel", { sequential: true }, () => {
     )
   })
 
+  describe("handler timeout + interruption", { sequential: true }, () => {
+    it.effect(
+      "Should let in-flight handler finish even when handlerTimeout is configured and fiber is interrupted",
+      () =>
+        Effect.gen(function*() {
+          yield* setup
+
+          const publisher = yield* AMQPPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
+            onHandlingStarted(message)
+            yield* Effect.sleep("300 millis")
+            onHandlingFinished(message)
+            return AMQPSubscriberResponse.ack()
+          })
+
+          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
+            handlerTimeout: "500 millis"
+          })
+
+          const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
+
+          yield* Effect.sleep("100 millis")
+
+          yield* publisher.publish({
+            exchange: TEST_EXCHANGE,
+            routingKey: TEST_SUBJECT,
+            content: Buffer.from("My Message that will NOT be interrupted")
+          })
+
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Interrupt the subscription fiber while handler is still running
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Handler should complete despite the interrupt
+          yield* Effect.sleep("300 millis")
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.provide(testChannel), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+  })
+
   describe("consumer cancellation on interruption", { sequential: true }, () => {
     it.effect(
       "Should cancel the consumer on interrupt, let in-flight handler complete, and leave new messages for the next subscriber",

@@ -14,6 +14,7 @@
 import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
 import * as Stream from "effect/Stream"
 import type * as Tracer from "effect/Tracer"
 import * as SubscriberError from "../SubscriberError.js"
@@ -69,15 +70,6 @@ const executeHandler = <M, A, E, R, EX, RX>(
 ) =>
 (message: M, span: Tracer.Span): Effect.Effect<void, E | EX | SubscriberError.SubscriberError, R | RX> => {
   const handler = config.handler(message)
-  const handlerEffect = config.options.handlerTimeout
-    ? handler.pipe(
-      Effect.interruptible,
-      Effect.timeoutFail({
-        duration: config.options.handlerTimeout,
-        onTimeout: () => new SubscriberError.SubscriberError({ reason: `${config.name}: handler timed out` })
-      })
-    )
-    : handler
 
   const handleErrorCause = (cause: Cause.Cause<unknown>) =>
     Effect.gen(function*() {
@@ -86,11 +78,35 @@ const executeHandler = <M, A, E, R, EX, RX>(
       yield* config.onError(message, span)()
     })
 
-  const body = Effect.gen(function*() {
-    yield* Effect.logDebug(config.spanName(message))
-    const response = yield* handlerEffect
-    yield* config.onSuccess(message, span)(response)
-  })
+  const body = config.options.handlerTimeout
+    ? Effect.gen(function*() {
+      yield* Effect.logDebug(config.spanName(message))
+      const appFiber = yield* Effect.forkDaemon(Effect.interruptible(handler))
+      const timerFiber = yield* Effect.forkDaemon(
+        Effect.interruptible(
+          Effect.sleep(config.options.handlerTimeout!).pipe(
+            Effect.andThen(Fiber.interrupt(appFiber))
+          )
+        )
+      )
+      const response = yield* Fiber.join(appFiber).pipe(
+        Effect.onExit(() => Fiber.interrupt(timerFiber)),
+        Effect.catchAllCause(
+          (cause): Effect.Effect<A, SubscriberError.SubscriberError | E, never> =>
+            Cause.isInterruptedOnly(cause)
+              ? Effect.fail(
+                new SubscriberError.SubscriberError({ reason: `${config.name}: handler timed out` })
+              )
+              : Effect.failCause(cause)
+        )
+      )
+      yield* config.onSuccess(message, span)(response)
+    })
+    : Effect.gen(function*() {
+      yield* Effect.logDebug(config.spanName(message))
+      const response = yield* handler
+      yield* config.onSuccess(message, span)(response)
+    })
 
   return body.pipe(
     Effect.tapErrorCause(handleErrorCause),

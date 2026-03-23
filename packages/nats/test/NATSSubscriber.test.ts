@@ -168,6 +168,49 @@ describe("NATSSubscriber", { sequential: true }, () => {
     )
 
     it.effect(
+      "Should let in-flight handler complete on interrupt when handlerTimeout is configured",
+      () =>
+        Effect.gen(function*() {
+          const publisher = yield* NATSPublisher.make()
+
+          const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+          const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+
+          const handler = Effect.gen(function*() {
+            const message = yield* NATSMessage.NATSConsumeMessage
+            onHandlingStarted(message)
+            yield* Effect.sleep("300 millis")
+            onHandlingFinished(message)
+          })
+
+          // handlerTimeout longer than handler duration — should not time out
+          const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT, undefined, {
+            handlerTimeout: "500 millis"
+          })
+
+          const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
+
+          yield* Effect.sleep("100 millis")
+
+          yield* publisher.publish({
+            subject: TEST_SUBJECT,
+            payload: new TextEncoder().encode("My Message that will NOT be interrupted")
+          })
+
+          yield* Effect.sleep("200 millis")
+          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+          // Interrupt the subscription fiber while handler is still running
+          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+          // Handler should complete despite the interrupt
+          yield* Effect.sleep("300 millis")
+          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+
+    it.effect(
       "Should interrupt the handler when it exceeds the timeout",
       () =>
         Effect.gen(function*() {

@@ -160,6 +160,68 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
     )
 
     it.effect(
+      "Should let in-flight handler complete on interrupt when handlerTimeout is configured",
+      () =>
+        Effect.scoped(
+          Effect.gen(function*() {
+            yield* setup
+
+            const publisher = yield* JetStreamPublisher.make()
+
+            const onHandlingStarted = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+            const onHandlingFinished = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
+
+            const handler = Effect.gen(function*() {
+              const message = yield* JetStreamMessage.JetStreamConsumeMessage
+              onHandlingStarted(message)
+              yield* Effect.sleep("300 millis")
+              onHandlingFinished(message)
+              return JetStreamSubscriberResponse.ack()
+            })
+
+            const client = yield* JetStreamClient.JetStreamClient
+
+            const startSubscription = Effect.gen(function*() {
+              const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+              // handlerTimeout longer than handler duration — should not time out
+              const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer, {
+                handlerTimeout: "500 millis"
+              })
+              yield* subscriber.subscribe(handler)
+            })
+
+            // Start the subscription
+            const subscriptionFiber = yield* Effect.fork(startSubscription)
+
+            yield* publisher.publish({
+              subject: TEST_SUBJECT,
+              payload: new TextEncoder().encode("My Message that will NOT be interrupted")
+            })
+
+            // Wait for the message to be consumed
+            yield* Effect.sleep("200 millis")
+            expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+
+            // Interrupt the subscription fiber while handler is still running
+            yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+
+            // Handler should complete despite the interrupt
+            yield* Effect.sleep("300 millis")
+            expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+
+            // Start the subscription again
+            yield* Effect.fork(startSubscription)
+
+            yield* Effect.sleep("500 millis")
+            // The same message should not be consumed again because the handler completed and acked
+            expect(onHandlingStarted).toHaveBeenCalledTimes(1)
+            expect(onHandlingFinished).toHaveBeenCalledTimes(1)
+          })
+        ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
+      { timeout: 15000 }
+    )
+
+    it.effect(
       "Should interrupt the handler when it exceeds the timeout, naking for redelivery",
       () =>
         Effect.scoped(

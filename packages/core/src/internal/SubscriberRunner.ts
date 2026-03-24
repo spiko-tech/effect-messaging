@@ -78,9 +78,8 @@ const executeHandler = <M, A, E, R, EX, RX>(
       yield* config.onError(message, span)()
     })
 
-  const body = config.options.handlerTimeout
+  const handlerEffect = config.options.handlerTimeout
     ? Effect.gen(function*() {
-      yield* Effect.logDebug(config.spanName(message))
       const appFiber = yield* Effect.forkDaemon(Effect.interruptible(handler))
       const timerFiber = yield* Effect.forkDaemon(
         Effect.interruptible(
@@ -89,7 +88,7 @@ const executeHandler = <M, A, E, R, EX, RX>(
           )
         )
       )
-      const response = yield* Fiber.join(appFiber).pipe(
+      return yield* Fiber.join(appFiber).pipe(
         Effect.onExit(() => Fiber.interrupt(timerFiber)),
         Effect.catchAllCause(
           (cause): Effect.Effect<A, SubscriberError.SubscriberError | E, never> =>
@@ -100,13 +99,14 @@ const executeHandler = <M, A, E, R, EX, RX>(
               : Effect.failCause(cause)
         )
       )
-      yield* config.onSuccess(message, span)(response)
     })
-    : Effect.gen(function*() {
-      yield* Effect.logDebug(config.spanName(message))
-      const response = yield* handler
-      yield* config.onSuccess(message, span)(response)
-    })
+    : handler
+
+  const body = Effect.gen(function*() {
+    yield* Effect.logDebug(config.spanName(message))
+    const response = yield* handlerEffect
+    yield* config.onSuccess(message, span)(response)
+  })
 
   return body.pipe(
     Effect.tapErrorCause(handleErrorCause),

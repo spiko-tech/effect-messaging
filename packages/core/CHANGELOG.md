@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 0.2.42
+
+### Patch Changes
+
+- [#140](https://github.com/spiko-tech/effect-messaging/pull/140) [`89a7459`](https://github.com/spiko-tech/effect-messaging/commit/89a74592a4896e11c7108390c3766618f39d43d7) Thanks [@adam-hotait](https://github.com/adam-hotait)! - Fix event handler being interrupted directly on SIGINT when handlerTimeout is set. `Effect.timeoutFail` relies on interruption internally, which does not work inside `Effect.uninterruptible`. The fix uses a Fiber-based race instead: the app is forked in an interruptible region so the timeout can interrupt it.
+
 ## 0.2.41
 
 ### Patch Changes

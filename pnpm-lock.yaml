@@ -36,14 +36,14 @@ importers:
         specifier: ^0.3.2
         version: 0.3.2
       '@effect/language-service':
-        specifier: ^0.78.0
-        version: 0.78.0
+        specifier: ^0.83.0
+        version: 0.83.0
       '@effect/platform':
-        specifier: ^0.94.5
-        version: 0.94.5(effect@3.19.19)
+        specifier: ^0.96.0
+        version: 0.96.0(effect@3.21.0)
       '@effect/vitest':
-        specifier: ^0.27.0
-        version: 0.27.0(effect@3.19.19)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))
+        specifier: ^0.29.0
+        version: 0.29.0(effect@3.21.0)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))
       '@eslint/js':
         specifier: ^9.24.0
         version: 9.24.0
@@ -63,8 +63,8 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0(@babel/core@7.26.10)
       effect:
-        specifier: ^3.19.19
-        version: 3.19.19
+        specifier: ^3.21.0
+        version: 3.21.0
       eslint:
         specifier: ^9.24.0
         version: 9.24.0
@@ -108,8 +108,8 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.94.5
-        version: 0.94.5(effect@3.19.19)
+        specifier: ^0.96.0
+        version: 0.96.0(effect@3.21.0)
       '@types/amqplib':
         specifier: 0.10.7
         version: 0.10.7
@@ -117,15 +117,15 @@ importers:
         specifier: ^0.10.9
         version: 0.10.9
       effect:
-        specifier: ^3.19.19
-        version: 3.19.19
+        specifier: ^3.21.0
+        version: 3.21.0
     publishDirectory: dist
 
   packages/core:
     devDependencies:
       effect:
-        specifier: ^3.19.19
-        version: 3.19.19
+        specifier: ^3.21.0
+        version: 3.21.0
     publishDirectory: dist
 
   packages/nats:
@@ -134,8 +134,8 @@ importers:
         specifier: workspace:^
         version: link:../core/dist
       '@effect/platform':
-        specifier: ^0.94.5
-        version: 0.94.5(effect@3.19.19)
+        specifier: ^0.96.0
+        version: 0.96.0(effect@3.21.0)
       '@nats-io/jetstream':
         specifier: ^3.3.1
         version: 3.3.1
@@ -146,8 +146,8 @@ importers:
         specifier: ^3.3.1
         version: 3.3.1
       effect:
-        specifier: ^3.19.19
-        version: 3.19.19
+        specifier: ^3.21.0
+        version: 3.21.0
     publishDirectory: dist
 
 packages:
@@ -354,8 +354,8 @@ packages:
   '@effect/eslint-plugin@0.3.2':
     resolution: {integrity: sha512-c4Vs9t3r54A4Zpl+wo8+PGzZz3JWYsip41H+UrebRLjQ2Hk/ap63IeCgN/HWcYtxtyhRopjp7gW9nOQ2Snbl+g==}
 
-  '@effect/language-service@0.78.0':
-    resolution: {integrity: sha512-dEYMhvhKFhikXpXjOlcByRKOU34xFeZbZcOuVTeWTQmjmZ/ZF4K3z0Ku6vL4cWKC8RRIB5di+ix18Y4f9ey5Dg==}
+  '@effect/language-service@0.83.0':
+    resolution: {integrity: sha512-uNY+SE2m9s5XjGQP6VG6tfIGeroMunbR1FLEYlBOo6fmthLmVH7a5Ax3w7MHHNXTP7OK0ozjC8kI8Iep5Z+u1A==}
     hasBin: true
 
   '@effect/markdown-toc@0.1.0':
@@ -363,15 +363,15 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
-  '@effect/platform@0.94.5':
-    resolution: {integrity: sha512-z05APUiDDPbodhTkH/RJqOLoCU11bU2IZLfcwLFrld03+ob1VeqRnELQlmueLIYm6NZifHAtjl32V+GRt34y4A==}
+  '@effect/platform@0.96.0':
+    resolution: {integrity: sha512-U7PLhkVzg7zzrgFvyWATOzD6reL87KG/fcdOxgLWBQ/J5CCU6qdPAVG+0o6o+IxcsLoqGwxs+rFxaFzrdtDV1A==}
     peerDependencies:
-      effect: ^3.19.17
+      effect: ^3.21.0
 
-  '@effect/vitest@0.27.0':
-    resolution: {integrity: sha512-8bM7n9xlMUYw9GqPIVgXFwFm2jf27m/R7psI64PGpwU5+26iwyxp9eAXEsfT5S6lqztYfpQQ1Ubp5o6HfNYzJQ==}
+  '@effect/vitest@0.29.0':
+    resolution: {integrity: sha512-DvWr1aeEcaZ8mtu8hNVb4e3rEYvGEwQSr7wsNrW53t6nKYjkmjRICcvVEsXUhjoCblRHSxRsRV0TOt0+UmcvaQ==}
     peerDependencies:
-      effect: ^3.19.0
+      effect: ^3.21.0
       vitest: ^3.2.0
 
   '@emnapi/core@1.4.0':
@@ -839,6 +839,9 @@ packages:
 
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@ts-graphviz/adapter@2.0.6':
     resolution: {integrity: sha512-kJ10lIMSWMJkLkkCG5gt927SnGZcBuG0s0HHswGzcHTgvtUe7yk5/3zTEr0bafzsodsOq5Gi6FhQeV775nC35Q==}
@@ -1637,8 +1640,8 @@ packages:
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
-  effect@3.19.19:
-    resolution: {integrity: sha512-Yc8U/SVXo2dHnaP7zNBlAo83h/nzSJpi7vph6Hzyl4ulgMBIgPmz3UzOjb9sBgpFE00gC0iETR244sfXDNLHRg==}
+  effect@3.21.0:
+    resolution: {integrity: sha512-PPN80qRokCd1f015IANNhrwOnLO7GrrMQfk4/lnZRE/8j7UPWrNNjPV0uBrZutI/nHzernbW+J0hdqQysHiSnQ==}
 
   electron-to-chromium@1.5.134:
     resolution: {integrity: sha512-zSwzrLg3jNP3bwsLqWHmS5z2nIOQ5ngMnfMZOWWtXnqqQkPVyOipxK98w+1beLw1TB+EImPNcG8wVP/cLVs2Og==}
@@ -1996,8 +1999,8 @@ packages:
   get-tsconfig@4.10.0:
     resolution: {integrity: sha512-kGzZ3LWWQcGIAmg6iWvXn0ei6WDtV26wzHRMwDSzmAbcXrTEXxHy6IehI6/4eT6VRKyMP1eF1VqwrVUmE/LR7A==}
 
-  get-tsconfig@4.13.6:
-    resolution: {integrity: sha512-shZT/QMiSHc/YBLxxOkMtgSid5HFoauqCE3/exfsEcwg1WkeqjG+V40yBbBrsD+jW2HDXcs28xOfcbm2jI8Ddw==}
+  get-tsconfig@4.13.7:
+    resolution: {integrity: sha512-7tN6rFgBlMgpBML5j8typ92BKFi2sFQvIdpAqLA2beia5avZDrMs0FLZiM5etShWq5irVyGcGMEA1jcDaK7A/Q==}
 
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
@@ -2545,8 +2548,8 @@ packages:
     resolution: {integrity: sha512-P0efT1C9jIdVRefqjzOQ9Xml57zpOXnIuS+csaB4MdZbTdmGDLo8XhzBG1N7aO11gKDDkJvBLULeFTo46wwreA==}
     hasBin: true
 
-  msgpackr@1.11.5:
-    resolution: {integrity: sha512-UjkUHN0yqp9RWKy0Lplhh+wlpdt9oQBYgULZOiFhV3VclSF1JnSQWZ5r9gORQlNYaUKQoR8itv7g7z1xDDuACA==}
+  msgpackr@1.11.9:
+    resolution: {integrity: sha512-FkoAAyyA6HM8wL882EcEyFZ9s7hVADSwG9xrVx3dxxNQAtgADTrJoEWivID82Iv1zWDsv/OtbrrcZAzGzOMdNw==}
 
   multipasta@0.2.7:
     resolution: {integrity: sha512-KPA58d68KgGil15oDqXjkUBEBYc00XvbPj5/X+dyzeo/lWm9Nc25pQRlf1D+gv4OpK7NM0J1odrbu9JNNGvynA==}
@@ -3719,7 +3722,7 @@ snapshots:
       '@dprint/typescript': 0.91.8
       prettier-linter-helpers: 1.0.0
 
-  '@effect/language-service@0.78.0': {}
+  '@effect/language-service@0.83.0': {}
 
   '@effect/markdown-toc@0.1.0':
     dependencies:
@@ -3736,16 +3739,16 @@ snapshots:
       repeat-string: 1.6.1
       strip-color: 0.1.0
 
-  '@effect/platform@0.94.5(effect@3.19.19)':
+  '@effect/platform@0.96.0(effect@3.21.0)':
     dependencies:
-      effect: 3.19.19
+      effect: 3.21.0
       find-my-way-ts: 0.1.6
-      msgpackr: 1.11.5
+      msgpackr: 1.11.9
       multipasta: 0.2.7
 
-  '@effect/vitest@0.27.0(effect@3.19.19)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))':
+  '@effect/vitest@0.29.0(effect@3.21.0)(vitest@4.0.16(@types/node@24.9.1)(tsx@4.19.3))':
     dependencies:
-      effect: 3.19.19
+      effect: 3.21.0
       vitest: 4.0.16(@types/node@24.9.1)(tsx@4.19.3)
 
   '@emnapi/core@1.4.0':
@@ -4101,6 +4104,8 @@ snapshots:
     optional: true
 
   '@standard-schema/spec@1.0.0': {}
+
+  '@standard-schema/spec@1.1.0': {}
 
   '@ts-graphviz/adapter@2.0.6':
     dependencies:
@@ -4989,9 +4994,9 @@ snapshots:
 
   eastasianwidth@0.2.0: {}
 
-  effect@3.19.19:
+  effect@3.21.0:
     dependencies:
-      '@standard-schema/spec': 1.0.0
+      '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
 
   electron-to-chromium@1.5.134: {}
@@ -5499,7 +5504,7 @@ snapshots:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
-  get-tsconfig@4.13.6:
+  get-tsconfig@4.13.7:
     dependencies:
       resolve-pkg-maps: 1.0.0
 
@@ -6076,7 +6081,7 @@ snapshots:
       '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.3
     optional: true
 
-  msgpackr@1.11.5:
+  msgpackr@1.11.9:
     optionalDependencies:
       msgpackr-extract: 3.0.3
 
@@ -6749,7 +6754,7 @@ snapshots:
   tsx@4.19.3:
     dependencies:
       esbuild: 0.25.12
-      get-tsconfig: 4.13.6
+      get-tsconfig: 4.13.7
     optionalDependencies:
       fsevents: 2.3.3
 

@@ -41,14 +41,14 @@
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.96.0",
-    "@types/amqplib": "0.10.7",
-    "amqplib": "^0.10.9",
+    "@types/amqplib": "0.10.8",
+    "amqplib": "^1.0.0",
     "effect": "^3.21.0"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.94.5",
-    "amqplib": "^0.10.9",
+    "amqplib": "^1.0.0",
     "effect": "^3.19.19"
   }
 }

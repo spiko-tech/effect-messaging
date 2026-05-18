@@ -12,6 +12,8 @@ export const testConnection = AMQPConnection.layer({
 
 export const testChannel = AMQPChannel.layer().pipe(Layer.provideMerge(testConnection))
 
+export const testConfirmChannel = AMQPChannel.layer({ confirm: true }).pipe(Layer.provideMerge(testConnection))
+
 export const TEST_EXCHANGE = "TEST_EXCHANGE"
 export const TEST_QUEUE = "TEST_QUEUE"
 export const TEST_SUBJECT = "TEST_SUBJECT"

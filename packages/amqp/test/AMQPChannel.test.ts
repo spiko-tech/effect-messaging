@@ -7,7 +7,8 @@ import {
   assertTestQueue,
   simulateChannelClose,
   simulateConnectionClose,
-  testChannel
+  testChannel,
+  testConfirmChannel
 } from "./dependencies.js"
 
 describe("AMQPChannel", () => {
@@ -54,9 +55,7 @@ describe("AMQPChannel", () => {
         yield* assertTestQueue
         const channel = yield* AMQPChannel.AMQPChannel
         const result = yield* channel.checkQueue("TEST_QUEUE")
-        expect(result).toMatchObject({
-          queue: "TEST_QUEUE"
-        })
+        expect(result).toMatchObject({ queue: "TEST_QUEUE" })
       }).pipe(Effect.provide(testChannel), TestServices.provideLive))
 
     it.effect("Should return an error when the queue does not exist", () =>
@@ -65,5 +64,41 @@ describe("AMQPChannel", () => {
         const exit = yield* channel.checkQueue("NON_EXISTENT_QUEUE").pipe(Effect.exit)
         expect(exit).toStrictEqual(Exit.fail(expect.any(AMQPChannelError)))
       }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+  })
+
+  describe("confirm channel", () => {
+    const EXCHANGE = "TEST_CONFIRM_EXCHANGE"
+    const QUEUE = "TEST_CONFIRM_QUEUE"
+    const ROUTING_KEY = "TEST_CONFIRM_SUBJECT"
+
+    it.effect("publish resolves only after the broker confirms the message", () =>
+      Effect.gen(function*() {
+        const channel = yield* AMQPChannel.AMQPChannel
+        yield* channel.assertExchange(EXCHANGE, "direct", { durable: true })
+        yield* channel.assertQueue(QUEUE, { durable: true })
+        yield* channel.bindQueue(QUEUE, EXCHANGE, ROUTING_KEY)
+        yield* channel.purgeQueue(QUEUE)
+
+        yield* channel.publish(EXCHANGE, ROUTING_KEY, Buffer.from("confirmed-payload"), { persistent: true })
+
+        const message = yield* channel.get(QUEUE, { noAck: true })
+        expect(message).not.toBe(false)
+        if (message !== false) {
+          expect(message.content.toString()).toBe("confirmed-payload")
+        }
+
+        // Cleanup so re-runs don't accumulate state
+        yield* channel.deleteQueue(QUEUE)
+        yield* channel.deleteExchange(EXCHANGE)
+      }).pipe(Effect.provide(testConfirmChannel), TestServices.provideLive))
+
+    it.effect("publish fails when the target exchange does not exist", () =>
+      Effect.gen(function*() {
+        const channel = yield* AMQPChannel.AMQPChannel
+        const exit = yield* channel
+          .publish("NON_EXISTENT_CONFIRM_EXCHANGE", "whatever", Buffer.from("payload"))
+          .pipe(Effect.exit)
+        expect(exit).toStrictEqual(Exit.fail(expect.any(AMQPChannelError)))
+      }).pipe(Effect.provide(testConfirmChannel), TestServices.provideLive))
   })
 })

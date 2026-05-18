@@ -1,6 +1,6 @@
 import * as Headers from "@effect/platform/Headers"
 import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
-import type { Channel, ConsumeMessage } from "amqplib"
+import type { Channel, ConfirmChannel, ConsumeMessage } from "amqplib"
 import type { StreamEmit } from "effect"
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
@@ -32,11 +32,12 @@ const ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY = "messaging.amqp.destination.
 /** @internal */
 export class InternalAMQPChannel
   extends Context.Tag("@effect-messaging/amqp/InternalAMQPChannel")<InternalAMQPChannel, {
-    channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
+    channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel | ConfirmChannel>>
     serverProperties: AMQPConnection.AMQPConnectionServerProperties
     retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
     retryConsumptionSchedule: Schedule.Schedule<unknown, AMQPChannelError>
     waitChannelTimeout: Duration.DurationInput
+    confirm: boolean
   }>()
 {
   private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
@@ -47,13 +48,14 @@ export class InternalAMQPChannel
     retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
     retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError>
     waitChannelTimeout?: Duration.DurationInput
+    confirm?: boolean
   }): Effect.Effect<
     Context.Tag.Service<InternalAMQPChannel>,
     AMQPConnectionError,
     AMQPConnection.AMQPConnection
   > =>
     Effect.gen(function*() {
-      const channelRef = yield* SubscriptionRef.make(Option.none<Channel>())
+      const channelRef = yield* SubscriptionRef.make(Option.none<Channel | ConfirmChannel>())
       const connection = yield* AMQPConnection.AMQPConnection
       const serverProperties = yield* connection.serverProperties
       return {
@@ -62,7 +64,8 @@ export class InternalAMQPChannel
         retryConnectionSchedule: options.retryConnectionSchedule ?? InternalAMQPChannel.defaultRetryConnectionSchedule,
         retryConsumptionSchedule: options.retryConsumptionSchedule ??
           InternalAMQPChannel.defaultRetryConsumptionSchedule,
-        waitChannelTimeout: options.waitChannelTimeout ?? InternalAMQPChannel.defaultwaitChannelTimeout
+        waitChannelTimeout: options.waitChannelTimeout ?? InternalAMQPChannel.defaultwaitChannelTimeout,
+        confirm: options.confirm ?? false
       }
     })
 }
@@ -86,11 +89,11 @@ const getOrWaitChannel = Effect.gen(function*() {
 
 /** @internal */
 export const initiateChannel = Effect.gen(function*() {
-  const { channelRef } = yield* InternalAMQPChannel
+  const { channelRef, confirm } = yield* InternalAMQPChannel
   yield* SubscriptionRef.updateEffect(channelRef, () =>
     Effect.gen(function*() {
       const connection = yield* AMQPConnection.AMQPConnection
-      const channel = yield* connection.createChannel
+      const channel = yield* confirm ? connection.createConfirmChannel : connection.createChannel
       return Option.some(channel)
     }))
   yield* Effect.logDebug(`AMQPChannel: channel created`)
@@ -144,6 +147,10 @@ export const monitorChannelErrors = Effect.gen(function*() {
 })
 
 /** @internal */
+const isConfirmChannel = (channel: Channel | ConfirmChannel): channel is ConfirmChannel =>
+  typeof (channel as ConfirmChannel).waitForConfirms === "function"
+
+/** @internal */
 export const publish = (
   ...[exchange, routingKey, content, options]: Parameters<Channel["publish"]>
 ) =>
@@ -169,15 +176,34 @@ export const publish = (
       (span) =>
         Effect.gen(function*() {
           const channel = yield* getOrWaitChannel
+          const finalOptions = {
+            ...options,
+            headers: Headers.merge(
+              options?.headers ?? {},
+              HttpTraceContext.toHeaders(span)
+            )
+          }
+          if (isConfirmChannel(channel)) {
+            return yield* Effect.async<boolean, AMQPChannelError>((resume) => {
+              try {
+                const accepted = channel.publish(exchange, routingKey, content, finalOptions, (err) => {
+                  if (err) {
+                    resume(
+                      Effect.fail(
+                        new AMQPChannelError({ reason: `Broker nacked or channel closed before confirm`, cause: err })
+                      )
+                    )
+                  } else {
+                    resume(Effect.succeed(accepted))
+                  }
+                })
+              } catch (error) {
+                resume(Effect.fail(new AMQPChannelError({ reason: `Failed to publish on channel`, cause: error })))
+              }
+            })
+          }
           return yield* Effect.try({
-            try: () =>
-              channel.publish(exchange, routingKey, content, {
-                ...options,
-                headers: Headers.merge(
-                  options?.headers ?? {},
-                  HttpTraceContext.toHeaders(span)
-                )
-              }),
+            try: () => channel.publish(exchange, routingKey, content, finalOptions),
             catch: (error) => new AMQPChannelError({ reason: `Failed to publish on channel`, cause: error })
           })
         })

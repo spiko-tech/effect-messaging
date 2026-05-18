@@ -112,6 +112,15 @@ export interface AMQPChannelOptions {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
   retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
   waitChannelTimeout?: Duration.DurationInput
+  /**
+   * When `true`, the channel is opened in publisher-confirm mode
+   * (`connection.createConfirmChannel`). Every `publish` call returns only
+   * after the broker has acknowledged the message, providing real
+   * backpressure and durability guarantees. Defaults to `false`.
+   *
+   * @since 0.7.0
+   */
+  confirm?: boolean
 }
 
 /**

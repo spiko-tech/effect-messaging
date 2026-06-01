@@ -28,6 +28,12 @@ import * as SubscriberOTel from "./SubscriberOTel.js"
  */
 export interface SubscriberRunnerOptions {
   readonly handlerTimeout?: Duration.DurationInput
+  /**
+   * When `true`, each message handler runs in a new **root** span, and the
+   * span extracted from the message headers is
+   * attached as a `SpanLink` instead of being used as the parent.
+   */
+  readonly newTracePerMessage?: boolean
 }
 
 /**
@@ -139,20 +145,32 @@ export const runStream: <M, ES, RS, A, E, R, EX, RX>(
 ) => {
   const handle = executeHandler(config)
   return stream.pipe(
-    Stream.runForEach((message) =>
-      Effect.fork(
+    Stream.runForEach((message) => {
+      const parentSpan = config.parentSpan(message)
+      const spanOptions: Tracer.SpanOptions = config.options.newTracePerMessage
+        ? {
+          root: true,
+          links: parentSpan === undefined
+            ? []
+            : [{ _tag: "SpanLink", span: parentSpan, attributes: {} }],
+          kind: "consumer",
+          captureStackTrace: false,
+          attributes: config.spanAttributes(message)
+        }
+        : {
+          parent: parentSpan,
+          kind: "consumer",
+          captureStackTrace: false,
+          attributes: config.spanAttributes(message)
+        }
+      return Effect.fork(
         Effect.useSpan(
           config.spanName(message),
-          {
-            parent: config.parentSpan(message),
-            kind: "consumer",
-            captureStackTrace: false,
-            attributes: config.spanAttributes(message)
-          },
+          spanOptions,
           (span) => handle(message, span)
         )
       )
-    ),
+    }),
     Effect.mapError((error) =>
       new SubscriberError.SubscriberError({ reason: `${config.name} failed to subscribe`, cause: error })
     )

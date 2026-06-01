@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Deferred, Effect, Fiber, Stream, TestServices } from "effect"
+import { Deferred, Effect, Fiber, Stream, TestServices, Tracer } from "effect"
 import type * as Duration from "effect/Duration"
-import type * as Tracer from "effect/Tracer"
 import type { StreamConfig } from "../src/internal/SubscriberRunner.js"
 import * as SubscriberRunner from "../src/SubscriberRunner.js"
 
@@ -11,13 +10,18 @@ const makeConfig = <A, E = never>(opts: {
   onSuccess?: (message: string) => (response: A) => Effect.Effect<void>
   onError?: (message: string) => () => Effect.Effect<void>
   handlerTimeout?: Duration.DurationInput
+  newTracePerMessage?: boolean
+  parentSpan?: (message: string) => Tracer.AnySpan | undefined
 }): StreamConfig<string, A, E, never> => ({
   name: "TestSubscriber",
   spanName: (m: string) => `test.consume ${m}`,
-  parentSpan: () => undefined,
+  parentSpan: opts.parentSpan ?? (() => undefined),
   spanAttributes: () => ({}),
   handler: opts.handler,
-  options: opts.handlerTimeout !== undefined ? { handlerTimeout: opts.handlerTimeout } : {},
+  options: {
+    ...(opts.handlerTimeout !== undefined ? { handlerTimeout: opts.handlerTimeout } : {}),
+    ...(opts.newTracePerMessage !== undefined ? { newTracePerMessage: opts.newTracePerMessage } : {})
+  },
   onSuccess: (_message: string, _span: Tracer.Span) => opts.onSuccess?.(_message) ?? (() => Effect.void),
   onError: (_message: string, _span: Tracer.Span) => opts.onError?.(_message) ?? (() => Effect.void)
 })
@@ -178,6 +182,95 @@ describe("SubscriberRunner", { sequential: true }, () => {
 
           expect(onError).toHaveBeenCalledTimes(1)
           expect(onSuccess).toHaveBeenCalledTimes(0)
+        }).pipe(TestServices.provideLive),
+      { timeout: 10000 }
+    )
+  })
+
+  describe("newTracePerMessage option", () => {
+    const PRODUCER_TRACE_ID = "abcdef1234567890abcdef1234567890"
+    const PRODUCER_SPAN_ID = "1234567890abcdef"
+    const producerSpan = Tracer.externalSpan({
+      traceId: PRODUCER_TRACE_ID,
+      spanId: PRODUCER_SPAN_ID,
+      sampled: true
+    })
+
+    it.effect(
+      "Should attach the linked span as a SpanLink and create a root span when enabled",
+      () =>
+        Effect.gen(function*() {
+          const captured = yield* Deferred.make<Tracer.Span>()
+          const config = makeConfig({
+            handler: () =>
+              Effect.gen(function*() {
+                const span = yield* Effect.currentSpan
+                yield* Deferred.succeed(captured, span)
+                return "ok"
+              }),
+            newTracePerMessage: true,
+            parentSpan: () => producerSpan
+          })
+
+          yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
+          const capturedSpan = yield* Deferred.await(captured)
+
+          expect(capturedSpan.traceId).not.toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.links.length).toBe(1)
+          expect(capturedSpan.links[0]!.span.traceId).toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.links[0]!.span.spanId).toBe(PRODUCER_SPAN_ID)
+          expect(capturedSpan.links[0]!.span.sampled).toBe(true)
+          expect(capturedSpan.parent._tag).toBe("None")
+        }).pipe(TestServices.provideLive),
+      { timeout: 10000 }
+    )
+
+    it.effect(
+      "Should create a root span without links when no linked span is provided",
+      () =>
+        Effect.gen(function*() {
+          const captured = yield* Deferred.make<Tracer.Span>()
+          const config = makeConfig({
+            handler: () =>
+              Effect.gen(function*() {
+                const span = yield* Effect.currentSpan
+                yield* Deferred.succeed(captured, span)
+                return "ok"
+              }),
+            newTracePerMessage: true,
+            parentSpan: () => undefined
+          })
+
+          yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
+          const capturedSpan = yield* Deferred.await(captured)
+
+          expect(capturedSpan.links.length).toBe(0)
+          expect(capturedSpan.parent._tag).toBe("None")
+        }).pipe(TestServices.provideLive),
+      { timeout: 10000 }
+    )
+
+    it.effect(
+      "Should use the linked span as parent when option is disabled (default)",
+      () =>
+        Effect.gen(function*() {
+          const captured = yield* Deferred.make<Tracer.Span>()
+          const config = makeConfig({
+            handler: () =>
+              Effect.gen(function*() {
+                const span = yield* Effect.currentSpan
+                yield* Deferred.succeed(captured, span)
+                return "ok"
+              }),
+            parentSpan: () => producerSpan
+          })
+
+          yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
+          const capturedSpan = yield* Deferred.await(captured)
+
+          expect(capturedSpan.traceId).toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.links.length).toBe(0)
+          expect(capturedSpan.parent._tag).toBe("Some")
         }).pipe(TestServices.provideLive),
       { timeout: 10000 }
     )

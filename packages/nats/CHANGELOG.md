@@ -1,5 +1,24 @@
 # @effect-messaging/nats
 
+## 0.7.6
+
+### Patch Changes
+
+- [#149](https://github.com/spiko-tech/effect-messaging/pull/149) [`7e54040`](https://github.com/spiko-tech/effect-messaging/commit/7e540402be6b8172a2f70f6d2c6f65c14393a425) Thanks [@gauthierdc](https://github.com/gauthierdc)! - Add `producerSpanRelation` subscriber option (`"parent" | "link"`). It controls how the span extracted from the message headers (e.g. W3C `traceparent`) relates to the consumer span:
+
+  - `"link"` (default): each consumed message handler runs in a new root span, and the extracted span is attached as a `SpanLink` instead of being used as the parent, producing a separate but correlated trace.
+  - `"parent"`: the extracted span is used as the parent, so the consumer span continues the producer's trace.
+
+  **Behavior change:** the default is `"link"`. Previously the consumer span always continued the producer's trace (equivalent to `"parent"`). With this release, consumers start a new root trace per message by default and link back to the producer span. This keeps per-message traces short and bounded and avoids skewing sampling, while preserving correlation via the `SpanLink`. To restore the previous behavior, set `producerSpanRelation: "parent"`.
+
+- [#152](https://github.com/spiko-tech/effect-messaging/pull/152) [`31563c8`](https://github.com/spiko-tech/effect-messaging/commit/31563c8e9fa80dd338dac5e5ef437f0e75667a3f) Thanks [@wewelll](https://github.com/wewelll)! - Upgrade messaging broker libraries to their latest versions.
+
+  - `@effect-messaging/amqp`: bump `amqplib` from `0.10.9` to `2.0.1`. `amqplib` now ships its own type definitions, so the `@types/amqplib` dev dependency has been removed.
+  - `@effect-messaging/nats`: bump `@nats-io/jetstream`, `@nats-io/nats-core`, and `@nats-io/transport-node` from `3.3.1` to `3.4.0`.
+
+- Updated dependencies [[`7e54040`](https://github.com/spiko-tech/effect-messaging/commit/7e540402be6b8172a2f70f6d2c6f65c14393a425)]:
+  - @effect-messaging/core@0.2.43
+
 ## 0.7.5
 
 ### Patch Changes

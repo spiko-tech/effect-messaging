@@ -1,7 +1,7 @@
 ---
-"@effect-messaging/core": minor
-"@effect-messaging/amqp": minor
-"@effect-messaging/nats": minor
+"@effect-messaging/core": patch
+"@effect-messaging/amqp": patch
+"@effect-messaging/nats": patch
 ---
 
 Add `producerSpanRelation` subscriber option (`"parent" | "link"`). It controls how the span extracted from the message headers (e.g. W3C `traceparent`) relates to the consumer span:

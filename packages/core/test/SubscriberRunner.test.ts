@@ -10,7 +10,7 @@ const makeConfig = <A, E = never>(opts: {
   onSuccess?: (message: string) => (response: A) => Effect.Effect<void>
   onError?: (message: string) => () => Effect.Effect<void>
   handlerTimeout?: Duration.DurationInput
-  newTracePerMessage?: boolean
+  producerSpanRelation?: "parent" | "link"
   parentSpan?: (message: string) => Tracer.AnySpan | undefined
 }): StreamConfig<string, A, E, never> => ({
   name: "TestSubscriber",
@@ -20,7 +20,7 @@ const makeConfig = <A, E = never>(opts: {
   handler: opts.handler,
   options: {
     ...(opts.handlerTimeout !== undefined ? { handlerTimeout: opts.handlerTimeout } : {}),
-    ...(opts.newTracePerMessage !== undefined ? { newTracePerMessage: opts.newTracePerMessage } : {})
+    ...(opts.producerSpanRelation !== undefined ? { producerSpanRelation: opts.producerSpanRelation } : {})
   },
   onSuccess: (_message: string, _span: Tracer.Span) => opts.onSuccess?.(_message) ?? (() => Effect.void),
   onError: (_message: string, _span: Tracer.Span) => opts.onError?.(_message) ?? (() => Effect.void)
@@ -187,7 +187,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
     )
   })
 
-  describe("newTracePerMessage option", () => {
+  describe("producerSpanRelation option", () => {
     const PRODUCER_TRACE_ID = "abcdef1234567890abcdef1234567890"
     const PRODUCER_SPAN_ID = "1234567890abcdef"
     const producerSpan = Tracer.externalSpan({
@@ -197,7 +197,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
     })
 
     it.effect(
-      "Should attach the linked span as a SpanLink and create a root span when enabled",
+      "Should attach the producer span as a SpanLink and create a root span when set to \"link\"",
       () =>
         Effect.gen(function*() {
           const captured = yield* Deferred.make<Tracer.Span>()
@@ -208,7 +208,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
                 yield* Deferred.succeed(captured, span)
                 return "ok"
               }),
-            newTracePerMessage: true,
+            producerSpanRelation: "link",
             parentSpan: () => producerSpan
           })
 
@@ -226,7 +226,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
     )
 
     it.effect(
-      "Should create a root span without links when no linked span is provided",
+      "Should create a root span without links when no producer span is provided",
       () =>
         Effect.gen(function*() {
           const captured = yield* Deferred.make<Tracer.Span>()
@@ -237,7 +237,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
                 yield* Deferred.succeed(captured, span)
                 return "ok"
               }),
-            newTracePerMessage: true,
+            producerSpanRelation: "link",
             parentSpan: () => undefined
           })
 
@@ -251,7 +251,33 @@ describe("SubscriberRunner", { sequential: true }, () => {
     )
 
     it.effect(
-      "Should use the linked span as parent when option is disabled (default)",
+      "Should use the producer span as parent when set to \"parent\"",
+      () =>
+        Effect.gen(function*() {
+          const captured = yield* Deferred.make<Tracer.Span>()
+          const config = makeConfig({
+            handler: () =>
+              Effect.gen(function*() {
+                const span = yield* Effect.currentSpan
+                yield* Deferred.succeed(captured, span)
+                return "ok"
+              }),
+            producerSpanRelation: "parent",
+            parentSpan: () => producerSpan
+          })
+
+          yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
+          const capturedSpan = yield* Deferred.await(captured)
+
+          expect(capturedSpan.traceId).toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.links.length).toBe(0)
+          expect(capturedSpan.parent._tag).toBe("Some")
+        }).pipe(TestServices.provideLive),
+      { timeout: 10000 }
+    )
+
+    it.effect(
+      "Should default to \"link\" (new root span + SpanLink) when option is unset",
       () =>
         Effect.gen(function*() {
           const captured = yield* Deferred.make<Tracer.Span>()
@@ -268,9 +294,10 @@ describe("SubscriberRunner", { sequential: true }, () => {
           yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
           const capturedSpan = yield* Deferred.await(captured)
 
-          expect(capturedSpan.traceId).toBe(PRODUCER_TRACE_ID)
-          expect(capturedSpan.links.length).toBe(0)
-          expect(capturedSpan.parent._tag).toBe("Some")
+          expect(capturedSpan.traceId).not.toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.links.length).toBe(1)
+          expect(capturedSpan.links[0]!.span.traceId).toBe(PRODUCER_TRACE_ID)
+          expect(capturedSpan.parent._tag).toBe("None")
         }).pipe(TestServices.provideLive),
       { timeout: 10000 }
     )

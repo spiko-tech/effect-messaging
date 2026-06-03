@@ -29,11 +29,16 @@ import * as SubscriberOTel from "./SubscriberOTel.js"
 export interface SubscriberRunnerOptions {
   readonly handlerTimeout?: Duration.DurationInput
   /**
-   * When `true`, each message handler runs in a new **root** span, and the
-   * span extracted from the message headers is
-   * attached as a `SpanLink` instead of being used as the parent.
+   * Controls how the span extracted from the message headers relates to the
+   * consumer span.
+   *
+   * - `"link"` (default): the consumer runs in a new **root** span and the
+   *   extracted span is attached as a `SpanLink`, producing a separate (but
+   *   correlated) trace.
+   * - `"parent"`: the extracted span is used as the parent, so the consumer
+   *   span continues the producer's trace.
    */
-  readonly newTracePerMessage?: boolean
+  readonly producerSpanRelation?: "parent" | "link"
 }
 
 /**
@@ -147,21 +152,19 @@ export const runStream: <M, ES, RS, A, E, R, EX, RX>(
   return stream.pipe(
     Stream.runForEach((message) => {
       const parentSpan = config.parentSpan(message)
-      const spanOptions: Tracer.SpanOptions = config.options.newTracePerMessage
-        ? {
+      const base = {
+        kind: "consumer",
+        captureStackTrace: false,
+        attributes: config.spanAttributes(message)
+      } as const
+      const spanOptions: Tracer.SpanOptions = config.options.producerSpanRelation === "parent"
+        ? { ...base, parent: parentSpan }
+        : {
+          ...base,
           root: true,
           links: parentSpan === undefined
             ? []
-            : [{ _tag: "SpanLink", span: parentSpan, attributes: {} }],
-          kind: "consumer",
-          captureStackTrace: false,
-          attributes: config.spanAttributes(message)
-        }
-        : {
-          parent: parentSpan,
-          kind: "consumer",
-          captureStackTrace: false,
-          attributes: config.spanAttributes(message)
+            : [{ _tag: "SpanLink", span: parentSpan, attributes: {} }]
         }
       return Effect.fork(
         Effect.useSpan(

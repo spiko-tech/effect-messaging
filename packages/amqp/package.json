@@ -41,6 +41,7 @@
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.96.0",
+    "@types/node": "^24.9.1",
     "amqplib": "^2.0.1",
     "effect": "^3.21.0"
   },

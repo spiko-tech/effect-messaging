@@ -5,6 +5,7 @@
   "compilerOptions": {
     "tsBuildInfoFile": ".tsbuildinfo/examples.tsbuildinfo",
     "rootDir": "examples",
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node"]
   }
 }

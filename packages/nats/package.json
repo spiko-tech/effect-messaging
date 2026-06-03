@@ -39,17 +39,17 @@
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.96.0",
-    "@nats-io/jetstream": "^3.3.1",
-    "@nats-io/nats-core": "^3.3.1",
-    "@nats-io/transport-node": "^3.3.1",
+    "@nats-io/jetstream": "^3.4.0",
+    "@nats-io/nats-core": "^3.4.0",
+    "@nats-io/transport-node": "^3.4.0",
     "effect": "^3.21.0"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
     "@effect/platform": "^0.94.5",
-    "@nats-io/jetstream": "^3.3.1",
-    "@nats-io/nats-core": "^3.3.1",
-    "@nats-io/transport-node": "^3.3.1",
+    "@nats-io/jetstream": "^3.4.0",
+    "@nats-io/nats-core": "^3.4.0",
+    "@nats-io/transport-node": "^3.4.0",
     "effect": "^3.19.19"
   }
 }

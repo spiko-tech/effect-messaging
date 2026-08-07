@@ -4,11 +4,13 @@
 import * as NATSCore from "@nats-io/nats-core"
 import * as TransportNode from "@nats-io/transport-node"
 import * as Context from "effect/Context"
+import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
+import * as connectionTeardown from "./internal/connectionTeardown.js"
 import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
@@ -75,15 +77,42 @@ export interface NATSConnection {
  */
 export const NATSConnection = Context.GenericTag<NATSConnection>("@effect-messaging/nats/NATSConnection")
 
+/**
+ * @category models
+ * @since 0.7.7
+ */
+export interface NATSConnectionOptions {
+  /**
+   * Budget for the scope finalizer to drain the connection before closing it outright.
+   *
+   * `drain()` unsubscribes, then waits for a PING/PONG round trip before it closes. It never waits
+   * for message handlers. It stalls when the server has gone silent, when the link is lost with
+   * reconnects disabled, or while a reconnect is in progress. Once the budget elapses the connection
+   * is closed instead, and that close gets whatever remains of the budget, at least one second.
+   * Pass `Duration.infinity` to wait without a bound. Defaults to 5 seconds.
+   *
+   * @since 0.7.7
+   */
+  drainTimeout?: Duration.DurationInput
+}
+
+const DEFAULT_DRAIN_TIMEOUT = Duration.seconds(5)
+
 const wrapAsync = utils.wrapAsync(NATSError.NATSConnectionError)
 const wrap = utils.wrap(NATSError.NATSConnectionError)
 
 /** @internal */
 const make = (
-  connect: () => Promise<NATSCore.NatsConnection>
+  connect: () => Promise<NATSCore.NatsConnection>,
+  options: NATSConnectionOptions = {}
 ): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
   Effect.gen(function*() {
-    const nc = yield* wrapAsync(connect, "Failed to create NATS connection")
+    // decoded before connecting so an invalid duration fails the layer instead of its finalizer
+    const drainTimeout = Duration.decode(options.drainTimeout ?? DEFAULT_DRAIN_TIMEOUT)
+    const nc = yield* Effect.acquireRelease(
+      wrapAsync(connect, "Failed to create NATS connection"),
+      (nc) => connectionTeardown.closeConnection(nc, drainTimeout)
+    )
 
     const connection: NATSConnection = {
       [TypeId]: TypeId,
@@ -127,8 +156,6 @@ const make = (
       nc
     }
 
-    yield* Effect.addFinalizer(() => Effect.promise(() => nc.drain()))
-
     return connection
   })
 
@@ -136,16 +163,18 @@ const make = (
  * @since 0.1.0
  * @category Layers
  */
-export const layerWebSocket = (options: NATSCore.ConnectionOptions): Layer.Layer<
-  NATSConnection,
-  NATSError.NATSConnectionError
-> => Layer.scoped(NATSConnection, make(() => NATSCore.wsconnect(options)))
+export const layerWebSocket = (
+  options: NATSCore.ConnectionOptions,
+  connectionOptions: NATSConnectionOptions = {}
+): Layer.Layer<NATSConnection, NATSError.NATSConnectionError> =>
+  Layer.scoped(NATSConnection, make(() => NATSCore.wsconnect(options), connectionOptions))
 
 /**
  * @since 0.1.0
  * @category Layers
  */
-export const layerNode = (options: TransportNode.NodeConnectionOptions): Layer.Layer<
-  NATSConnection,
-  NATSError.NATSConnectionError
-> => Layer.scoped(NATSConnection, make(() => TransportNode.connect(options)))
+export const layerNode = (
+  options: TransportNode.NodeConnectionOptions,
+  connectionOptions: NATSConnectionOptions = {}
+): Layer.Layer<NATSConnection, NATSError.NATSConnectionError> =>
+  Layer.scoped(NATSConnection, make(() => TransportNode.connect(options), connectionOptions))

@@ -15,6 +15,7 @@ import * as AMQPConnection from "../AMQPConnection.js"
 import type { AMQPConnectionError } from "../AMQPError.js"
 import { AMQPChannelError } from "../AMQPError.js"
 import { closeStream, errorStream } from "./closeStream.js"
+import { settleWithin } from "./settleWithin.js"
 
 const DEFAULT_PREFETCH = 50
 
@@ -119,10 +120,10 @@ export const closeChannel = ({ removeAllListeners = true }: CloseChannelOptions 
         if (Option.isSome(channel)) {
           if (confirm) {
             // `removeAllListeners` also removes amqplib's own ack/nack listeners, so drain confirms first
-            yield* Effect.tryPromise(() => (channel.value as ConfirmChannel).waitForConfirms()).pipe(
-              Effect.disconnect, // finalizers are uninterruptible: without this the timeout could not fire
-              Effect.timeout(confirmTimeout),
-              Effect.ignore
+            yield* settleWithin(
+              (channel.value as ConfirmChannel).waitForConfirms().then(() => undefined, () => undefined),
+              Duration.toMillis(Duration.decode(confirmTimeout)),
+              undefined
             )
           }
           if (removeAllListeners) {
@@ -199,7 +200,6 @@ const publishAndConfirm = (
         resume(discardChannel(channel).pipe(Effect.andThen(Effect.fail(publishError(error)))))
       }
     }).pipe(
-      Effect.disconnect,
       Effect.timeout(confirmTimeout),
       Effect.catchTag("TimeoutException", () =>
         new AMQPChannelError({ reason: "Timed out waiting for broker confirm" }))

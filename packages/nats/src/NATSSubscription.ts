@@ -5,6 +5,7 @@ import type * as NATSCore from "@nats-io/nats-core"
 import type * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
+import { stoppableIterable } from "./internal/stoppableIterable.js"
 import * as utils from "./internal/utils.js"
 import * as NATSError from "./NATSError.js"
 import * as NATSMessage from "./NATSMessage.js"
@@ -54,7 +55,8 @@ const wrap = utils.wrap(NATSError.NATSSubscriptionError)
 export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
   [TypeId]: TypeId,
   stream: Stream.fromAsyncIterable(
-    sub,
+    // unsubscribed when the stream ends or is interrupted, so an idle subscription releases promptly
+    stoppableIterable(sub, () => sub.unsubscribe()),
     (error) => new NATSError.NATSSubscriptionError({ reason: "Failed to read from NATS subscription", cause: error })
   ).pipe(Stream.map(NATSMessage.make)),
   unsubscribe: (...params: Parameters<NATSCore.Subscription["unsubscribe"]>) =>

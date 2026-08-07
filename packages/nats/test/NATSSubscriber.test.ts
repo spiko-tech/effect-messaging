@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, TestServices } from "effect"
+import { Effect, Fiber, TestServices } from "effect"
 import * as NATSMessage from "../src/NATSMessage.js"
 import * as NATSPublisher from "../src/NATSPublisher.js"
 import * as NATSSubscriber from "../src/NATSSubscriber.js"
@@ -312,6 +312,17 @@ describe("NATSSubscriber", { sequential: true }, () => {
 
         // Health check should succeed
         yield* subscriber.healthCheck
+      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+  })
+  describe("release", () => {
+    it.effect("Should release an idle subscription promptly when interrupted", () =>
+      Effect.gen(function*() {
+        const subscriber = yield* NATSSubscriber.make("nats.subscriber.test.idle")
+        const fiber = yield* Effect.fork(subscriber.subscribe(Effect.void))
+        yield* Effect.sleep("100 millis")
+
+        // an idle subscription used to hold this until its next message arrived
+        yield* Fiber.interrupt(fiber).pipe(Effect.timeout("2 seconds"))
       }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
   })
 })

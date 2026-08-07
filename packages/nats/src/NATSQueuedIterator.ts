@@ -4,6 +4,7 @@
 import type * as NATS from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 import * as Stream from "effect/Stream"
+import { stoppableIterable } from "./internal/stoppableIterable.js"
 import type * as utils from "./internal/utils.js"
 
 /**
@@ -47,7 +48,7 @@ export const make = <E>(ErrorClass: utils.NATSErrorConstructor<E>) =>
   getPending: Effect.sync(() => iterator.getPending()),
   getReceived: Effect.sync(() => iterator.getReceived()),
   stream: Stream.fromAsyncIterable(
-    iterator,
+    stoppableIterable(iterator, () => iterator.stop()),
     (error) => new ErrorClass({ reason: "An error occurred in queued iterator async iterable", cause: error })
   ),
 

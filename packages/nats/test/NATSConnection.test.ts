@@ -1,5 +1,5 @@
-import { describe, expect, layer } from "@effect/vitest"
-import { Chunk, Effect, Option, Stream, TestServices } from "effect"
+import { describe, expect, it, layer } from "@effect/vitest"
+import { Chunk, Context, Duration, Effect, Layer, Option, Stream, TestServices } from "effect"
 import * as NATSConnection from "../src/NATSConnection.js"
 import { testConnection } from "./dependencies.js"
 
@@ -121,5 +121,39 @@ describe("NATSConnection", () => {
 
         expect(responseText).toEqual("Echo: Hello")
       }).pipe(TestServices.provideLive))
+  })
+  describe("scope close", () => {
+    const servers = "localhost:4222"
+
+    // Builds the layer in its own scope and hands back the raw connection once that scope has closed.
+    const buildAndClose = (
+      layer: Layer.Layer<NATSConnection.NATSConnection, unknown>,
+      beforeClose: (nc: NATSConnection.NATSConnection["nc"]) => void = () => {}
+    ) =>
+      Effect.scoped(
+        Layer.build(layer).pipe(
+          Effect.map((context) => Context.get(context, NATSConnection.NATSConnection).nc),
+          Effect.tap((nc) => Effect.sync(() => beforeClose(nc)))
+        )
+      )
+
+    it.live("closes the connection when the scope closes", () =>
+      Effect.gen(function*() {
+        const nc = yield* buildAndClose(testConnection)
+        expect(nc.isClosed()).toBe(true)
+      }))
+
+    it.live("closes the connection outright once drainTimeout elapses", () =>
+      Effect.gen(function*() {
+        const layer = NATSConnection.layerNode({ servers }, { drainTimeout: "200 millis" })
+        const [elapsed, nc] = yield* Effect.timed(
+          // a drain that never settles; the default budget of 5 seconds would fail the bound below
+          buildAndClose(layer, (nc) => {
+            nc.drain = () => new Promise(() => {})
+          })
+        )
+        expect(nc.isClosed()).toBe(true)
+        expect(Duration.toMillis(elapsed)).toBeLessThan(3_000)
+      }))
   })
 })

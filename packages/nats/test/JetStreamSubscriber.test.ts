@@ -1,6 +1,6 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Fiber, Schedule, TestServices } from "effect"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import * as JetStreamMessage from "../src/JetStreamMessage.js"
 import * as JetStreamPublisher from "../src/JetStreamPublisher.js"
@@ -444,6 +444,23 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
 
           // Health check should succeed
           yield* subscriber.healthCheck
+        })
+      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+  })
+  describe("release", () => {
+    it.effect("Should release an idle consumer promptly when interrupted", () =>
+      Effect.scoped(
+        Effect.gen(function*() {
+          yield* setup
+
+          const client = yield* JetStreamClient.JetStreamClient
+          const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
+          const subscriber = yield* JetStreamSubscriber.fromConsumer(consumer)
+          const fiber = yield* Effect.fork(subscriber.subscribe(Effect.succeed(JetStreamSubscriberResponse.ack())))
+          yield* Effect.sleep("100 millis")
+
+          // an idle consumer used to hold this until its next message arrived
+          yield* Fiber.interrupt(fiber).pipe(Effect.timeout("2 seconds"))
         })
       ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
   })

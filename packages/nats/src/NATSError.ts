@@ -21,7 +21,7 @@ export type TypeId = typeof TypeId
  */
 export class NATSConnectionError extends Schema.TaggedError<NATSConnectionError>()(
   "NATSConnectionError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -37,7 +37,7 @@ export class NATSConnectionError extends Schema.TaggedError<NATSConnectionError>
  */
 export class NATSMessageError extends Schema.TaggedError<NATSMessageError>()(
   "NATSMessageError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -53,7 +53,7 @@ export class NATSMessageError extends Schema.TaggedError<NATSMessageError>()(
  */
 export class NATSSubscriptionError extends Schema.TaggedError<NATSSubscriptionError>()(
   "NATSSubscriptionError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -69,7 +69,7 @@ export class NATSSubscriptionError extends Schema.TaggedError<NATSSubscriptionEr
  */
 export class JetStreamClientError extends Schema.TaggedError<JetStreamClientError>()(
   "JetStreamClientError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -85,7 +85,7 @@ export class JetStreamClientError extends Schema.TaggedError<JetStreamClientErro
  */
 export class JetStreamManagerError extends Schema.TaggedError<JetStreamManagerError>()(
   "JetStreamManagerError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -101,7 +101,7 @@ export class JetStreamManagerError extends Schema.TaggedError<JetStreamManagerEr
  */
 export class JetStreamBatchError extends Schema.TaggedError<JetStreamBatchError>()(
   "JetStreamBatchError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -117,7 +117,7 @@ export class JetStreamBatchError extends Schema.TaggedError<JetStreamBatchError>
  */
 export class JetStreamConsumerAPIError extends Schema.TaggedError<JetStreamConsumerAPIError>()(
   "JetStreamConsumerAPIError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -133,7 +133,7 @@ export class JetStreamConsumerAPIError extends Schema.TaggedError<JetStreamConsu
  */
 export class JetStreamStreamAPIError extends Schema.TaggedError<JetStreamStreamAPIError>()(
   "JetStreamStreamAPIError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -149,7 +149,7 @@ export class JetStreamStreamAPIError extends Schema.TaggedError<JetStreamStreamA
  */
 export class JetStreamDirectStreamAPIError extends Schema.TaggedError<JetStreamDirectStreamAPIError>()(
   "JetStreamDirectStreamAPIError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -165,7 +165,7 @@ export class JetStreamDirectStreamAPIError extends Schema.TaggedError<JetStreamD
  */
 export class JetStreamStoredMessageError extends Schema.TaggedError<JetStreamStoredMessageError>()(
   "JetStreamStoredMessageError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -181,7 +181,7 @@ export class JetStreamStoredMessageError extends Schema.TaggedError<JetStreamSto
  */
 export class JetStreamConsumerError extends Schema.TaggedError<JetStreamConsumerError>()(
   "JetStreamConsumerError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -197,7 +197,7 @@ export class JetStreamConsumerError extends Schema.TaggedError<JetStreamConsumer
  */
 export class JetStreamMessageError extends Schema.TaggedError<JetStreamMessageError>()(
   "JetStreamMessageError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -213,7 +213,7 @@ export class JetStreamMessageError extends Schema.TaggedError<JetStreamMessageEr
  */
 export class JetStreamStreamError extends Schema.TaggedError<JetStreamStreamError>()(
   "JetStreamStreamError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0

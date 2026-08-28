@@ -52,7 +52,14 @@ export const make = (batch: JetStream.Batch): JetStreamBatch => ({
     subj: string,
     payload?: Uint8Array | string,
     opts?: Partial<JetStream.BatchMessageOptions | JetStream.BatchMessageOptionsWithReply>
-  ) => wrapAsync(async () => batch.add(subj, payload, opts as any), "Failed to add message to batch"),
+  ) =>
+    wrapAsync(async () => {
+      if (opts !== undefined && "ack" in opts) {
+        await batch.add(subj, payload, { ...opts, ack: opts.ack })
+      } else {
+        batch.add(subj, payload, opts)
+      }
+    }, "Failed to add message to batch"),
   commit: (...params: Parameters<JetStream.Batch["commit"]>) =>
     wrapAsync(() => batch.commit(...params), "Failed to commit batch"),
 

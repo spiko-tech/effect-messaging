@@ -4,6 +4,7 @@ import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
+import * as PubSub from "effect/PubSub"
 import * as Redacted from "effect/Redacted"
 import * as Schedule from "effect/Schedule"
 import * as Sink from "effect/Sink"
@@ -16,57 +17,53 @@ const ATTR_SERVER_ADDRESS = "server.address" as const
 const ATTR_SERVER_PORT = "server.port" as const
 const ATTR_MESSAGING_SYSTEM = "messaging.system" as const
 
-/** @internal */
 export type ConnectionUrl = Redacted.Redacted<string> | Options.Connect
 
-export class InternalAMQPConnection
-  extends Context.Tag("@effect-messaging/amqp/InternalAMQPConnection")<InternalAMQPConnection, {
-    connectionRef: SubscriptionRef.SubscriptionRef<Option.Option<ChannelModel>>
-    url: ConnectionUrl
-    retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
-    waitConnectionTimeout: Duration.DurationInput
-    connectionTimeout: Duration.DurationInput
-  }>()
-{
-  private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
-  private static defaultWaitConnectionTimeout = Duration.seconds(5)
-  private static defaultConnectionTimeout = Duration.seconds(10)
+export const InternalAMQPConnection = Context.Service<{
+  connectionRef: SubscriptionRef.SubscriptionRef<Option.Option<ChannelModel>>
+  url: ConnectionUrl
+  retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
+  waitConnectionTimeout: Duration.Input
+  connectionTimeout: Duration.Input
+}>("@effect-messaging/amqp/InternalAMQPConnection")
 
-  static new = (
-    url: ConnectionUrl,
-    options: {
-      retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
-      waitConnectionTimeout?: Duration.DurationInput
-      connectionTimeout?: Duration.DurationInput
+const defaultRetryConnectionSchedule = Schedule.spaced(1000)
+const defaultWaitConnectionTimeout = Duration.seconds(5)
+const defaultConnectionTimeout = Duration.seconds(10)
+
+export const makeInternalAMQPConnection = (
+  url: ConnectionUrl,
+  options: {
+    retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
+    waitConnectionTimeout?: Duration.Input
+    connectionTimeout?: Duration.Input
+  }
+): Effect.Effect<Context.Service.Shape<typeof InternalAMQPConnection>> =>
+  Effect.gen(function*() {
+    const connectionRef = yield* SubscriptionRef.make(Option.none<ChannelModel>())
+    return {
+      connectionRef,
+      url,
+      retryConnectionSchedule: options.retryConnectionSchedule ?? defaultRetryConnectionSchedule,
+      waitConnectionTimeout: options.waitConnectionTimeout ?? defaultWaitConnectionTimeout,
+      connectionTimeout: options.connectionTimeout ?? defaultConnectionTimeout
     }
-  ): Effect.Effect<Context.Tag.Service<InternalAMQPConnection>> =>
-    Effect.gen(function*() {
-      const connectionRef = yield* SubscriptionRef.make(Option.none<ChannelModel>())
-      return {
-        connectionRef,
-        url,
-        retryConnectionSchedule: options.retryConnectionSchedule ??
-          InternalAMQPConnection.defaultRetryConnectionSchedule,
-        waitConnectionTimeout: options.waitConnectionTimeout ?? InternalAMQPConnection.defaultWaitConnectionTimeout,
-        connectionTimeout: options.connectionTimeout ?? InternalAMQPConnection.defaultConnectionTimeout
-      }
-    })
-}
+  })
 
 /** @internal */
 const getOrWaitConnection = Effect.gen(function*() {
   const { connectionRef, waitConnectionTimeout } = yield* InternalAMQPConnection
-  return yield* connectionRef.changes.pipe(
-    Stream.takeUntil(Option.isSome),
+  return yield* SubscriptionRef.changes(connectionRef).pipe(
+    Stream.filter(Option.isSome),
+    Stream.map((connection) => connection.value),
+    Stream.take(1),
     Stream.run(Sink.last()),
-    Effect.flatten,
-    Effect.flatten,
-    Effect.catchTag(
-      "NoSuchElementException",
-      () => Effect.dieMessage(`Should never happen: Connection should be available here`)
-    ),
+    Effect.flatMap(Option.match({
+      onNone: () => Effect.die(new Error("Should never happen: Connection should be available here")),
+      onSome: Effect.succeed
+    })),
     Effect.timeout(waitConnectionTimeout),
-    Effect.catchTag("TimeoutException", () => new AMQPConnectionError({ reason: "Connection is not available" }))
+    Effect.catchTag("TimeoutError", () => new AMQPConnectionError({ reason: "Connection is not available" }))
   )
 })
 
@@ -90,6 +87,11 @@ export const initiateConnection = Effect.gen(function*() {
         try: () => connect(normalizedUrl, socketOptions),
         catch: (error) => new AMQPConnectionError({ reason: "Failed to establish connection", cause: error })
       })
+      connection.on("close", () => {
+        const unavailable = Option.none<ChannelModel>()
+        connectionRef.value = unavailable
+        PubSub.publishUnsafe(connectionRef.pubsub, unavailable)
+      })
       return Option.some(connection)
     }))
   yield* Effect.logDebug(`AMQPConnection: connection established`)
@@ -103,24 +105,23 @@ export interface CloseConnectionOptions {
 }
 
 /** @internal */
-export const closeConnection = ({ removeAllListeners = true }: CloseConnectionOptions = {}) =>
-  Effect.gen(function*() {
-    const { connectionRef } = yield* InternalAMQPConnection
-    yield* SubscriptionRef.updateEffect(connectionRef, (connection) =>
-      Effect.gen(function*() {
-        if (Option.isSome(connection)) {
-          if (removeAllListeners) {
-            connection.value.removeAllListeners()
-          }
-          yield* annotateSpanWithConnectionProps(connection.value)
-          yield* Effect.tryPromise(() => connection.value.close()).pipe(Effect.ignore)
+export const closeConnection = Effect.fn("AMQPConnection.closeConnection")(function*(
+  { removeAllListeners = true }: CloseConnectionOptions = {}
+) {
+  const { connectionRef } = yield* InternalAMQPConnection
+  yield* SubscriptionRef.updateEffect(connectionRef, (connection) =>
+    Effect.gen(function*() {
+      if (Option.isSome(connection)) {
+        if (removeAllListeners) {
+          connection.value.removeAllListeners()
         }
-        return Option.none()
-      }))
-    yield* Effect.logDebug("AMQPConnection: connection closed")
-  }).pipe(
-    Effect.withSpan("AMQPConnection.closeConnection")
-  )
+        yield* annotateSpanWithConnectionProps(connection.value)
+        yield* Effect.tryPromise(() => connection.value.close()).pipe(Effect.ignore)
+      }
+      return Option.none()
+    }))
+  yield* Effect.logDebug("AMQPConnection: connection closed")
+})
 
 /** @internal */
 export const keepConnectionAlive = Effect.gen(function*() {
@@ -168,17 +169,16 @@ export const createConfirmChannel = Effect.gen(function*() {
 )
 
 /** @internal */
-export const updateSecret = (...parameters: Parameters<ChannelModel["updateSecret"]>) =>
-  Effect.gen(function*() {
-    const conn = yield* getOrWaitConnection
-    yield* annotateSpanWithConnectionProps(conn)
-    return yield* Effect.tryPromise({
-      try: () => conn.updateSecret(...parameters),
-      catch: (error) => new AMQPConnectionError({ reason: `Failed to create updateSecret`, cause: error })
-    })
-  }).pipe(
-    Effect.withSpan("AMQPConnection.updateSecret")
-  )
+export const updateSecret = Effect.fn("AMQPConnection.updateSecret")(function*(
+  ...parameters: Parameters<ChannelModel["updateSecret"]>
+) {
+  const conn = yield* getOrWaitConnection
+  yield* annotateSpanWithConnectionProps(conn)
+  return yield* Effect.tryPromise({
+    try: () => conn.updateSecret(...parameters),
+    catch: (error) => new AMQPConnectionError({ reason: `Failed to create updateSecret`, cause: error })
+  })
+})
 
 /** @internal */
 export const serverProperties = Effect.gen(function*() {

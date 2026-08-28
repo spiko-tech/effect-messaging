@@ -1,6 +1,7 @@
 packages:
   - packages/*
 
-onlyBuiltDependencies:
-  - esbuild
-  - msgpackr-extract
+allowBuilds:
+  dprint: false
+  esbuild: true
+  msgpackr-extract: true

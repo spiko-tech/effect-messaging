@@ -28,25 +28,20 @@ export const SpanAttributes = {
  * Sets standard error span attributes on a span from an error cause.
  *
  * Sets `error.type`, `error.stack`, and `error.message` attributes using
- * `Cause.squashWith` to extract meaningful error information.
+ * `Cause.squash` to extract meaningful error information.
  *
  * @since 0.3.0
  * @category otel helpers
  */
 export const setErrorSpanAttributes = (span: Tracer.Span, cause: Cause.Cause<unknown>): void => {
+  const error = Cause.squash(cause)
   span.attribute(
     "error.type",
-    String(Cause.squashWith(
-      cause,
-      (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
-    ))
+    String(Predicate.hasProperty(error, "_tag") ? error._tag : error instanceof Error ? error.name : error)
   )
   span.attribute("error.stack", Cause.pretty(cause))
   span.attribute(
     "error.message",
-    String(Cause.squashWith(
-      cause,
-      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
-    ))
+    String(Predicate.hasProperty(error, "reason") ? error.reason : error instanceof Error ? error.message : error)
   )
 }

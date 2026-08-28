@@ -102,7 +102,7 @@ export interface AMQPChannel {
  * @category tags
  * @since 0.1.0
  */
-export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
+export const AMQPChannel = Context.Service<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
 
 /**
  * @category models
@@ -111,7 +111,7 @@ export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/am
 export interface AMQPChannelOptions {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
   retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
-  waitChannelTimeout?: Duration.DurationInput
+  waitChannelTimeout?: Duration.Input
 }
 
 /**
@@ -226,7 +226,7 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
       return channel
     }
   ).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.InternalAMQPChannel.new(options))
+    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.makeInternalAMQPChannel(options))
   )
 
 /**
@@ -237,4 +237,4 @@ export const layer = (options: AMQPChannelOptions = {}): Layer.Layer<
   AMQPChannel,
   AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
   AMQPConnection.AMQPConnection
-> => Layer.scoped(AMQPChannel, make(options))
+> => Layer.effect(AMQPChannel, make(options))

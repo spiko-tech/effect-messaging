@@ -51,9 +51,9 @@ export const make = (msg: NATSCore.Msg): NATSMessage => ({
   [TypeId]: TypeId,
   subject: msg.subject,
   sid: msg.sid,
-  reply: Option.fromNullable(msg.reply),
+  reply: Option.fromNullishOr(msg.reply),
   data: msg.data,
-  headers: Option.fromNullable(msg.headers),
+  headers: Option.fromNullishOr(msg.headers),
   respond: (...params: Parameters<NATSCore.Msg["respond"]>) =>
     wrap(() => msg.respond(...params), "Failed to respond to NATS message"),
   json: (...params: Parameters<NATSCore.Msg["json"]>) =>
@@ -68,7 +68,7 @@ export const make = (msg: NATSCore.Msg): NATSMessage => ({
  * @category tags
  * @since 0.3.0
  */
-export const NATSConsumeMessage = Context.GenericTag<NATSMessage>(
+export const NATSConsumeMessage = Context.Service<NATSMessage>(
   "@effect-messaging/nats/NATSConsumeMessage"
 )
 

@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/setup
       - run: pnpm check
-      # - run: pnpm test-types --target '>=5.4'
+      - run: pnpm test-types
 
   lint:
     name: Lint
@@ -73,6 +73,8 @@ jobs:
         uses: ./.github/actions/setup
       - name: Build
         run: pnpm build
+      - name: Check package entry points
+        run: pnpm check-packages
       - name: Test
         run: pnpm vitest
         env:

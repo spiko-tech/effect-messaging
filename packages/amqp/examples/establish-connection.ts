@@ -1,7 +1,7 @@
 import { AMQPConnection } from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
-const program = Effect.gen(function*(_) {
+const program = Effect.gen(function*() {
   // Your application logic that requires an AMQP connection
   const connection = yield* AMQPConnection.AMQPConnection
   const props = yield* connection.serverProperties
@@ -17,7 +17,8 @@ const runnable = program.pipe(
     username: "guest",
     password: "guest",
     heartbeat: 10
-  }))
+  })),
+  Effect.scoped
 )
 
 // Run the program

@@ -1,9 +1,9 @@
 import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
-import { Context, Effect } from "effect"
+import { Context, Effect, Layer } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<MyPublisher, AMQPPublisher.AMQPPublisher>() {}
+class MyPublisher extends Context.Service<MyPublisher, AMQPPublisher.AMQPPublisher>()("MyPublisher") {}
 
-const program = Effect.gen(function*(_) {
+const program = Effect.gen(function*() {
   const publisher = yield* MyPublisher
 
   yield* publisher.publish({
@@ -21,18 +21,22 @@ const program = Effect.gen(function*(_) {
   })
 })
 
+const PublisherLive = Layer.effect(MyPublisher, AMQPPublisher.make())
+const ConnectionLive = AMQPConnection.layer({
+  hostname: "localhost",
+  port: 5672,
+  username: "guest",
+  password: "guest",
+  heartbeat: 10
+})
+const MainLive = PublisherLive.pipe(
+  Layer.provide(AMQPChannel.layer()),
+  Layer.provide(ConnectionLive)
+)
+
 const runnable = program.pipe(
-  Effect.provideServiceEffect(MyPublisher, AMQPPublisher.make()),
-  // provide the AMQP Channel dependency
-  Effect.provide(AMQPChannel.layer()),
-  // provide the AMQP Connection dependency
-  Effect.provide(AMQPConnection.layer({
-    hostname: "localhost",
-    port: 5672,
-    username: "guest",
-    password: "guest",
-    heartbeat: 10
-  }))
+  Effect.provide(MainLive),
+  Effect.scoped
 )
 
 // Run the program

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Deferred, Effect, Fiber, Stream, TestServices, Tracer } from "effect"
+import { Cause, Data, Deferred, Effect, Exit, Fiber, Stream, Tracer } from "effect"
 import type * as Duration from "effect/Duration"
 import type { StreamConfig } from "../src/internal/SubscriberRunner.js"
 import * as SubscriberRunner from "../src/SubscriberRunner.js"
@@ -8,8 +8,8 @@ import * as SubscriberRunner from "../src/SubscriberRunner.js"
 const makeConfig = <A, E = never>(opts: {
   handler: (message: string) => Effect.Effect<A, E>
   onSuccess?: (message: string) => (response: A) => Effect.Effect<void>
-  onError?: (message: string) => () => Effect.Effect<void>
-  handlerTimeout?: Duration.DurationInput
+  onError?: (message: string, span: Tracer.Span) => () => Effect.Effect<void>
+  handlerTimeout?: Duration.Input
   producerSpanRelation?: "parent" | "link"
   parentSpan?: (message: string) => Tracer.AnySpan | undefined
 }): StreamConfig<string, A, E, never> => ({
@@ -23,12 +23,12 @@ const makeConfig = <A, E = never>(opts: {
     ...(opts.producerSpanRelation !== undefined ? { producerSpanRelation: opts.producerSpanRelation } : {})
   },
   onSuccess: (_message: string, _span: Tracer.Span) => opts.onSuccess?.(_message) ?? (() => Effect.void),
-  onError: (_message: string, _span: Tracer.Span) => opts.onError?.(_message) ?? (() => Effect.void)
+  onError: (_message: string, span: Tracer.Span) => opts.onError?.(_message, span) ?? (() => Effect.void)
 })
 
 describe("SubscriberRunner", { sequential: true }, () => {
   describe("handler behavior on interruption", () => {
-    it.effect(
+    it.live(
       "Should let in-flight handler complete on interrupt",
       () =>
         Effect.gen(function*() {
@@ -47,23 +47,27 @@ describe("SubscriberRunner", { sequential: true }, () => {
               })
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(
+            SubscriberRunner.runStream(Stream.make("msg-1").pipe(Stream.concat(Stream.never)), config)
+          )
 
           // Wait for handler to start
           yield* Deferred.await(latch)
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber
-          yield* fiber.interruptAsFork(fiber.id())
+          yield* Effect.sync(() => fiber.interruptUnsafe())
 
           // Handler should complete despite the interrupt (uninterruptible)
           yield* Effect.sleep("500 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+          const exit = yield* Fiber.await(fiber)
+          expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should let in-flight handler complete on interrupt when handlerTimeout is configured",
       () =>
         Effect.gen(function*() {
@@ -87,24 +91,28 @@ describe("SubscriberRunner", { sequential: true }, () => {
             handlerTimeout: "2 seconds"
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(
+            SubscriberRunner.runStream(Stream.make("msg-1").pipe(Stream.concat(Stream.never)), config)
+          )
 
           // Wait for handler to start
           yield* Deferred.await(latch)
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber while handler is still running
-          yield* fiber.interruptAsFork(fiber.id())
+          yield* Effect.sync(() => fiber.interruptUnsafe())
 
           // Handler should complete despite the interrupt
           yield* Effect.sleep("500 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
           expect(onSuccess).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+          const exit = yield* Fiber.await(fiber)
+          expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should interrupt the handler when it exceeds the timeout",
       () =>
         Effect.gen(function*() {
@@ -127,7 +135,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
             handlerTimeout: "200 millis"
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(Stream.make("msg-1"), config))
 
           // Wait for handler to start
           yield* Deferred.await(latch)
@@ -141,13 +149,13 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(onError).toHaveBeenCalledTimes(1)
 
           yield* Fiber.interrupt(fiber)
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
   })
 
   describe("handler callbacks", () => {
-    it.effect(
+    it.live(
       "Should call onSuccess after handler completes without timeout",
       () =>
         Effect.gen(function*() {
@@ -161,28 +169,38 @@ describe("SubscriberRunner", { sequential: true }, () => {
           yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
 
           expect(onSuccess).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should call onError when handler fails",
       () =>
         Effect.gen(function*() {
           const onError = vi.fn()
           const onSuccess = vi.fn()
+          const spans: Array<Tracer.Span> = []
 
-          const config = makeConfig<never, Error>({
-            handler: (_message) => Effect.fail(new Error("handler error")),
+          class TestFailure extends Data.TaggedError("TestFailure")<{ readonly reason: string }> {}
+
+          const config = makeConfig<never, TestFailure>({
+            handler: (_message) => Effect.fail(new TestFailure({ reason: "handler error" })),
             onSuccess: () => () => Effect.sync(() => onSuccess()),
-            onError: () => () => Effect.sync(() => onError())
+            onError: (_message, span) => () =>
+              Effect.sync(() => {
+                onError()
+                spans.push(span)
+              })
           })
 
           yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
 
           expect(onError).toHaveBeenCalledTimes(1)
           expect(onSuccess).toHaveBeenCalledTimes(0)
-        }).pipe(TestServices.provideLive),
+          expect(spans[0]?.attributes.get("error.type")).toBe("TestFailure")
+          expect(spans[0]?.attributes.get("error.message")).toBe("handler error")
+          expect(spans[0]?.attributes.get("error.stack")).toEqual(expect.any(String))
+        }),
       { timeout: 10000 }
     )
   })
@@ -196,7 +214,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
       sampled: true
     })
 
-    it.effect(
+    it.live(
       "Should attach the producer span as a SpanLink and create a root span when set to \"link\"",
       () =>
         Effect.gen(function*() {
@@ -221,11 +239,11 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.links[0]!.span.spanId).toBe(PRODUCER_SPAN_ID)
           expect(capturedSpan.links[0]!.span.sampled).toBe(true)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should create a root span without links when no producer span is provided",
       () =>
         Effect.gen(function*() {
@@ -246,11 +264,11 @@ describe("SubscriberRunner", { sequential: true }, () => {
 
           expect(capturedSpan.links.length).toBe(0)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should use the producer span as parent when set to \"parent\"",
       () =>
         Effect.gen(function*() {
@@ -272,11 +290,11 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.traceId).toBe(PRODUCER_TRACE_ID)
           expect(capturedSpan.links.length).toBe(0)
           expect(capturedSpan.parent._tag).toBe("Some")
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
 
-    it.effect(
+    it.live(
       "Should default to \"link\" (new root span + SpanLink) when option is unset",
       () =>
         Effect.gen(function*() {
@@ -298,7 +316,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.links.length).toBe(1)
           expect(capturedSpan.links[0]!.span.traceId).toBe(PRODUCER_TRACE_ID)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }),
       { timeout: 10000 }
     )
   })

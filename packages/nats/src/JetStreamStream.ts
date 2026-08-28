@@ -61,7 +61,7 @@ export const makeJetStreamStream = (stream: JetStream.Stream): JetStreamStream =
   info: (...args) => wrapAsync(() => stream.info(...args), "Failed to get stream info"),
   getMessage: (...args) =>
     wrapAsync(() => stream.getMessage(...args), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   deleteMessage: (...args) => wrapAsync(() => stream.deleteMessage(...args), "Failed to delete message"),

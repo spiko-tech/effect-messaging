@@ -1,5 +1,5 @@
-import { describe, expect, it, layer } from "@effect/vitest"
-import { Chunk, Effect, Stream, TestServices } from "effect"
+import { describe, expect, it } from "@effect/vitest"
+import { Effect, Stream } from "effect"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import * as JetStreamManager from "../src/JetStreamManager.js"
 import { makeTestConsumer, makeTestStream, makeTestStreamAndConsumer, testJetStream } from "./dependencies.js"
@@ -11,18 +11,16 @@ const TEST_SUBJECT = "manager.test.subject"
 
 describe("JetStreamManager", { sequential: true }, () => {
   describe("basic operations", () => {
-    layer(testJetStream)((it) => {
-      it.effect("Should be able to create a JetStream manager", () =>
-        Effect.gen(function*() {
-          const jetStreamManager = yield* JetStreamManager.JetStreamManager
-          const accountInfo = yield* jetStreamManager.accountInfo
-          expect(accountInfo.streams).toEqual(expect.any(Number))
-        }))
-    })
+    it.live("Should be able to create a JetStream manager", () =>
+      Effect.gen(function*() {
+        const jetStreamManager = yield* JetStreamManager.JetStreamManager
+        const accountInfo = yield* jetStreamManager.accountInfo
+        expect(accountInfo.streams).toEqual(expect.any(Number))
+      }).pipe(Effect.provide(testJetStream)))
   })
 
   describe("stream management and publish/consume", () => {
-    it.effect("Should create a stream, publish messages, and consume them", () =>
+    it.live("Should create a stream, publish messages, and consume them", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* makeTestStreamAndConsumer(TEST_STREAM, TEST_CONSUMER, [TEST_SUBJECT])
@@ -41,7 +39,7 @@ describe("JetStreamManager", { sequential: true }, () => {
             Stream.take(3),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
+          const messagesArray = messages
 
           expect(messagesArray.length).toBe(3)
           expect(messagesArray[0].string()).toBe("Manager Test Message 1")
@@ -50,9 +48,9 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           yield* Effect.all(messagesArray.map((msg) => msg.ack))
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
 
-    it.effect("Should list streams and consumers", () =>
+    it.live("Should list streams and consumers", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* makeTestStreamAndConsumer(TEST_STREAM, TEST_CONSUMER, [TEST_SUBJECT])
@@ -61,21 +59,21 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           const streamLister = yield* manager.streams.list()
           const streams = yield* Stream.runCollect(streamLister.stream)
-          const streamsArray = Chunk.toArray(streams)
+          const streamsArray = streams
 
           expect(streamsArray.length).toBeGreaterThan(0)
           expect(streamsArray.some((s) => s.config.name === TEST_STREAM)).toBe(true)
 
           const consumerLister = yield* manager.consumers.list(TEST_STREAM)
           const consumers = yield* Stream.runCollect(consumerLister.stream)
-          const consumersArray = Chunk.toArray(consumers)
+          const consumersArray = consumers
 
           expect(consumersArray.length).toBeGreaterThan(0)
           expect(consumersArray.some((c) => c.name === TEST_CONSUMER)).toBe(true)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
 
-    it.effect("Should get stream info and consumer info", () =>
+    it.live("Should get stream info and consumer info", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* makeTestStreamAndConsumer(TEST_STREAM, TEST_CONSUMER, [TEST_SUBJECT])
@@ -97,9 +95,9 @@ describe("JetStreamManager", { sequential: true }, () => {
           expect(consumerInfo.name).toBe(TEST_CONSUMER)
           expect(consumerInfo.num_pending).toBeGreaterThan(0)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
 
-    it.effect("Should purge stream messages", () =>
+    it.live("Should purge stream messages", () =>
       Effect.scoped(
         Effect.gen(function*() {
           const manager = yield* JetStreamManager.JetStreamManager
@@ -122,9 +120,9 @@ describe("JetStreamManager", { sequential: true }, () => {
           const purgedStreamInfo = yield* manager.streams.info(TEST_STREAM)
           expect(purgedStreamInfo.state.messages).toBe(0)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
 
-    it.effect("Should update stream configuration", () =>
+    it.live("Should update stream configuration", () =>
       Effect.scoped(
         Effect.gen(function*() {
           yield* makeTestStream(TEST_STREAM, [TEST_SUBJECT])
@@ -137,9 +135,9 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           expect(updatedStreamInfo.config.max_msgs).toBe(2000)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
 
-    it.effect("Should handle consumer with multiple subjects", () =>
+    it.live("Should handle consumer with multiple subjects", () =>
       Effect.scoped(
         Effect.gen(function*() {
           const subject1 = "test.multi.1"
@@ -161,7 +159,7 @@ describe("JetStreamManager", { sequential: true }, () => {
             Stream.take(2),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
+          const messagesArray = messages
 
           expect(messagesArray.length).toBe(2)
           expect(messagesArray[0].subject).toBe(subject1)
@@ -169,6 +167,6 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           yield* Effect.all(messagesArray.map((msg) => msg.ack))
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream)))
   })
 })

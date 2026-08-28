@@ -1,10 +1,10 @@
 import { describe, expect, layer } from "@effect/vitest"
-import { Effect, TestServices } from "effect"
+import { Effect } from "effect"
 import * as AMQPConnection from "../src/AMQPConnection.js"
 import { simulateConnectionClose, testConnection } from "./dependencies.js"
 
 describe("AMQPConnection", () => {
-  layer(testConnection)("serverProperties", (it) => {
+  layer(testConnection, { excludeTestServices: true })("serverProperties", (it) => {
     it.effect("Should be able to connect and test server properties", () =>
       Effect.gen(function*() {
         const connection = yield* AMQPConnection.AMQPConnection
@@ -17,7 +17,7 @@ describe("AMQPConnection", () => {
       }))
   })
 
-  layer(testConnection)("watchConnection", (it) => {
+  layer(testConnection, { excludeTestServices: true })("watchConnection", (it) => {
     it("Should reconnect the connection when close", () =>
       Effect.gen(function*() {
         const connection = yield* AMQPConnection.AMQPConnection
@@ -28,6 +28,6 @@ describe("AMQPConnection", () => {
 
         // should wait for connection to re-open and get server properties
         expect(yield* connection.serverProperties).toMatchObject({ hostname: "localhost" })
-      }).pipe(TestServices.provideLive))
+      }))
   })
 })

@@ -53,7 +53,7 @@ export interface AMQPConnection {
  * @category tags
  * @since 0.1.0
  */
-export const AMQPConnection = Context.GenericTag<AMQPConnection>("@effect-messaging/amqp/AMQPConnection")
+export const AMQPConnection = Context.Service<AMQPConnection>("@effect-messaging/amqp/AMQPConnection")
 
 /**
  * @category models
@@ -70,7 +70,7 @@ export type AMQPConnectionOptions = {
    * (used by createChannel, serverProperties, etc. during reconnection).
    * Default: 5 seconds.
    */
-  waitConnectionTimeout?: Duration.DurationInput
+  waitConnectionTimeout?: Duration.Input
   /**
    * Timeout for establishing a new connection. This applies to both the
    * TCP socket connection and the AMQP handshake. If the connection is
@@ -79,7 +79,7 @@ export type AMQPConnectionOptions = {
    *
    * @since 0.7.0
    */
-  connectionTimeout?: Duration.DurationInput
+  connectionTimeout?: Duration.Input
 }
 
 /**
@@ -113,7 +113,7 @@ export const make = (
     yield* Effect.forkScoped(internal.monitorConnectionErrors)
     return connection
   }).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.InternalAMQPConnection.new(url, options))
+    Effect.provideServiceEffect(internal.InternalAMQPConnection, internal.makeInternalAMQPConnection(url, options))
   )
 
 /**
@@ -124,4 +124,4 @@ export const make = (
 export const layer = (url: internal.ConnectionUrl, options: AMQPConnectionOptions = {}): Layer.Layer<
   AMQPConnection,
   AMQPError.AMQPConnectionError
-> => Layer.scoped(AMQPConnection, make(url, options))
+> => Layer.effect(AMQPConnection, make(url, options))

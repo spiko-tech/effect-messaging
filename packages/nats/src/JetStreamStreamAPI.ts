@@ -100,7 +100,7 @@ export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
     wrapAsync(() => streams.deleteMessage(...params), "Failed to delete message"),
   getMessage: (...params: Parameters<JetStream.StreamAPI["getMessage"]>) =>
     wrapAsync(() => streams.getMessage(...params), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   find: (...params: Parameters<JetStream.StreamAPI["find"]>) =>

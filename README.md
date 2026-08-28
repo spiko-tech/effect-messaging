@@ -16,7 +16,8 @@ A message broker toolkit for Effect.
 - 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
 > [!WARNING]
-> This project is currently **under development**. Please note that future releases might introduce breaking changes.
+> This branch targets the Effect 4 `1.0.0-beta.0` packages. The stable `0.x` packages use Effect 3. See the
+> [Effect 4 migration guide](./EFFECT_V4_MIGRATION.md) before installing the beta.
 
 ## Quickstart Guide
 
@@ -30,7 +31,7 @@ First, you need to establish a connection to your AMQP server:
 import { AMQPConnection } from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   // Your application logic that requires an AMQP connection
   const connection = yield* AMQPConnection.AMQPConnection
   const props = yield* connection.serverProperties
@@ -60,25 +61,18 @@ Effect.runPromise(runnable)
 To send messages, create a publisher:
 
 ```typescript
-import {
-  AMQPChannel,
-  AMQPConnection,
-  AMQPPublisher
-} from "@effect-messaging/amqp"
+import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
 import { Context, Effect } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<
-  MyPublisher,
-  AMQPPublisher.AMQPPublisher
->() {}
+class MyPublisher extends Context.Service<MyPublisher, AMQPPublisher.AMQPPublisher>()("MyPublisher") {}
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   const publisher = yield* MyPublisher
 
   yield* publisher.publish({
     exchange: "my-exchange",
     routingKey: "my-routing-key",
-    content: Buffer.from('{ "hello": "world" }'),
+    content: Buffer.from("{ \"hello\": \"world\" }"),
     options: {
       persistent: true,
       contentType: "application/json",
@@ -124,7 +118,7 @@ import {
 } from "@effect-messaging/amqp"
 import { Effect } from "effect"
 
-const messageHandler = Effect.gen(function* (_) {
+const messageHandler = Effect.gen(function*() {
   const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
 
   // You can add your message processing logic here
@@ -137,7 +131,7 @@ const messageHandler = Effect.gen(function* (_) {
   return AMQPSubscriberResponse.ack()
 })
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   const subscriber = yield* AMQPSubscriber.make("my-queue")
 
   // Subscribe to messages - on handler error, messages are nacked automatically
@@ -173,7 +167,7 @@ First, establish a connection to your NATS server:
 import { NATSConnection } from "@effect-messaging/nats"
 import { Effect } from "effect"
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   const connection = yield* NATSConnection.NATSConnection
 
   yield* Effect.logInfo(`Connected to NATS`)
@@ -191,19 +185,15 @@ Effect.runPromise(runnable)
 To publish messages to a JetStream stream:
 
 ```typescript
-import {
-  JetStreamClient,
-  JetStreamPublisher,
-  NATSConnection
-} from "@effect-messaging/nats"
+import { JetStreamClient, JetStreamPublisher, NATSConnection } from "@effect-messaging/nats"
 import { Effect } from "effect"
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   const publisher = yield* JetStreamPublisher.make()
 
   yield* publisher.publish({
     subject: "orders.created",
-    payload: new TextEncoder().encode('{ "orderId": "123" }')
+    payload: new TextEncoder().encode("{ \"orderId\": \"123\" }")
   })
 })
 
@@ -229,7 +219,7 @@ import {
 } from "@effect-messaging/nats"
 import { Effect } from "effect"
 
-const messageHandler = Effect.gen(function* (_) {
+const messageHandler = Effect.gen(function*() {
   const message = yield* JetStreamMessage.JetStreamConsumeMessage
 
   yield* Effect.logInfo(`Received: ${message.string()}`)
@@ -241,7 +231,7 @@ const messageHandler = Effect.gen(function* (_) {
   return JetStreamSubscriberResponse.ack()
 })
 
-const program = Effect.gen(function* (_) {
+const program = Effect.gen(function*() {
   const client = yield* JetStreamClient.JetStreamClient
 
   // Get an existing consumer (stream and consumer must already exist)

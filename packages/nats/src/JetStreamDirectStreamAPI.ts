@@ -62,7 +62,7 @@ export const make = (direct: JetStream.DirectStreamAPI): JetStreamDirectStreamAP
   [TypeId]: TypeId,
   getMessage: (...params: Parameters<JetStream.DirectStreamAPI["getMessage"]>) =>
     wrapAsync(() => direct.getMessage(...params), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   getBatch: (...params: Parameters<JetStream.DirectStreamAPI["getBatch"]>) =>

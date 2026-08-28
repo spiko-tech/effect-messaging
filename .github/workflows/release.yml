@@ -16,12 +16,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: release
+    services:
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5679:5672
+        options: >-
+          --health-cmd "rabbitmqctl node_health_check"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      nats:
+        image: nats:alpine
+        ports:
+          - 4222:4222
+        options: --name nats
     permissions:
       contents: write
       id-token: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+      - name: Start JetStream
+        run: |
+          chmod a+x ${{ github.workspace }}/.github/workflows/nats-entrypoint.sh
+          docker cp ${{ github.workspace }}/.github/workflows/nats-entrypoint.sh nats:/usr/local/bin/docker-entrypoint.sh
+          docker restart nats
       - name: Install dependencies
         uses: ./.github/actions/setup
       - name: Create Release Pull Request or Publish

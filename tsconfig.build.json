@@ -3,6 +3,7 @@
   "include": [],
   "references": [
     { "path": "packages/amqp/tsconfig.build.json" },
-    { "path": "packages/core/tsconfig.build.json" }
+    { "path": "packages/core/tsconfig.build.json" },
+    { "path": "packages/nats/tsconfig.build.json" }
   ]
 }

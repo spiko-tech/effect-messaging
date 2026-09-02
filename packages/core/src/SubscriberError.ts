@@ -21,7 +21,7 @@ export type TypeId = typeof TypeId
  */
 export class SubscriberError extends Schema.TaggedError<SubscriberError>()(
   "SubscriberError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.3.0

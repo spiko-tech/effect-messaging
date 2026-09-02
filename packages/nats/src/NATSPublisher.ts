@@ -75,7 +75,6 @@ const publish = (
     `nats.publish ${message.subject}`,
     {
       kind: "producer",
-      captureStackTrace: false,
       attributes: {
         [ATTR_SERVER_ADDRESS]: connectionInfo.host,
         [ATTR_SERVER_PORT]: connectionInfo.port,
@@ -127,7 +126,7 @@ export const make = (
     const publisher: NATSPublisher = {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.stop)
+      publish: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.recurs(0))
     }
 
     return publisher

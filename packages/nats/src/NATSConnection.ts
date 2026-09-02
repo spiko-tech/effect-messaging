@@ -73,7 +73,7 @@ export interface NATSConnection {
  * @category tags
  * @since 0.1.0
  */
-export const NATSConnection = Context.GenericTag<NATSConnection>("@effect-messaging/nats/NATSConnection")
+export const NATSConnection = Context.Service<NATSConnection>("@effect-messaging/nats/NATSConnection")
 
 const wrapAsync = utils.wrapAsync(NATSError.NATSConnectionError)
 const wrap = utils.wrap(NATSError.NATSConnectionError)
@@ -87,7 +87,7 @@ const make = (
 
     const connection: NATSConnection = {
       [TypeId]: TypeId,
-      info: Option.fromNullable(nc.info),
+      info: Option.fromNullishOr(nc.info),
       publish: (...params) => wrap(() => nc.publish(...params), "Failed to publish message"),
       publishMessage: (...params) => wrap(() => nc.publishMessage(...params), "Failed to publish message"),
       respondMessage: (...params) => wrap(() => nc.respondMessage(...params), "Failed to respond to message"),
@@ -139,7 +139,7 @@ const make = (
 export const layerWebSocket = (options: NATSCore.ConnectionOptions): Layer.Layer<
   NATSConnection,
   NATSError.NATSConnectionError
-> => Layer.scoped(NATSConnection, make(() => NATSCore.wsconnect(options)))
+> => Layer.effect(NATSConnection, make(() => NATSCore.wsconnect(options)))
 
 /**
  * @since 0.1.0
@@ -148,4 +148,4 @@ export const layerWebSocket = (options: NATSCore.ConnectionOptions): Layer.Layer
 export const layerNode = (options: TransportNode.NodeConnectionOptions): Layer.Layer<
   NATSConnection,
   NATSError.NATSConnectionError
-> => Layer.scoped(NATSConnection, make(() => TransportNode.connect(options)))
+> => Layer.effect(NATSConnection, make(() => TransportNode.connect(options)))

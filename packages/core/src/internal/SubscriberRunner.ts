@@ -27,7 +27,7 @@ import * as SubscriberOTel from "./SubscriberOTel.js"
  * @category models
  */
 export interface SubscriberRunnerOptions {
-  readonly handlerTimeout?: Duration.DurationInput
+  readonly handlerTimeout?: Duration.Input
   /**
    * Controls how the span extracted from the message headers relates to the
    * consumer span.
@@ -91,8 +91,8 @@ const executeHandler = <M, A, E, R, EX, RX>(
 
   const handlerEffect = config.options.handlerTimeout
     ? Effect.gen(function*() {
-      const appFiber = yield* Effect.forkDaemon(Effect.interruptible(handler))
-      const timerFiber = yield* Effect.forkDaemon(
+      const appFiber = yield* Effect.forkDetach(Effect.interruptible(handler))
+      const timerFiber = yield* Effect.forkDetach(
         Effect.interruptible(
           Effect.sleep(config.options.handlerTimeout!).pipe(
             Effect.andThen(Fiber.interrupt(appFiber))
@@ -101,9 +101,9 @@ const executeHandler = <M, A, E, R, EX, RX>(
       )
       return yield* Fiber.join(appFiber).pipe(
         Effect.onExit(() => Fiber.interrupt(timerFiber)),
-        Effect.catchAllCause(
+        Effect.catchCause(
           (cause): Effect.Effect<A, SubscriberError.SubscriberError | E, never> =>
-            Cause.isInterruptedOnly(cause)
+            Cause.hasInterruptsOnly(cause)
               ? Effect.fail(
                 new SubscriberError.SubscriberError({ reason: `${config.name}: handler timed out` })
               )
@@ -120,7 +120,7 @@ const executeHandler = <M, A, E, R, EX, RX>(
   })
 
   return body.pipe(
-    Effect.tapErrorCause(handleErrorCause),
+    Effect.tapCause(handleErrorCause),
     Effect.uninterruptible,
     Effect.withParentSpan(span),
     Effect.asVoid
@@ -133,7 +133,7 @@ const executeHandler = <M, A, E, R, EX, RX>(
  *
  * This is the shared stream consumption loop used by all subscriber implementations.
  * It handles:
- * - `Stream.runForEach` with `Effect.fork` for concurrent message processing
+ * - Concurrent stream processing for message handlers
  * - `Effect.useSpan` for OTel trace context propagation
  * - Delegation to `executeHandler` for timeout, error handling, and uninterruptible execution
  * - `Effect.mapError` to wrap transport-specific stream errors into `SubscriberError`
@@ -150,7 +150,7 @@ export const runStream: <M, ES, RS, A, E, R, EX, RX>(
 ) => {
   const handle = executeHandler(config)
   return stream.pipe(
-    Stream.runForEach((message) => {
+    Stream.mapEffect((message) => {
       const parentSpan = config.parentSpan(message)
       const base = {
         kind: "consumer",
@@ -164,16 +164,17 @@ export const runStream: <M, ES, RS, A, E, R, EX, RX>(
           root: true,
           links: parentSpan === undefined
             ? []
-            : [{ _tag: "SpanLink", span: parentSpan, attributes: {} }]
+            : [{ span: parentSpan, attributes: {} }]
         }
-      return Effect.fork(
-        Effect.useSpan(
-          config.spanName(message),
-          spanOptions,
-          (span) => handle(message, span)
-        )
+      return Effect.useSpan(
+        config.spanName(message),
+        spanOptions,
+        (span) => handle(message, span)
+      ).pipe(
+        Effect.ignoreCause
       )
-    }),
+    }, { concurrency: "unbounded", unordered: true }),
+    Stream.runDrain,
     Effect.mapError((error) =>
       new SubscriberError.SubscriberError({ reason: `${config.name} failed to subscribe`, cause: error })
     )

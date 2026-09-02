@@ -21,7 +21,7 @@ export type TypeId = typeof TypeId
  */
 export class PublisherError extends Schema.TaggedError<PublisherError>()(
   "PublisherError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.3.0

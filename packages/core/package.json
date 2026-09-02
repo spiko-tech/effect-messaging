@@ -43,9 +43,10 @@
     "coverage": "vitest --coverage"
   },
   "devDependencies": {
-    "effect": "^3.21.0"
+    "@effect/vitest": "4.0.0-rc.112",
+    "effect": "4.0.0-rc.112"
   },
   "peerDependencies": {
-    "effect": "^3.19.19"
+    "effect": "^4.0.0-rc.112"
   }
 }

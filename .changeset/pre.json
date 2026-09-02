@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@effect-messaging/amqp": "0.6.5",
+    "@effect-messaging/core": "0.2.43",
+    "@effect-messaging/nats": "0.7.6"
+  },
+  "changesets": []
+}

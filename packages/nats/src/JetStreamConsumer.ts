@@ -255,7 +255,7 @@ export const makeConsumer = (consumer: JetStream.Consumer): Consumer => ({
   isPushConsumer: wrap(() => consumer.isPushConsumer(), "Failed to check if consumer is push consumer"),
   next: (...args) =>
     wrapAsync(() => consumer.next(...args), "Failed to get next message").pipe(
-      Effect.map((msg) => Option.fromNullable(msg ? JetStreamMessage.make(msg) : null))
+      Effect.map((msg) => Option.fromNullishOr(msg === null ? undefined : JetStreamMessage.make(msg)))
     ),
   fetch: (...args) =>
     wrapAsync(() => consumer.fetch(...args), "Failed to fetch messages").pipe(Effect.map(makeConsumerMessages)),

@@ -5,9 +5,9 @@ import {
   AMQPSubscriber,
   AMQPSubscriberResponse
 } from "@effect-messaging/amqp"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 
-const messageHandler = Effect.gen(function*(_) {
+const messageHandler = Effect.gen(function*() {
   const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
 
   // You can add your message processing logic here
@@ -17,7 +17,7 @@ const messageHandler = Effect.gen(function*(_) {
   return AMQPSubscriberResponse.ack()
 })
 
-const program = Effect.gen(function*(_) {
+const program = Effect.gen(function*() {
   const subscriber = yield* AMQPSubscriber.make("my-queue")
 
   // The subscriber will handle message ack/nack/reject based on the response returned by the handler
@@ -25,17 +25,18 @@ const program = Effect.gen(function*(_) {
   yield* subscriber.subscribe(messageHandler)
 })
 
+const ConnectionLive = AMQPConnection.layer({
+  hostname: "localhost",
+  port: 5672,
+  username: "guest",
+  password: "guest",
+  heartbeat: 10
+})
+const MainLive = AMQPChannel.layer().pipe(Layer.provide(ConnectionLive))
+
 const runnable = program.pipe(
-  // provide the AMQP Channel dependency
-  Effect.provide(AMQPChannel.layer()),
-  // provide the AMQP Connection dependency
-  Effect.provide(AMQPConnection.layer({
-    hostname: "localhost",
-    port: 5672,
-    username: "guest",
-    password: "guest",
-    heartbeat: 10
-  }))
+  Effect.provide(MainLive),
+  Effect.scoped
 )
 
 // Run the program

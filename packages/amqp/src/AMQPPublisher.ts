@@ -60,6 +60,11 @@ const publish = (
  * @since 0.3.2
  */
 export interface AMQPPublisherConfig {
+  /**
+   * Retry schedule for a failed `publish`. Defaults to no retry. With
+   * `confirm: true` a failure may concern a message the broker did receive,
+   * so a retry can deliver it twice.
+   */
   readonly retrySchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
 }
 

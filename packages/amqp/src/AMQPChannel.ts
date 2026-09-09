@@ -42,6 +42,10 @@ export interface AMQPChannel {
   readonly nack: (...parameters: Parameters<Channel["nack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly nackAll: (...parameters: Parameters<Channel["nackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly reject: (...parameters: Parameters<Channel["reject"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
+  /**
+   * The boolean is amqplib's write-buffer flag, never a failure signal. It is
+   * stale when `confirm` is `true`.
+   */
   readonly publish: (
     ...parameters: Parameters<Channel["publish"]>
   ) => Effect.Effect<boolean, AMQPError.AMQPChannelError>
@@ -113,14 +117,29 @@ export interface AMQPChannelOptions {
   retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
   waitChannelTimeout?: Duration.DurationInput
   /**
-   * When `true`, the channel is opened in publisher-confirm mode
-   * (`connection.createConfirmChannel`). Every `publish` call returns only
-   * after the broker has acknowledged the message, providing real
-   * backpressure and durability guarantees. Defaults to `false`.
+   * When `true`, the channel is opened in publisher-confirm mode and
+   * `publish` / `sendToQueue` resolve only once the broker has acknowledged
+   * the message, or fail with an `AMQPChannelError` on a nack, on a channel
+   * close, or after `confirmTimeout`.
+   *
+   * An acknowledgement means the broker took responsibility for the message.
+   * Unroutable messages are acknowledged too, and surviving a broker restart
+   * still needs `persistent: true` and a durable queue. A failure may concern
+   * a message the broker did receive, so retrying can deliver it twice. Each
+   * publish costs a round trip: run publishes concurrently for throughput.
+   *
+   * Defaults to `false`.
    *
    * @since 0.7.0
    */
   confirm?: boolean
+  /**
+   * How long a publish waits for the broker's confirmation, and how long
+   * closing the channel waits for outstanding confirms. Defaults to 30 seconds.
+   *
+   * @since 0.7.0
+   */
+  confirmTimeout?: Duration.DurationInput
 }
 
 /**
@@ -160,10 +179,8 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
             reject: (...params: Parameters<Channel["reject"]>) =>
               internal.wrapChannelMethod("reject", async (channel) => channel.reject(...params)).pipe(provideInternal),
             publish: (...params: Parameters<Channel["publish"]>) => internal.publish(...params).pipe(provideInternal),
-            sendToQueue: (...params: Parameters<Channel["sendToQueue"]>) =>
-              internal.wrapChannelMethod("sendToQueue", async (channel) => channel.sendToQueue(...params)).pipe(
-                provideInternal
-              ),
+            sendToQueue: (...[queue, content, options]: Parameters<Channel["sendToQueue"]>) =>
+              internal.publish("", queue, content, options).pipe(provideInternal),
             assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>
               internal.wrapChannelMethod("assertQueue", async (channel) => channel.assertQueue(...params)).pipe(
                 provideInternal

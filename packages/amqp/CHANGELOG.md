@@ -1,5 +1,16 @@
 # @effect-messaging/amqp
 
+## 0.7.0
+
+### Minor Changes
+
+- [#147](https://github.com/spiko-tech/effect-messaging/pull/147) [`4fb3c66`](https://github.com/spiko-tech/effect-messaging/commit/4fb3c660a484d6ca92dcfa8146f4dab7492fd553) Thanks [@adam-hotait](https://github.com/adam-hotait)! - Add `confirm` and `confirmTimeout` options to `AMQPChannelOptions`. With
+  `confirm: true` the channel is opened in publisher-confirm mode and `publish` /
+  `sendToQueue` resolve only once the broker has acknowledged the message, or fail
+  with an `AMQPChannelError` on a nack, on a channel close, or after
+  `confirmTimeout` (default 30 seconds). Both default to a plain channel, so
+  existing callers are unaffected.
+
 ## 0.6.5
 
 ### Patch Changes

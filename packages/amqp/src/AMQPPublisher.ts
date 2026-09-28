@@ -79,7 +79,7 @@ export const make = (config?: AMQPPublisherConfig): Effect.Effect<AMQPPublisher,
     const publisher: AMQPPublisher = {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(channel, config?.retrySchedule ?? Schedule.stop)
+      publish: publish(channel, config?.retrySchedule ?? Schedule.recurs(0))
     }
 
     return publisher

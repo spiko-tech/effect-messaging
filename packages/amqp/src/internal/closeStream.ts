@@ -1,20 +1,19 @@
 import type { Channel, ChannelModel } from "amqplib"
-import type { SubscriptionRef } from "effect"
-import { Effect, Option, Stream } from "effect"
+import { Effect, Option, Queue, Stream, SubscriptionRef } from "effect"
 
 /** @internal */
 const eventStream =
   (eventName: string) => <T extends ChannelModel | Channel>(ref: SubscriptionRef.SubscriptionRef<Option.Option<T>>) =>
-    ref.changes.pipe(
+    SubscriptionRef.changes(ref).pipe(
       Stream.flatMap(
         (target) => {
           if (Option.isNone(target)) {
             return Stream.never
           } else {
-            return Stream.asyncPush<unknown>((emit) =>
+            return Stream.callback<unknown>((queue) =>
               Effect.sync(() => {
-                target.value.addListener(eventName, emit.single)
-                target.value.addListener("close", emit.end)
+                target.value.addListener(eventName, (event: unknown) => Queue.offerUnsafe(queue, event))
+                target.value.addListener("close", () => Queue.endUnsafe(queue))
               })
             )
           }

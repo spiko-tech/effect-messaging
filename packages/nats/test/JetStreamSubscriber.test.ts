@@ -1,6 +1,7 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule, TestServices } from "effect"
+import { Effect, Schedule } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import * as JetStreamMessage from "../src/JetStreamMessage.js"
 import * as JetStreamPublisher from "../src/JetStreamPublisher.js"
@@ -52,10 +53,10 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           yield* setup
 
           const publisher = yield* JetStreamPublisher.make({
-            retrySchedule: Schedule.exponential("100 millis", 1.5).pipe(
-              Schedule.jittered,
-              Schedule.intersect(Schedule.recurs(10))
-            )
+            retrySchedule: Schedule.max([
+              Schedule.exponential("100 millis", 1.5).pipe(Schedule.jittered),
+              Schedule.recurs(10)
+            ])
           })
 
           const client = yield* JetStreamClient.JetStreamClient
@@ -65,7 +66,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           const onMessage = vi.fn<(message: JetStreamMessage.JetStreamMessage) => void>()
 
           // Start the subscription
-          yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
+          yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
             const message = yield* JetStreamMessage.JetStreamConsumeMessage
             onMessage(message)
             return JetStreamSubscriberResponse.ack()
@@ -95,7 +96,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             times: 3
           })
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
   })
 
   describe("handler behavior on interruption", { sequential: true }, () => {
@@ -128,7 +129,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             })
 
             // Start the subscription
-            const subscriptionFiber1 = yield* Effect.fork(startSubscription)
+            const subscriptionFiber1 = yield* Effect.forkChild(startSubscription)
 
             yield* publisher.publish({
               subject: TEST_SUBJECT,
@@ -141,21 +142,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
             // Interrupt the subscription fiber
-            yield* subscriptionFiber1.interruptAsFork(subscriptionFiber1.id())
+            subscriptionFiber1.interruptUnsafe(subscriptionFiber1.id)
 
             // The handler should complete despite the interrupt (uninterruptible)
             yield* Effect.sleep("300 millis")
             expect(onHandlingFinished).toHaveBeenCalledTimes(1)
 
             // Start the subscription again
-            yield* Effect.fork(startSubscription)
+            yield* Effect.forkChild(startSubscription)
 
             yield* Effect.sleep("500 millis")
             // The same message should not be consumed again because the handler completed and acked
             expect(onHandlingStarted).toHaveBeenCalledTimes(1)
             expect(onHandlingFinished).toHaveBeenCalledTimes(1)
           })
-        ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
+        ).pipe(Effect.provide(testJetStream), TestClock.withLive),
       { timeout: 15000 }
     )
 
@@ -191,7 +192,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             })
 
             // Start the subscription
-            const subscriptionFiber = yield* Effect.fork(startSubscription)
+            const subscriptionFiber = yield* Effect.forkChild(startSubscription)
 
             yield* publisher.publish({
               subject: TEST_SUBJECT,
@@ -203,21 +204,21 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
             // Interrupt the subscription fiber while handler is still running
-            yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+            subscriptionFiber.interruptUnsafe(subscriptionFiber.id)
 
             // Handler should complete despite the interrupt
             yield* Effect.sleep("300 millis")
             expect(onHandlingFinished).toHaveBeenCalledTimes(1)
 
             // Start the subscription again
-            yield* Effect.fork(startSubscription)
+            yield* Effect.forkChild(startSubscription)
 
             yield* Effect.sleep("500 millis")
             // The same message should not be consumed again because the handler completed and acked
             expect(onHandlingStarted).toHaveBeenCalledTimes(1)
             expect(onHandlingFinished).toHaveBeenCalledTimes(1)
           })
-        ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
+        ).pipe(Effect.provide(testJetStream), TestClock.withLive),
       { timeout: 15000 }
     )
 
@@ -261,7 +262,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             })
 
             // Start the subscription
-            yield* Effect.fork(startSubscription)
+            yield* Effect.forkChild(startSubscription)
 
             yield* publisher.publish({
               subject: TEST_SUBJECT,
@@ -280,7 +281,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
             expect(onHandlingStarted.mock.calls.length).toBeGreaterThanOrEqual(2)
             expect(onHandlingFinished.mock.calls.length).toBeGreaterThanOrEqual(1)
           })
-        ).pipe(Effect.provide(testJetStream), TestServices.provideLive),
+        ).pipe(Effect.provide(testJetStream), TestClock.withLive),
       { timeout: 30000 }
     )
   })
@@ -320,7 +321,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           })
 
           // Start the subscription
-          yield* Effect.fork(startSubscription)
+          yield* Effect.forkChild(startSubscription)
 
           yield* publisher.publish({
             subject: TEST_SUBJECT,
@@ -334,7 +335,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           expect(onHandlingStarted).toHaveBeenCalledTimes(2)
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive), { timeout: 15000 })
   })
 
   describe("explicit response types", () => {
@@ -371,7 +372,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           })
 
           // Start the subscription
-          yield* Effect.fork(startSubscription)
+          yield* Effect.forkChild(startSubscription)
 
           yield* publisher.publish({
             subject: TEST_SUBJECT,
@@ -384,7 +385,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           // The message should be processed twice: once nacked, once acked
           expect(onHandlingStarted).toHaveBeenCalledTimes(2)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive), { timeout: 15000 })
 
     it.effect("Should terminate the message when handler returns term()", () =>
       Effect.scoped(
@@ -412,7 +413,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           })
 
           // Start the subscription
-          yield* Effect.fork(startSubscription)
+          yield* Effect.forkChild(startSubscription)
 
           yield* publisher.publish({
             subject: TEST_SUBJECT,
@@ -429,7 +430,7 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           yield* Effect.sleep("1 second")
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive), { timeout: 15000 })
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive), { timeout: 15000 })
   })
 
   describe("healthCheck", () => {
@@ -445,6 +446,6 @@ describe("JetStreamSubscriber", { sequential: true }, () => {
           // Health check should succeed
           yield* subscriber.healthCheck
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
   })
 })

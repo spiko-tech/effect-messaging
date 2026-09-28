@@ -1,5 +1,6 @@
 import { describe, expect, layer } from "@effect/vitest"
-import { Effect, TestServices } from "effect"
+import { Effect } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as AMQPConnection from "../src/AMQPConnection.js"
 import { simulateConnectionClose, testConnection } from "./dependencies.js"
 
@@ -28,6 +29,6 @@ describe("AMQPConnection", () => {
 
         // should wait for connection to re-open and get server properties
         expect(yield* connection.serverProperties).toMatchObject({ hostname: "localhost" })
-      }).pipe(TestServices.provideLive))
+      }).pipe(TestClock.withLive))
   })
 })

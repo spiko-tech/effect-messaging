@@ -67,7 +67,7 @@ export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
   redelivered: jsMsg.redelivered,
   info: jsMsg.info,
   seq: jsMsg.seq,
-  headers: Option.fromNullable(jsMsg.headers),
+  headers: Option.fromNullishOr(jsMsg.headers),
   data: jsMsg.data,
   subject: jsMsg.subject,
   sid: jsMsg.sid,
@@ -90,7 +90,7 @@ export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
  * @category tags
  * @since 0.1.0
  */
-export const JetStreamConsumeMessage = Context.GenericTag<JetStreamMessage>(
+export const JetStreamConsumeMessage = Context.Service<JetStreamMessage>(
   "@effect-messaging/nats/JetStreamConsumeMessage"
 )
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, layer } from "@effect/vitest"
-import { Chunk, Effect, Option, Stream, TestServices } from "effect"
+import { Effect, Option, Stream } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import { makeTestStreamAndConsumer, testJetStream, testJetStreamClient } from "./dependencies.js"
 
@@ -42,16 +43,15 @@ describe("JetStreamClient", { sequential: true }, () => {
             Stream.take(3),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
 
-          expect(messagesArray.length).toBe(3)
-          expect(messagesArray[0].string()).toBe("Fetch Message 1")
-          expect(messagesArray[1].string()).toBe("Fetch Message 2")
-          expect(messagesArray[2].string()).toBe("Fetch Message 3")
+          expect(messages.length).toBe(3)
+          expect(messages[0].string()).toBe("Fetch Message 1")
+          expect(messages[1].string()).toBe("Fetch Message 2")
+          expect(messages[2].string()).toBe("Fetch Message 3")
 
-          yield* Effect.all(messagesArray.map((msg) => msg.ack))
+          yield* Effect.all(messages.map((msg) => msg.ack))
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should handle JSON messages", () =>
       Effect.scoped(
@@ -79,16 +79,15 @@ describe("JetStreamClient", { sequential: true }, () => {
             Stream.take(1),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
 
-          expect(messagesArray.length).toBe(1)
+          expect(messages.length).toBe(1)
 
-          const receivedPayload = yield* messagesArray[0].json<TestPayload>()
+          const receivedPayload = yield* messages[0].json<TestPayload>()
           expect(receivedPayload).toEqual(payload)
 
-          yield* messagesArray[0].ack
+          yield* messages[0].ack
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should handle message redelivery with nak", () =>
       Effect.scoped(
@@ -107,12 +106,11 @@ describe("JetStreamClient", { sequential: true }, () => {
             Stream.take(1),
             Stream.runCollect
           )
-          const messagesArray1 = Chunk.toArray(messages1)
 
-          expect(messagesArray1.length).toBe(1)
-          expect(messagesArray1[0].redelivered).toBe(false)
+          expect(messages1.length).toBe(1)
+          expect(messages1[0].redelivered).toBe(false)
 
-          yield* messagesArray1[0].nak()
+          yield* messages1[0].nak()
           yield* Effect.sleep("100 millis")
 
           // Second fetch - should get the same message redelivered
@@ -121,15 +119,14 @@ describe("JetStreamClient", { sequential: true }, () => {
             Stream.take(1),
             Stream.runCollect
           )
-          const messagesArray2 = Chunk.toArray(messages2)
 
-          expect(messagesArray2.length).toBe(1)
-          expect(messagesArray2[0].redelivered).toBe(true)
-          expect(messagesArray2[0].string()).toBe("Redelivery Test")
+          expect(messages2.length).toBe(1)
+          expect(messages2[0].redelivered).toBe(true)
+          expect(messages2[0].string()).toBe("Redelivery Test")
 
-          yield* messagesArray2[0].ack
+          yield* messages2[0].ack
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should use next to get single messages", () =>
       Effect.scoped(
@@ -162,7 +159,7 @@ describe("JetStreamClient", { sequential: true }, () => {
             yield* msg2.ack
           }
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should consume messages continuously with consume", () =>
       Effect.scoped(
@@ -187,19 +184,18 @@ describe("JetStreamClient", { sequential: true }, () => {
             Stream.take(3),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
 
-          expect(messagesArray.length).toBe(3)
-          expect(messagesArray[0].string()).toBe("Consume Message 1")
-          expect(messagesArray[1].string()).toBe("Consume Message 2")
-          expect(messagesArray[2].string()).toBe("Consume Message 3")
+          expect(messages.length).toBe(3)
+          expect(messages[0].string()).toBe("Consume Message 1")
+          expect(messages[1].string()).toBe("Consume Message 2")
+          expect(messages[2].string()).toBe("Consume Message 3")
 
           // Acknowledge all messages
-          yield* Effect.all(messagesArray.map((msg) => msg.ack))
+          yield* Effect.all(messages.map((msg) => msg.ack))
 
           // Close the consumer messages iterator
           yield* consumerMessages.close
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
   })
 })

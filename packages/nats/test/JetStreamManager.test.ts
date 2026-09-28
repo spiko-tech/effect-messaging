@@ -1,5 +1,6 @@
 import { describe, expect, it, layer } from "@effect/vitest"
-import { Chunk, Effect, Stream, TestServices } from "effect"
+import { Effect, Stream } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as JetStreamClient from "../src/JetStreamClient.js"
 import * as JetStreamManager from "../src/JetStreamManager.js"
 import { makeTestConsumer, makeTestStream, makeTestStreamAndConsumer, testJetStream } from "./dependencies.js"
@@ -41,16 +42,15 @@ describe("JetStreamManager", { sequential: true }, () => {
             Stream.take(3),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
 
-          expect(messagesArray.length).toBe(3)
-          expect(messagesArray[0].string()).toBe("Manager Test Message 1")
-          expect(messagesArray[1].string()).toBe("Manager Test Message 2")
-          expect(messagesArray[2].string()).toBe("Manager Test Message 3")
+          expect(messages.length).toBe(3)
+          expect(messages[0].string()).toBe("Manager Test Message 1")
+          expect(messages[1].string()).toBe("Manager Test Message 2")
+          expect(messages[2].string()).toBe("Manager Test Message 3")
 
-          yield* Effect.all(messagesArray.map((msg) => msg.ack))
+          yield* Effect.all(messages.map((msg) => msg.ack))
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should list streams and consumers", () =>
       Effect.scoped(
@@ -61,19 +61,17 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           const streamLister = yield* manager.streams.list()
           const streams = yield* Stream.runCollect(streamLister.stream)
-          const streamsArray = Chunk.toArray(streams)
 
-          expect(streamsArray.length).toBeGreaterThan(0)
-          expect(streamsArray.some((s) => s.config.name === TEST_STREAM)).toBe(true)
+          expect(streams.length).toBeGreaterThan(0)
+          expect(streams.some((s) => s.config.name === TEST_STREAM)).toBe(true)
 
           const consumerLister = yield* manager.consumers.list(TEST_STREAM)
           const consumers = yield* Stream.runCollect(consumerLister.stream)
-          const consumersArray = Chunk.toArray(consumers)
 
-          expect(consumersArray.length).toBeGreaterThan(0)
-          expect(consumersArray.some((c) => c.name === TEST_CONSUMER)).toBe(true)
+          expect(consumers.length).toBeGreaterThan(0)
+          expect(consumers.some((c) => c.name === TEST_CONSUMER)).toBe(true)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should get stream info and consumer info", () =>
       Effect.scoped(
@@ -97,7 +95,7 @@ describe("JetStreamManager", { sequential: true }, () => {
           expect(consumerInfo.name).toBe(TEST_CONSUMER)
           expect(consumerInfo.num_pending).toBeGreaterThan(0)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should purge stream messages", () =>
       Effect.scoped(
@@ -122,7 +120,7 @@ describe("JetStreamManager", { sequential: true }, () => {
           const purgedStreamInfo = yield* manager.streams.info(TEST_STREAM)
           expect(purgedStreamInfo.state.messages).toBe(0)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should update stream configuration", () =>
       Effect.scoped(
@@ -137,7 +135,7 @@ describe("JetStreamManager", { sequential: true }, () => {
 
           expect(updatedStreamInfo.config.max_msgs).toBe(2000)
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
 
     it.effect("Should handle consumer with multiple subjects", () =>
       Effect.scoped(
@@ -161,14 +159,13 @@ describe("JetStreamManager", { sequential: true }, () => {
             Stream.take(2),
             Stream.runCollect
           )
-          const messagesArray = Chunk.toArray(messages)
 
-          expect(messagesArray.length).toBe(2)
-          expect(messagesArray[0].subject).toBe(subject1)
-          expect(messagesArray[1].subject).toBe(subject2)
+          expect(messages.length).toBe(2)
+          expect(messages[0].subject).toBe(subject1)
+          expect(messages[1].subject).toBe(subject2)
 
-          yield* Effect.all(messagesArray.map((msg) => msg.ack))
+          yield* Effect.all(messages.map((msg) => msg.ack))
         })
-      ).pipe(Effect.provide(testJetStream), TestServices.provideLive))
+      ).pipe(Effect.provide(testJetStream), TestClock.withLive))
   })
 })

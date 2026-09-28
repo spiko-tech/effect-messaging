@@ -6,6 +6,7 @@
  */
 import * as Cause from "effect/Cause"
 import * as Predicate from "effect/Predicate"
+import * as Result from "effect/Result"
 import type * as Tracer from "effect/Tracer"
 
 /**
@@ -24,11 +25,14 @@ export const SpanAttributes = {
   MESSAGING_MESSAGE_ID: "messaging.message.id"
 } as const
 
+const squashWith = (cause: Cause.Cause<unknown>, f: (error: unknown) => unknown): unknown =>
+  Result.match(Cause.findError(cause), { onSuccess: f, onFailure: Cause.squash })
+
 /**
  * Sets standard error span attributes on a span from an error cause.
  *
  * Sets `error.type`, `error.stack`, and `error.message` attributes using
- * `Cause.squashWith` to extract meaningful error information.
+ * the first typed failure (or the squashed cause) to extract meaningful error information.
  *
  * @since 0.3.0
  * @category otel helpers
@@ -36,17 +40,17 @@ export const SpanAttributes = {
 export const setErrorSpanAttributes = (span: Tracer.Span, cause: Cause.Cause<unknown>): void => {
   span.attribute(
     "error.type",
-    String(Cause.squashWith(
+    String(squashWith(
       cause,
-      (_) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
+      (_: unknown) => Predicate.hasProperty(_, "_tag") ? _._tag : _ instanceof Error ? _.name : `${_}`
     ))
   )
   span.attribute("error.stack", Cause.pretty(cause))
   span.attribute(
     "error.message",
-    String(Cause.squashWith(
+    String(squashWith(
       cause,
-      (_) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
+      (_: unknown) => Predicate.hasProperty(_, "reason") ? _.reason : _ instanceof Error ? _.message : `${_}`
     ))
   )
 }

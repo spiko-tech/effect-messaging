@@ -1,16 +1,18 @@
-import * as Headers from "@effect/platform/Headers"
-import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Channel, ConfirmChannel, ConsumeMessage } from "amqplib"
-import type { StreamEmit } from "effect"
+import type * as Cause from "effect/Cause"
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Fiber from "effect/Fiber"
+import * as Filter from "effect/Filter"
 import * as Function from "effect/Function"
 import * as Option from "effect/Option"
+import * as Queue from "effect/Queue"
 import * as Schedule from "effect/Schedule"
-import * as Sink from "effect/Sink"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
+import * as Headers from "effect/unstable/http/Headers"
+import * as HttpTraceContext from "effect/unstable/http/HttpTraceContext"
 import * as AMQPConnection from "../AMQPConnection.js"
 import type { AMQPConnectionError } from "../AMQPError.js"
 import { AMQPChannelError } from "../AMQPError.js"
@@ -30,30 +32,28 @@ const ATTR_MESSAGING_MESSAGE_CONVERSATION_ID = "messaging.message.conversation_i
 const ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY = "messaging.amqp.destination.routing_key" as const
 
 /** @internal */
-export class InternalAMQPChannel
-  extends Context.Tag("@effect-messaging/amqp/InternalAMQPChannel")<InternalAMQPChannel, {
-    channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
-    serverProperties: AMQPConnection.AMQPConnectionServerProperties
-    retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
-    retryConsumptionSchedule: Schedule.Schedule<unknown, AMQPChannelError>
-    waitChannelTimeout: Duration.DurationInput
-    confirm: boolean
-    confirmTimeout: Duration.DurationInput
-  }>()
-{
-  private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
-  private static defaultRetryConsumptionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => 1000))
+export class InternalAMQPChannel extends Context.Service<InternalAMQPChannel, {
+  channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
+  serverProperties: AMQPConnection.AMQPConnectionServerProperties
+  retryConnectionSchedule: Schedule.Schedule<unknown, AMQPConnectionError>
+  retryConsumptionSchedule: Schedule.Schedule<unknown, AMQPChannelError>
+  waitChannelTimeout: Duration.Input
+  confirm: boolean
+  confirmTimeout: Duration.Input
+}>()("@effect-messaging/amqp/InternalAMQPChannel") {
+  private static defaultRetryConnectionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => Effect.succeed(1000)))
+  private static defaultRetryConsumptionSchedule = Schedule.forever.pipe(Schedule.addDelay(() => Effect.succeed(1000)))
   private static defaultwaitChannelTimeout = Duration.seconds(5)
   private static defaultConfirmTimeout = Duration.seconds(30)
 
   static new = (options: {
     retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPConnectionError>
     retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError>
-    waitChannelTimeout?: Duration.DurationInput
+    waitChannelTimeout?: Duration.Input
     confirm?: boolean
-    confirmTimeout?: Duration.DurationInput
+    confirmTimeout?: Duration.Input
   }): Effect.Effect<
-    Context.Tag.Service<InternalAMQPChannel>,
+    Context.Service.Shape<typeof InternalAMQPChannel>,
     AMQPConnectionError,
     AMQPConnection.AMQPConnection
   > =>
@@ -75,19 +75,36 @@ export class InternalAMQPChannel
 }
 
 /** @internal */
+const disconnect = <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, R> =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.flatMap(
+      Effect.forkDetach(self, { startImmediately: true }),
+      (fiber) => restore(Fiber.join(fiber)).pipe(Effect.onInterrupt(() => Effect.sync(() => fiber.interruptUnsafe())))
+    )
+  )
+
+/** @internal */
+const closedChannels = new WeakSet<Channel>()
+
+/** @internal */
+const isOpen = (channel: Channel) => !closedChannels.has(channel)
+
+/** @internal */
 const getOrWaitChannel = Effect.gen(function*() {
   const { channelRef, waitChannelTimeout } = yield* InternalAMQPChannel
-  return yield* channelRef.changes.pipe(
-    Stream.takeUntil(Option.isSome),
-    Stream.run(Sink.last()),
-    Effect.flatten,
-    Effect.flatten,
-    Effect.catchTag(
-      "NoSuchElementException",
-      () => Effect.dieMessage(`Should never happen: Channel should be available here`)
+  return yield* channelRef.semaphore.withPermit(Effect.void).pipe(
+    Effect.andThen(
+      SubscriptionRef.changes(channelRef).pipe(
+        Stream.filterMap(Filter.fromPredicateOption(Option.filter(isOpen))),
+        Stream.runHead
+      )
     ),
+    Effect.flatMap(Option.match({
+      onNone: () => Effect.die(new Error(`Should never happen: Channel should be available here`)),
+      onSome: Effect.succeed
+    })),
     Effect.timeout(waitChannelTimeout),
-    Effect.catchTag("TimeoutException", () => new AMQPChannelError({ reason: "Channel is not available" }))
+    Effect.catchTag("TimeoutError", () => new AMQPChannelError({ reason: "Channel is not available" }))
   )
 })
 
@@ -98,6 +115,7 @@ export const initiateChannel = Effect.gen(function*() {
     Effect.gen(function*() {
       const connection = yield* AMQPConnection.AMQPConnection
       const channel = yield* confirm ? connection.createConfirmChannel : connection.createChannel
+      channel.once("close", () => closedChannels.add(channel))
       return Option.some(channel)
     }))
   yield* Effect.logDebug(`AMQPChannel: channel created`)
@@ -120,7 +138,7 @@ export const closeChannel = ({ removeAllListeners = true }: CloseChannelOptions 
           if (confirm) {
             // `removeAllListeners` also removes amqplib's own ack/nack listeners, so drain confirms first
             yield* Effect.tryPromise(() => (channel.value as ConfirmChannel).waitForConfirms()).pipe(
-              Effect.disconnect, // finalizers are uninterruptible: without this the timeout could not fire
+              disconnect, // finalizers are uninterruptible: without this the timeout could not fire
               Effect.timeout(confirmTimeout),
               Effect.ignore
             )
@@ -188,7 +206,7 @@ const publishAndConfirm = (
 ) =>
   Effect.gen(function*() {
     const { confirmTimeout } = yield* InternalAMQPChannel
-    return yield* Effect.async<boolean, AMQPChannelError, InternalAMQPChannel>((resume) => {
+    return yield* Effect.callback<boolean, AMQPChannelError, InternalAMQPChannel>((resume) => {
       let accepted = true // declared before `publish` so an orphaned callback never reads it uninitialized
       try {
         accepted = channel.publish(exchange, routingKey, content, options, (error) =>
@@ -199,9 +217,9 @@ const publishAndConfirm = (
         resume(discardChannel(channel).pipe(Effect.andThen(Effect.fail(publishError(error)))))
       }
     }).pipe(
-      Effect.disconnect,
+      disconnect,
       Effect.timeout(confirmTimeout),
-      Effect.catchTag("TimeoutException", () =>
+      Effect.catchTag("TimeoutError", () =>
         new AMQPChannelError({ reason: "Timed out waiting for broker confirm" }))
     )
   })
@@ -216,7 +234,6 @@ export const publish = (
       `amqp.publish ${routingKey}`,
       {
         kind: "producer",
-        captureStackTrace: false,
         attributes: {
           [ATTR_SERVER_ADDRESS]: serverProperties.host,
           [ATTR_SERVER_PORT]: serverProperties.port,
@@ -267,7 +284,7 @@ const initiateConsumption = Effect.fn("initiateConsumption")(
   function*(
     channel: Channel,
     queueName: string,
-    emit: StreamEmit.EmitOpsPush<AMQPChannelError, ConsumeMessage>,
+    queue: Queue.Queue<ConsumeMessage, AMQPChannelError | Cause.Done>,
     options?: { readonly prefetch?: number }
   ) {
     yield* Effect.annotateCurrentSpan({
@@ -282,7 +299,7 @@ const initiateConsumption = Effect.fn("initiateConsumption")(
       try: () =>
         channel.consume(queueName, (message) => {
           if (!message) return
-          emit.single(message)
+          Queue.offerUnsafe(queue, message)
         }),
       catch: (error) => new AMQPChannelError({ reason: `Failed to consume from queue ${queueName}`, cause: error })
     })
@@ -293,7 +310,7 @@ const initiateConsumption = Effect.fn("initiateConsumption")(
       )
     )
     channel.on("close", () => {
-      emit.end()
+      Queue.endUnsafe(queue)
     })
     yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName} with consumer tag ${consumerTag}`)
   },
@@ -304,13 +321,14 @@ const initiateConsumption = Effect.fn("initiateConsumption")(
 export const consume = (queueName: string, options?: { readonly prefetch?: number }) =>
   Effect.gen(function*() {
     const { channelRef, retryConsumptionSchedule } = yield* InternalAMQPChannel
-    return channelRef.changes.pipe(
-      Stream.filterMap(Function.identity),
+    return SubscriptionRef.changes(channelRef).pipe(
+      Stream.filterMap(Filter.fromPredicateOption(Function.identity)),
       Stream.flatMap(
         (channel) =>
-          Stream.asyncPush<ConsumeMessage, AMQPChannelError>((emit) =>
-            initiateConsumption(channel, queueName, emit, options).pipe(
-              Effect.retry(retryConsumptionSchedule)
+          Stream.callback<ConsumeMessage, AMQPChannelError>((queue) =>
+            initiateConsumption(channel, queueName, queue, options).pipe(
+              Effect.retry(retryConsumptionSchedule),
+              Effect.catchCause((cause) => Queue.failCause(queue, cause))
             )
           ),
         { concurrency: "unbounded" }

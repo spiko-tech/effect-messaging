@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Deferred, Effect, Fiber, Stream, TestServices, Tracer } from "effect"
+import { Deferred, Effect, Fiber, Stream, Tracer } from "effect"
 import type * as Duration from "effect/Duration"
+import * as TestClock from "effect/testing/TestClock"
 import type { StreamConfig } from "../src/internal/SubscriberRunner.js"
 import * as SubscriberRunner from "../src/SubscriberRunner.js"
 
@@ -9,7 +10,7 @@ const makeConfig = <A, E = never>(opts: {
   handler: (message: string) => Effect.Effect<A, E>
   onSuccess?: (message: string) => (response: A) => Effect.Effect<void>
   onError?: (message: string) => () => Effect.Effect<void>
-  handlerTimeout?: Duration.DurationInput
+  handlerTimeout?: Duration.Input
   producerSpanRelation?: "parent" | "link"
   parentSpan?: (message: string) => Tracer.AnySpan | undefined
 }): StreamConfig<string, A, E, never> => ({
@@ -47,19 +48,19 @@ describe("SubscriberRunner", { sequential: true }, () => {
               })
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(Stream.make("msg-1"), config))
 
           // Wait for handler to start
           yield* Deferred.await(latch)
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber
-          yield* fiber.interruptAsFork(fiber.id())
+          fiber.interruptUnsafe(fiber.id)
 
           // Handler should complete despite the interrupt (uninterruptible)
           yield* Effect.sleep("500 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -87,20 +88,20 @@ describe("SubscriberRunner", { sequential: true }, () => {
             handlerTimeout: "2 seconds"
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(Stream.make("msg-1"), config))
 
           // Wait for handler to start
           yield* Deferred.await(latch)
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber while handler is still running
-          yield* fiber.interruptAsFork(fiber.id())
+          fiber.interruptUnsafe(fiber.id)
 
           // Handler should complete despite the interrupt
           yield* Effect.sleep("500 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
           expect(onSuccess).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -127,7 +128,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
             handlerTimeout: "200 millis"
           })
 
-          const fiber = yield* Effect.fork(SubscriberRunner.runStream(Stream.make("msg-1"), config))
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(Stream.make("msg-1"), config))
 
           // Wait for handler to start
           yield* Deferred.await(latch)
@@ -141,7 +142,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(onError).toHaveBeenCalledTimes(1)
 
           yield* Fiber.interrupt(fiber)
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
   })
@@ -161,7 +162,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           yield* SubscriberRunner.runStream(Stream.make("msg-1"), config)
 
           expect(onSuccess).toHaveBeenCalledTimes(1)
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -182,7 +183,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
 
           expect(onError).toHaveBeenCalledTimes(1)
           expect(onSuccess).toHaveBeenCalledTimes(0)
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
   })
@@ -221,7 +222,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.links[0]!.span.spanId).toBe(PRODUCER_SPAN_ID)
           expect(capturedSpan.links[0]!.span.sampled).toBe(true)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -246,7 +247,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
 
           expect(capturedSpan.links.length).toBe(0)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -272,7 +273,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.traceId).toBe(PRODUCER_TRACE_ID)
           expect(capturedSpan.links.length).toBe(0)
           expect(capturedSpan.parent._tag).toBe("Some")
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
 
@@ -298,7 +299,7 @@ describe("SubscriberRunner", { sequential: true }, () => {
           expect(capturedSpan.links.length).toBe(1)
           expect(capturedSpan.links[0]!.span.traceId).toBe(PRODUCER_TRACE_ID)
           expect(capturedSpan.parent._tag).toBe("None")
-        }).pipe(TestServices.provideLive),
+        }).pipe(TestClock.withLive),
       { timeout: 10000 }
     )
   })

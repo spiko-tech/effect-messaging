@@ -1,9 +1,9 @@
 import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
 import { Context, Effect } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<MyPublisher, AMQPPublisher.AMQPPublisher>() {}
+class MyPublisher extends Context.Service<MyPublisher, AMQPPublisher.AMQPPublisher>()("MyPublisher") {}
 
-const program = Effect.gen(function*(_) {
+const program = Effect.gen(function*() {
   const publisher = yield* MyPublisher
 
   yield* publisher.publish({

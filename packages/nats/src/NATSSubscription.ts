@@ -79,7 +79,7 @@ export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
     "Failed to get pending count of NATS subscription"
   ),
   getMax: wrap(
-    () => Option.fromNullable(sub.getMax()),
+    () => Option.fromNullishOr(sub.getMax()),
     "Failed to get max of NATS subscription"
   ),
   sub

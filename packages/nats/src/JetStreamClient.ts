@@ -51,7 +51,7 @@ export interface JetStreamClient {
  * @category tags
  * @since 0.1.0
  */
-export const JetStreamClient = Context.GenericTag<JetStreamClient>("@effect-messaging/nats/JetStreamClient")
+export const JetStreamClient = Context.Service<JetStreamClient>("@effect-messaging/nats/JetStreamClient")
 
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamClientError)
 const wrap = utils.wrap(NATSError.JetStreamClientError)
@@ -91,4 +91,4 @@ export const layer = (options: JetStream.JetStreamOptions = {}): Layer.Layer<
   JetStreamClient,
   NATSError.JetStreamClientError,
   NATSConnection.NATSConnection
-> => Layer.scoped(JetStreamClient, makeJetStreamClient(options))
+> => Layer.effect(JetStreamClient, makeJetStreamClient(options))

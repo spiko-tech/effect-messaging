@@ -1,5 +1,6 @@
 import { describe, expect, it, layer } from "@effect/vitest"
-import { Effect, Exit, TestServices } from "effect"
+import { Effect, Exit } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as AMQPChannel from "../src/AMQPChannel.js"
 import { AMQPChannelError } from "../src/AMQPError.js"
 import {
@@ -35,7 +36,7 @@ describe("AMQPChannel", () => {
 
         // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel), TestClock.withLive))
 
     it.effect("Should reconnect the channel when the connection is close", () =>
       Effect.gen(function*() {
@@ -46,7 +47,7 @@ describe("AMQPChannel", () => {
 
         // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel), TestClock.withLive))
   })
 
   describe("checkQueue", () => {
@@ -56,14 +57,14 @@ describe("AMQPChannel", () => {
         const channel = yield* AMQPChannel.AMQPChannel
         const result = yield* channel.checkQueue("TEST_QUEUE")
         expect(result).toMatchObject({ queue: "TEST_QUEUE" })
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel), TestClock.withLive))
 
     it.effect("Should return an error when the queue does not exist", () =>
       Effect.gen(function*() {
         const channel = yield* AMQPChannel.AMQPChannel
         const exit = yield* channel.checkQueue("NON_EXISTENT_QUEUE").pipe(Effect.exit)
-        expect(exit).toStrictEqual(Exit.fail(expect.any(AMQPChannelError)))
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+        expect(exit).toEqual(Exit.fail(expect.any(AMQPChannelError)))
+      }).pipe(Effect.provide(testChannel), TestClock.withLive))
   })
 
   describe("confirm channel", () => {
@@ -107,7 +108,7 @@ describe("AMQPChannel", () => {
         Effect.andThen(test(r)),
         Effect.ensuring(cleanup(r)),
         Effect.provide(testConfirmChannel),
-        TestServices.provideLive
+        TestClock.withLive
       )
     }
 

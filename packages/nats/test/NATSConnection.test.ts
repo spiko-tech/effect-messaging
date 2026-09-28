@@ -1,5 +1,6 @@
 import { describe, expect, layer } from "@effect/vitest"
-import { Chunk, Effect, Option, Stream, TestServices } from "effect"
+import { Effect, Option, Stream } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as NATSConnection from "../src/NATSConnection.js"
 import { testConnection } from "./dependencies.js"
 
@@ -21,7 +22,7 @@ describe("NATSConnection", () => {
         const subscription = yield* connection.subscribe(subject)
 
         // Publish message after subscribing
-        yield* Effect.fork(
+        yield* Effect.forkChild(
           Effect.gen(function*() {
             yield* Effect.sleep("50 millis")
             yield* connection.publish(subject, message)
@@ -34,10 +35,10 @@ describe("NATSConnection", () => {
           Stream.runCollect
         )
 
-        expect(Chunk.size(messages)).toBe(1)
-        const receivedMessage = Chunk.unsafeGet(messages, 0)
+        expect(messages.length).toBe(1)
+        const receivedMessage = messages[0]
         expect(yield* receivedMessage.string).toBe("Hello, NATS!")
-      }).pipe(TestServices.provideLive))
+      }).pipe(TestClock.withLive))
 
     it("Should receive multiple messages in order", () =>
       Effect.gen(function*() {
@@ -47,7 +48,7 @@ describe("NATSConnection", () => {
         const subscription = yield* connection.subscribe(subject)
 
         // Publish messages after subscribing
-        yield* Effect.fork(
+        yield* Effect.forkChild(
           Effect.gen(function*() {
             yield* Effect.sleep("50 millis")
             yield* connection.publish(subject, "Message 1")
@@ -63,8 +64,8 @@ describe("NATSConnection", () => {
           Stream.runCollect
         )
 
-        expect(Chunk.toArray(messages)).toEqual(["Message 1", "Message 2", "Message 3"])
-      }).pipe(TestServices.provideLive))
+        expect(messages).toEqual(["Message 1", "Message 2", "Message 3"])
+      }).pipe(TestClock.withLive))
 
     it("Should support wildcard subscriptions", () =>
       Effect.gen(function*() {
@@ -73,7 +74,7 @@ describe("NATSConnection", () => {
         const subscription = yield* connection.subscribe("test.wildcard.*")
 
         // Publish messages after subscribing
-        yield* Effect.fork(
+        yield* Effect.forkChild(
           Effect.gen(function*() {
             yield* Effect.sleep("50 millis")
             yield* connection.publish("test.wildcard.foo", "Message 1")
@@ -88,8 +89,8 @@ describe("NATSConnection", () => {
           Stream.runCollect
         )
 
-        expect(Chunk.size(messages)).toBe(2)
-      }).pipe(TestServices.provideLive))
+        expect(messages.length).toBe(2)
+      }).pipe(TestClock.withLive))
   })
 
   layer(testConnection)("request/reply", (it) => {
@@ -101,7 +102,7 @@ describe("NATSConnection", () => {
         const subscription = yield* connection.subscribe(subject)
 
         // Set up responder
-        yield* Effect.fork(
+        yield* Effect.forkChild(
           subscription.stream.pipe(
             Stream.take(1),
             Stream.runForEach((msg) =>
@@ -120,6 +121,6 @@ describe("NATSConnection", () => {
         const responseText = yield* response.string
 
         expect(responseText).toEqual("Echo: Hello")
-      }).pipe(TestServices.provideLive))
+      }).pipe(TestClock.withLive))
   })
 })

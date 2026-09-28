@@ -48,7 +48,7 @@ export interface JetStreamManager {
  * @category tags
  * @since 0.1.0
  */
-export const JetStreamManager = Context.GenericTag<JetStreamManager>(
+export const JetStreamManager = Context.Service<JetStreamManager>(
   "@effect-messaging/nats/JetStreamManager"
 )
 
@@ -98,4 +98,4 @@ export const layer = (options: JetStream.JetStreamManagerOptions = {}): Layer.La
   JetStreamManager,
   NATSError.JetStreamManagerError,
   NATSConnection.NATSConnection
-> => Layer.scoped(JetStreamManager, makeJetStreamClient(options))
+> => Layer.effect(JetStreamManager, makeJetStreamClient(options))

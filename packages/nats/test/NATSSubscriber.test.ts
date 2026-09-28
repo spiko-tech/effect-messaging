@@ -1,6 +1,7 @@
 import type { Mock } from "@effect/vitest"
 import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, TestServices } from "effect"
+import { Effect } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as NATSMessage from "../src/NATSMessage.js"
 import * as NATSPublisher from "../src/NATSPublisher.js"
 import * as NATSSubscriber from "../src/NATSSubscriber.js"
@@ -45,7 +46,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
 
         // Start the subscription
-        yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
+        yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
           const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
         })))
@@ -76,7 +77,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           content: new TextEncoder().encode("Message 3"),
           times: 3
         })
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive))
 
     it.effect("Should NOT receive messages published before subscription started (no persistence)", () =>
       Effect.gen(function*() {
@@ -96,7 +97,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         // Now start the subscriber
         const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
 
-        yield* Effect.fork(subscriber.subscribe(Effect.gen(function*() {
+        yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
           const message = yield* NATSMessage.NATSConsumeMessage
           onMessage(message)
         })))
@@ -120,7 +121,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
           subject: TEST_SUBJECT
         }))
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive))
   })
 
   describe("handler behavior on interruption", { sequential: true }, () => {
@@ -143,7 +144,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
 
           // Start the subscription
-          const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
+          const subscriptionFiber = yield* Effect.forkChild(subscriber.subscribe(handler))
 
           // Give the subscription time to start
           yield* Effect.sleep("100 millis")
@@ -158,12 +159,12 @@ describe("NATSSubscriber", { sequential: true }, () => {
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber
-          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+          subscriptionFiber.interruptUnsafe(subscriptionFiber.id)
 
           // The handler should complete despite the interrupt (uninterruptible)
           yield* Effect.sleep("300 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+        }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive),
       { timeout: 15000 }
     )
 
@@ -188,7 +189,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
             handlerTimeout: "500 millis"
           })
 
-          const subscriptionFiber = yield* Effect.fork(subscriber.subscribe(handler))
+          const subscriptionFiber = yield* Effect.forkChild(subscriber.subscribe(handler))
 
           yield* Effect.sleep("100 millis")
 
@@ -201,12 +202,12 @@ describe("NATSSubscriber", { sequential: true }, () => {
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
 
           // Interrupt the subscription fiber while handler is still running
-          yield* subscriptionFiber.interruptAsFork(subscriptionFiber.id())
+          subscriptionFiber.interruptUnsafe(subscriptionFiber.id)
 
           // Handler should complete despite the interrupt
           yield* Effect.sleep("300 millis")
           expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+        }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive),
       { timeout: 15000 }
     )
 
@@ -232,7 +233,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           })
 
           // Start the subscription
-          yield* Effect.fork(subscriber.subscribe(handler))
+          yield* Effect.forkChild(subscriber.subscribe(handler))
 
           // Give the subscription time to start
           yield* Effect.sleep("100 millis")
@@ -248,7 +249,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
           // Handler started but did not finish due to timeout
           expect(onHandlingStarted).toHaveBeenCalledTimes(1)
           expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-        }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive),
+        }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive),
       { timeout: 15000 }
     )
   })
@@ -278,7 +279,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
 
         // Start the subscription
-        yield* Effect.fork(subscriber.subscribe(handler))
+        yield* Effect.forkChild(subscriber.subscribe(handler))
 
         // Give the subscription time to start
         yield* Effect.sleep("100 millis")
@@ -302,7 +303,7 @@ describe("NATSSubscriber", { sequential: true }, () => {
         yield* Effect.sleep("200 millis")
         expect(onHandlingStarted).toHaveBeenCalledTimes(2)
         expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive), { timeout: 15000 })
+      }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive), { timeout: 15000 })
   })
 
   describe("healthCheck", () => {
@@ -312,6 +313,6 @@ describe("NATSSubscriber", { sequential: true }, () => {
 
         // Health check should succeed
         yield* subscriber.healthCheck
-      }).pipe(Effect.scoped, Effect.provide(testConnection), TestServices.provideLive))
+      }).pipe(Effect.scoped, Effect.provide(testConnection), TestClock.withLive))
   })
 })

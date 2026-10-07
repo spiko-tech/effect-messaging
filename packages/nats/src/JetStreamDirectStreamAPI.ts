@@ -4,10 +4,10 @@
 import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import * as utils from "./internal/utils.js"
-import * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSQueuedIterator from "./NATSQueuedIterator.js"
+import * as utils from "./internal/utils.ts"
+import * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSQueuedIterator from "./NATSQueuedIterator.ts"
 
 /**
  * @category type ids
@@ -62,7 +62,7 @@ export const make = (direct: JetStream.DirectStreamAPI): JetStreamDirectStreamAP
   [TypeId]: TypeId,
   getMessage: (...params: Parameters<JetStream.DirectStreamAPI["getMessage"]>) =>
     wrapAsync(() => direct.getMessage(...params), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   getBatch: (...params: Parameters<JetStream.DirectStreamAPI["getBatch"]>) =>

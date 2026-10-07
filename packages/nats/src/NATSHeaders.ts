@@ -1,9 +1,9 @@
 /**
  * @since 0.1.0
  */
-import * as Headers from "@effect/platform/Headers"
-import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import * as NATSCore from "@nats-io/nats-core"
+import * as Headers from "effect/http/Headers"
+import * as HttpTraceContext from "effect/http/HttpTraceContext"
 import * as Option from "effect/Option"
 import type * as Tracer from "effect/Tracer"
 
@@ -22,7 +22,7 @@ export const natsHeadersToEffectHeaders = (msgHdrs: NATSCore.MsgHdrs): Headers.H
 export const effectHeadersToNatsHeaders = (hdrs: Headers.Headers): NATSCore.MsgHdrs => {
   const msgHdrs = NATSCore.headers()
   for (const [key, value] of Object.entries(hdrs)) {
-    if (key !== Headers.HeadersTypeId.toString()) {
+    if (key !== Headers.TypeId.toString()) {
       msgHdrs.set(key, value)
     }
   }

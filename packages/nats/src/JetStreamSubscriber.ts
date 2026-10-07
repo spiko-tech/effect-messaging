@@ -11,12 +11,12 @@ import * as Effect from "effect/Effect"
 
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
-import type * as JetStreamConsumer from "./JetStreamConsumer.js"
-import * as JetStreamMessage from "./JetStreamMessage.js"
-import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
-import * as NATSConnection from "./NATSConnection.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSHeaders from "./NATSHeaders.js"
+import type * as JetStreamConsumer from "./JetStreamConsumer.ts"
+import * as JetStreamMessage from "./JetStreamMessage.ts"
+import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.ts"
+import * as NATSConnection from "./NATSConnection.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSHeaders from "./NATSHeaders.ts"
 
 /**
  * @category type ids

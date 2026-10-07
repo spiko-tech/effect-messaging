@@ -4,10 +4,10 @@
 import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import * as utils from "./internal/utils.js"
-import * as JetStreamLister from "./JetStreamLister.js"
-import * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
-import * as NATSError from "./NATSError.js"
+import * as utils from "./internal/utils.ts"
+import * as JetStreamLister from "./JetStreamLister.ts"
+import * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
+import * as NATSError from "./NATSError.ts"
 
 /**
  * @category type ids
@@ -100,7 +100,7 @@ export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
     wrapAsync(() => streams.deleteMessage(...params), "Failed to delete message"),
   getMessage: (...params: Parameters<JetStream.StreamAPI["getMessage"]>) =>
     wrapAsync(() => streams.getMessage(...params), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   find: (...params: Parameters<JetStream.StreamAPI["find"]>) =>

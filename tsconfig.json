@@ -1,5 +1,8 @@
 {
-  "extends": "./tsconfig.base.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "include": [],
-  "references": [{ "path": "packages/amqp" }, { "path": "packages/core" }]
+  "references": [
+    { "path": "tsconfig.packages.json" },
+    { "path": "tsconfig.tests.json" }
+  ]
 }

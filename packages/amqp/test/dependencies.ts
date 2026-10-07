@@ -1,7 +1,7 @@
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as AMQPChannel from "../src/AMQPChannel.js"
-import * as AMQPConnection from "../src/AMQPConnection.js"
+import * as AMQPChannel from "../src/AMQPChannel.ts"
+import * as AMQPConnection from "../src/AMQPConnection.ts"
 
 export const testConnection = AMQPConnection.layer({
   hostname: "localhost",

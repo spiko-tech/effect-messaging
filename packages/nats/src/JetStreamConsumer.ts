@@ -5,10 +5,10 @@ import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.js"
-import * as JetStreamMessage from "./JetStreamMessage.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSQueuedIterator from "./NATSQueuedIterator.js"
+import * as utils from "./internal/utils.ts"
+import * as JetStreamMessage from "./JetStreamMessage.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSQueuedIterator from "./NATSQueuedIterator.ts"
 
 const wrap = utils.wrap(NATSError.JetStreamConsumerError)
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamConsumerError)
@@ -255,7 +255,7 @@ export const makeConsumer = (consumer: JetStream.Consumer): Consumer => ({
   isPushConsumer: wrap(() => consumer.isPushConsumer(), "Failed to check if consumer is push consumer"),
   next: (...args) =>
     wrapAsync(() => consumer.next(...args), "Failed to get next message").pipe(
-      Effect.map((msg) => Option.fromNullable(msg ? JetStreamMessage.make(msg) : null))
+      Effect.map((msg) => Option.fromNullishOr(msg === null ? undefined : JetStreamMessage.make(msg)))
     ),
   fetch: (...args) =>
     wrapAsync(() => consumer.fetch(...args), "Failed to fetch messages").pipe(Effect.map(makeConsumerMessages)),

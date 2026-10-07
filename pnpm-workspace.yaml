@@ -1,6 +1,68 @@
 packages:
   - packages/*
+  - tools/*
 
-onlyBuiltDependencies:
-  - esbuild
-  - msgpackr-extract
+verifyDepsBeforeRun: error
+enableGlobalVirtualStore: false
+
+allowBuilds:
+  dprint: false
+  esbuild: true
+  msgpackr-extract: true
+
+minimumReleaseAgeExclude:
+  - '@dprint/android-arm64@0.61.0'
+  - '@dprint/android-x64@0.61.0'
+  - '@dprint/darwin-arm64@0.61.0'
+  - '@dprint/darwin-x64@0.61.0'
+  - '@dprint/linux-arm64-glibc@0.61.0'
+  - '@dprint/linux-arm64-musl@0.61.0'
+  - '@dprint/linux-loong64-glibc@0.61.0'
+  - '@dprint/linux-loong64-musl@0.61.0'
+  - '@dprint/linux-ppc64-glibc@0.61.0'
+  - '@dprint/linux-ppc64-musl@0.61.0'
+  - '@dprint/linux-riscv64-glibc@0.61.0'
+  - '@dprint/linux-x64-glibc@0.61.0'
+  - '@dprint/linux-x64-musl@0.61.0'
+  - '@dprint/win32-arm64@0.61.0'
+  - '@dprint/win32-x64@0.61.0'
+  - '@effect/tsgo-darwin-arm64@0.51.1'
+  - '@effect/tsgo-darwin-x64@0.51.1'
+  - '@effect/tsgo-linux-arm64@0.51.1'
+  - '@effect/tsgo-linux-arm@0.51.1'
+  - '@effect/tsgo-linux-x64@0.51.1'
+  - '@effect/tsgo-win32-arm64@0.51.1'
+  - '@effect/tsgo-win32-x64@0.51.1'
+  - '@effect/tsgo@0.51.1'
+  - dprint@0.61.0
+  - '@effect/docgen@4.0.2'
+  - '@effect/platform-node-shared@4.0.2'
+  - '@effect/platform-node@4.0.2'
+  - '@effect/vitest@4.0.2'
+  - '@vitest/coverage-v8@5.0.3'
+  - '@vitest/mocker@5.0.3'
+  - '@vitest/spy@5.0.3'
+  - effect@4.0.2
+  - vitest@5.0.3
+  - '@babel/cli@8.0.6'
+  - '@babel/core@8.0.7'
+  - '@changesets/changelog-github@1.0.1'
+  - '@changesets/cli@3.0.3'
+  - '@oxlint/plugins@1.87.0'
+  - '@types/node@26.6.4'
+  - 'babel-plugin-annotate-pure-calls@0.5.0'
+  - 'glob@13.0.6'
+  - 'madge@8.0.0'
+  - 'oxlint@1.87.0'
+  - 'tstyche@7.2.5'
+  - 'typescript@7.0.2'
+  - 'vite@8.3.3'
+  - 'amqplib@2.2.0'
+  - '@nats-io/jetstream@3.4.0'
+  - '@nats-io/nats-core@3.4.0'
+  - '@nats-io/transport-node@3.4.0'
+  - 'tsx@4.23.15'
+  - '@babel/helper-compilation-targets@8.0.7'
+  - '@babel/helpers@8.0.7'
+  - '@babel/parser@8.0.7'
+  - '@babel/traverse@8.0.7'

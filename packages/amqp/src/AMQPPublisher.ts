@@ -6,8 +6,8 @@ import * as PublisherError from "@effect-messaging/core/PublisherError"
 import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
 import * as Schedule from "effect/Schedule"
-import * as AMQPChannel from "./AMQPChannel.js"
-import type * as AMQPError from "./AMQPError.js"
+import * as AMQPChannel from "./AMQPChannel.ts"
+import type * as AMQPError from "./AMQPError.ts"
 
 /**
  * @category type ids
@@ -52,7 +52,7 @@ const publish = (
       "AMQPChannelError",
       (error) => Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
     ),
-    Effect.map(() => undefined)
+    Effect.asVoid
   )
 
 /**
@@ -79,7 +79,7 @@ export const make = (config?: AMQPPublisherConfig): Effect.Effect<AMQPPublisher,
     const publisher: AMQPPublisher = {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(channel, config?.retrySchedule ?? Schedule.stop)
+      publish: publish(channel, config?.retrySchedule ?? Schedule.recurs(0))
     }
 
     return publisher

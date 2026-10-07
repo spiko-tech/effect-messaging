@@ -4,10 +4,10 @@
 import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
-import * as utils from "./internal/utils.js"
-import * as JetStreamConsumers from "./JetStreamConsumer.js"
-import * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
-import * as NATSError from "./NATSError.js"
+import * as utils from "./internal/utils.ts"
+import * as JetStreamConsumers from "./JetStreamConsumer.ts"
+import * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
+import * as NATSError from "./NATSError.ts"
 
 const wrapAsync = utils.wrapAsync(NATSError.JetStreamStreamError)
 
@@ -61,7 +61,7 @@ export const makeJetStreamStream = (stream: JetStream.Stream): JetStreamStream =
   info: (...args) => wrapAsync(() => stream.info(...args), "Failed to get stream info"),
   getMessage: (...args) =>
     wrapAsync(() => stream.getMessage(...args), "Failed to get message").pipe(
-      Effect.map(Option.fromNullable),
+      Effect.map((message) => Option.fromNullishOr(message)),
       Effect.map(Option.map(JetStreamStoredMessage.make))
     ),
   deleteMessage: (...args) => wrapAsync(() => stream.deleteMessage(...args), "Failed to delete message"),

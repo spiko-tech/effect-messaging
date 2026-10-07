@@ -1,0 +1,7 @@
+{
+  "$schema": "./node_modules/tstyche/schemas/config.json",
+  "rejectAnyType": true,
+  "testFileMatch": [
+    "packages/*/dtslint/**/*.tst.*"
+  ]
+}

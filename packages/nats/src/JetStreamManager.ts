@@ -6,12 +6,12 @@ import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.js"
-import * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
-import * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
-import * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
-import * as NATSConnection from "./NATSConnection.js"
-import * as NATSError from "./NATSError.js"
+import * as utils from "./internal/utils.ts"
+import * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.ts"
+import * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.ts"
+import * as JetStreamStreamAPI from "./JetStreamStreamAPI.ts"
+import * as NATSConnection from "./NATSConnection.ts"
+import * as NATSError from "./NATSError.ts"
 
 /**
  * @category type ids
@@ -48,7 +48,7 @@ export interface JetStreamManager {
  * @category tags
  * @since 0.1.0
  */
-export const JetStreamManager = Context.GenericTag<JetStreamManager>(
+export const JetStreamManager = Context.Service<JetStreamManager>(
   "@effect-messaging/nats/JetStreamManager"
 )
 
@@ -98,4 +98,4 @@ export const layer = (options: JetStream.JetStreamManagerOptions = {}): Layer.La
   JetStreamManager,
   NATSError.JetStreamManagerError,
   NATSConnection.NATSConnection
-> => Layer.scoped(JetStreamManager, makeJetStreamClient(options))
+> => Layer.effect(JetStreamManager, makeJetStreamClient(options))

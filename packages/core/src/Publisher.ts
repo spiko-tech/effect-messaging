@@ -2,7 +2,7 @@
  * @since 0.3.0
  */
 import type * as Effect from "effect/Effect"
-import type * as PublisherError from "./PublisherError.js"
+import type * as PublisherError from "./PublisherError.ts"
 
 /**
  * @category type ids

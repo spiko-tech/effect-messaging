@@ -1,7 +1,7 @@
 /**
  * @since 0.3.0
  */
-import * as internal from "./internal/SubscriberRunner.js"
+import * as internal from "./internal/SubscriberRunner.ts"
 
 /**
  * @since 0.3.0

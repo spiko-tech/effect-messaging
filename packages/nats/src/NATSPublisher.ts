@@ -8,9 +8,9 @@ import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
 import type * as Tracer from "effect/Tracer"
-import * as NATSConnection from "./NATSConnection.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSHeaders from "./NATSHeaders.js"
+import * as NATSConnection from "./NATSConnection.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSHeaders from "./NATSHeaders.ts"
 
 /**
  * @category type ids
@@ -75,7 +75,6 @@ const publish = (
     `nats.publish ${message.subject}`,
     {
       kind: "producer",
-      captureStackTrace: false,
       attributes: {
         [ATTR_SERVER_ADDRESS]: connectionInfo.host,
         [ATTR_SERVER_PORT]: connectionInfo.port,
@@ -127,7 +126,7 @@ export const make = (
     const publisher: NATSPublisher = {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.stop)
+      publish: publish(connection, connectionInfo, config?.retrySchedule ?? Schedule.recurs(0))
     }
 
     return publisher

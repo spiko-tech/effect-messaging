@@ -4,8 +4,8 @@
 import type * as JetStream from "@nats-io/jetstream"
 import type * as NATSCore from "@nats-io/nats-core"
 import type * as Effect from "effect/Effect"
-import * as utils from "./internal/utils.js"
-import * as NATSError from "./NATSError.js"
+import * as utils from "./internal/utils.ts"
+import * as NATSError from "./NATSError.ts"
 
 /**
  * @category type ids

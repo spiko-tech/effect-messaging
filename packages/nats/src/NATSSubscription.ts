@@ -5,9 +5,9 @@ import type * as NATSCore from "@nats-io/nats-core"
 import type * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSMessage from "./NATSMessage.js"
+import * as utils from "./internal/utils.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSMessage from "./NATSMessage.ts"
 
 /**
  * @category type ids
@@ -79,7 +79,7 @@ export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
     "Failed to get pending count of NATS subscription"
   ),
   getMax: wrap(
-    () => Option.fromNullable(sub.getMax()),
+    () => Option.fromNullishOr(sub.getMax()),
     "Failed to get max of NATS subscription"
   ),
   sub

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
+  "references": [{ "path": "tsconfig.packages.json" }],
+  "include": [
+    "**/vitest.*.ts", // All vitest config files across all packages
+    "./scripts/test/**/*.ts",
+    "./packages/*/test/**/*.ts",
+    "./packages/*/test/**/*.json",
+    "./packages/*/typetest/**/*.ts",
+    "./packages/*/dtslint/**/*.ts",
+    "./packages/*/examples/**/*.ts",
+    "./packages/**/test/**/*.ts",
+    "./packages/**/test/**/*.json",
+    "./packages/**/typetest/**/*.ts",
+    "./packages/**/dtslint/**/*.ts",
+    "./packages/**/examples/**/*.ts"
+  ],
+  "exclude": ["**/node_modules/**", "**/dist/**", "**/build/**"],
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": false,
+    // Tests/examples/dtslint import package sources relatively and are never
+    // emitted, so the rewrite-based safety check (TS2878) does not apply.
+    "rewriteRelativeImportExtensions": false,
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "paths": {
+      // These path aliases allow us to load workspace packages in tests and examples.
+      "@effect-messaging/amqp": ["./packages/amqp/src/index.ts"],
+      "@effect-messaging/amqp/*": ["./packages/amqp/src/*.ts"],
+      "@effect-messaging/core": ["./packages/core/src/index.ts"],
+      "@effect-messaging/core/*": ["./packages/core/src/*.ts"],
+      "@effect-messaging/nats": ["./packages/nats/src/index.ts"],
+      "@effect-messaging/nats/*": ["./packages/nats/src/*.ts"]
+    },
+    "plugins": [{
+      "name": "@effect/language-service",
+      "namespaceImportPackages": [],
+      "includeSuggestionsInTsc": false,
+      "ignoreEffectWarningsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": true,
+      "overrides": [
+        {
+          "include": ["**/dtslint/**/*.ts", "**/typetest/**/*.ts"],
+          "options": {
+            "diagnosticSeverity": {
+              "floatingEffect": "off"
+            }
+          }
+        }
+      ],
+      "diagnosticSeverity": {
+        "unknownInEffectCatch": "off",
+        "multipleEffectProvide": "off"
+      }
+    }]
+  }
+}

@@ -9,11 +9,11 @@ import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 
 import * as Option from "effect/Option"
-import * as NATSConnection from "./NATSConnection.js"
-import * as NATSError from "./NATSError.js"
-import * as NATSHeaders from "./NATSHeaders.js"
-import * as NATSMessage from "./NATSMessage.js"
-import type * as NATSSubscription from "./NATSSubscription.js"
+import * as NATSConnection from "./NATSConnection.ts"
+import * as NATSError from "./NATSError.ts"
+import * as NATSHeaders from "./NATSHeaders.ts"
+import * as NATSMessage from "./NATSMessage.ts"
+import type * as NATSSubscription from "./NATSSubscription.ts"
 
 /**
  * @category type ids

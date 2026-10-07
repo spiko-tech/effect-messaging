@@ -1,0 +1,12 @@
+{
+  "name": "@effect-messaging/docgen-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Isolated classic TypeScript toolchain for documentation generation",
+  "type": "module",
+  "devDependencies": {
+    "@effect/docgen": "^4.0.2",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  }
+}

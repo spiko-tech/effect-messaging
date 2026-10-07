@@ -1,51 +1,44 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": [],
   "compilerOptions": {
-    "strict": true,
-    "exactOptionalPropertyTypes": true,
-    "moduleDetection": "force",
+    "outDir": "${configDir}/build",
+    "rootDir": "${configDir}/src",
+    // Use incremental builds with project references.
+    "incremental": true,
     "composite": true,
-    "downlevelIteration": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": false,
-    "declaration": true,
-    "skipLibCheck": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "moduleResolution": "NodeNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": [],
-    "isolatedModules": true,
-    "sourceMap": true,
-    "declarationMap": true,
-    "noImplicitReturns": false,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true,
-    "noEmitOnError": false,
-    "noErrorTruncation": false,
-    "allowJs": false,
-    "checkJs": false,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noUncheckedIndexedAccess": false,
-    "strictNullChecks": true,
-    "baseUrl": ".",
+    // Target modern JavaScript (ES2022+) whilst staying closely compatible with the Node.js module system.
     "target": "ES2022",
     "module": "NodeNext",
-    "incremental": true,
-    "removeComments": false,
-    "plugins": [{ "name": "@effect/language-service" }],
-    "paths": {
-      "@effect-messaging/amqp": ["./packages/amqp/src/index.js"],
-      "@effect-messaging/amqp/*": ["./packages/amqp/src/*.js"],
-      "@effect-messaging/amqp/test/*": ["./packages/amqp/test/*.js"],
-      "@effect-messaging/core": ["./packages/core/src/index.js"],
-      "@effect-messaging/core/*": ["./packages/core/src/*.js"],
-      "@effect-messaging/core/test/*": ["./packages/core/test/*.js"],
-      "@effect-messaging/nats": ["./packages/nats/src/index.js"],
-      "@effect-messaging/nats/*": ["./packages/nats/src/*.js"],
-      "@effect-messaging/nats/test/*": ["./packages/nats/test/*.js"]
-    }
+    "moduleDetection": "force", // Treat every non-declaration file as a module.
+    "verbatimModuleSyntax": true, // Only transform/eliminate type-only import/export statements.
+    "allowJs": false, // If you touch this, a puppy dies.
+    "rewriteRelativeImportExtensions": true, // Rewrite `.ts` imports to `.js` at build time.
+    "erasableSyntaxOnly": true, // Allows to run directly with node and type removal
+    // Emit source- & declaration maps.
+    "declarationMap": true,
+    "sourceMap": true,
+    // Opt-in to stricter type checking and correctness guard rails. The more the merrier.
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    // Miscellaneous
+    "stripInternal": false, // Project-reference tests need internals; release configs strip them in dist instead.
+    "skipLibCheck": true, // Skip type checking of third party libraries.
+    "noErrorTruncation": true, // Do not truncate error messages.
+    "types": [], // Disable automatic loading of `@types/*` packages.
+    "plugins": [{
+      "name": "@effect/language-service",
+      "namespaceImportPackages": ["effect", "@effect/*", "@effect-messaging/*"],
+      "diagnosticSeverity": {
+        "globalErrorInEffectFailure": "off" // TODO: Check if we should fix the warnings this reports
+      },
+      "includeSuggestionsInTsc": false,
+      "ignoreEffectWarningsInTscExitCode": true,
+      "ignoreEffectErrorsInTscExitCode": true
+    }]
   }
 }

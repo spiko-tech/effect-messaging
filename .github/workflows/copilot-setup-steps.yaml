@@ -26,12 +26,12 @@ jobs:
 
     services:
       rabbitmq:
-        image: rabbitmq:3-management
+        image: rabbitmq:4.3.6-management
         ports:
           - 5679:5672
           - 15679:15672
         options: >-
-          --health-cmd "rabbitmqctl node_health_check"
+          --health-cmd "rabbitmq-diagnostics -q ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -40,7 +40,7 @@ jobs:
     # If you do not check out your code, Copilot will do this for you.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install dependencies
         uses: ./.github/actions/setup

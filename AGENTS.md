@@ -1,5 +1,11 @@
 # Agent Guidelines for effect-messaging
 
+## Learning more about Effect
+
+This repository uses the Effect TypeScript library.
+Before writing any Effect code, read `node_modules/effect/AGENTS.md` completely and follow its links when needed.
+For concepts not covered by that guide, search the source in `node_modules/effect/src`.
+
 ## Commands
 
 - Build: `pnpm build`

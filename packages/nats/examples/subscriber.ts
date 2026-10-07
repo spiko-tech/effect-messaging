@@ -5,7 +5,7 @@ import {
   JetStreamSubscriberResponse,
   NATSConnection
 } from "@effect-messaging/nats"
-import { Effect } from "effect"
+import { Effect, Layer } from "effect"
 
 const messageHandler = Effect.gen(function*() {
   const message = yield* JetStreamMessage.JetStreamConsumeMessage
@@ -44,10 +44,9 @@ const program = Effect.gen(function*() {
 const NATSConnectionLive = NATSConnection.layerNode({ servers: ["localhost:4222"] })
 const JetStreamClientLive = JetStreamClient.layer()
 
-const runnable = program.pipe(
-  Effect.provide(JetStreamClientLive),
-  Effect.provide(NATSConnectionLive)
-)
+const MainLive = JetStreamClientLive.pipe(Layer.provideMerge(NATSConnectionLive))
+
+const runnable = program.pipe(Effect.provide(MainLive))
 
 // Run the program
 Effect.runPromise(runnable)

@@ -3,22 +3,19 @@ import type { ViteUserConfig } from "vitest/config"
 
 const alias = (pkg: string, dir = pkg) => {
   const name = `@effect-messaging/${pkg}`
-  const target = process.env.TEST_DIST !== undefined ? path.join("dist", "dist", "esm") : "src"
+  const target = process.env.TEST_DIST !== undefined ? "dist" : "src"
   return ({
-    [`${name}/test`]: path.join(__dirname, "packages", dir, "test"),
-    [`${name}`]: path.join(__dirname, "packages", dir, target)
+    [`${name}/test`]: path.join(import.meta.dirname, "packages", dir, "test"),
+    [`${name}`]: path.join(import.meta.dirname, "packages", dir, target)
   })
 }
 
 const config: ViteUserConfig = {
-  esbuild: {
+  oxc: {
     target: "es2020"
   },
   test: {
-    setupFiles: [path.join(__dirname, "vitest.setup.ts")],
-    fakeTimers: {
-      toFake: undefined
-    },
+    setupFiles: [path.join(import.meta.dirname, "vitest.setup.ts")],
     sequence: {
       concurrent: true
     },

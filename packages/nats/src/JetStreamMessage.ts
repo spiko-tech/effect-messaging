@@ -7,8 +7,8 @@ import * as Context from "effect/Context"
 import type * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
-import { wrap, wrapAsync } from "./internal/utils.js"
-import * as NATSError from "./NATSError.js"
+import { wrap, wrapAsync } from "./internal/utils.ts"
+import * as NATSError from "./NATSError.ts"
 
 /**
  * @category type ids
@@ -67,7 +67,7 @@ export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
   redelivered: jsMsg.redelivered,
   info: jsMsg.info,
   seq: jsMsg.seq,
-  headers: Option.fromNullable(jsMsg.headers),
+  headers: Option.fromNullishOr(jsMsg.headers),
   data: jsMsg.data,
   subject: jsMsg.subject,
   sid: jsMsg.sid,
@@ -90,7 +90,7 @@ export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
  * @category tags
  * @since 0.1.0
  */
-export const JetStreamConsumeMessage = Context.GenericTag<JetStreamMessage>(
+export const JetStreamConsumeMessage = Context.Service<JetStreamMessage>(
   "@effect-messaging/nats/JetStreamConsumeMessage"
 )
 

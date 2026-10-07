@@ -3,6 +3,7 @@ import type * as Cause from "effect/Cause"
 import * as Context from "effect/Context"
 import * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
+import * as Exit from "effect/Exit"
 import * as Fiber from "effect/Fiber"
 import * as Headers from "effect/http/Headers"
 import * as HttpTraceContext from "effect/http/HttpTraceContext"
@@ -121,28 +122,48 @@ export const closeChannel = Effect.fn("AMQPChannel.closeChannel")(function*(
   { removeAllListeners = true }: CloseChannelOptions = {}
 ) {
   const { channelRef, confirm, confirmTimeout } = yield* InternalAMQPChannel
-  yield* SubscriptionRef.updateEffect(channelRef, (channel) =>
-    Effect.gen(function*() {
-      if (Option.isSome(channel)) {
-        const unavailable = resourceStates.has(channel.value)
-        if (removeAllListeners) {
-          resourceStates.set(channel.value, "shutdown")
-        }
-        if (confirm && !unavailable) {
-          // `removeAllListeners` also removes amqplib's own ack/nack listeners, so drain confirms first
-          yield* Effect.tryPromise(() => (channel.value as ConfirmChannel).waitForConfirms()).pipe(
-            disconnect, // finalizers are uninterruptible: without this the timeout could not fire
-            Effect.timeout(confirmTimeout),
-            Effect.ignore
-          )
-        }
-        if (removeAllListeners) {
-          channel.value.removeAllListeners()
-        }
-        yield* Effect.tryPromise(() => channel.value.close()).pipe(Effect.ignore)
-      }
-      return Option.none()
-    }))
+  yield* SubscriptionRef.updateEffect(
+    channelRef,
+    Option.match({
+      onNone: () => Effect.succeed(Option.none<Channel>()),
+      onSome: (resource) =>
+        Effect.acquireUseRelease(
+          Effect.gen(function*() {
+            // The outer scope repairs failed updates only after the channel lock has been released.
+            yield* Effect.addFinalizer((exit) =>
+              Exit.isFailure(exit)
+                ? SubscriptionRef.updateSome(channelRef, (current) =>
+                  Option.isSome(current) && current.value === resource
+                    ? Option.some(Option.none<Channel>())
+                    : Option.none())
+                : Effect.void
+            )
+
+            const unavailable = resourceStates.has(resource)
+            if (removeAllListeners) {
+              resourceStates.set(resource, "shutdown")
+            }
+            return { resource, unavailable }
+          }),
+          ({ resource, unavailable }) => {
+            if (!confirm || unavailable) return Effect.void
+
+            // `removeAllListeners` also removes amqplib's own ack/nack listeners, so drain confirms first
+            return Effect.tryPromise(() => (resource as ConfirmChannel).waitForConfirms()).pipe(
+              Effect.timeout(confirmTimeout),
+              Effect.ignore
+            )
+          },
+          ({ resource }) =>
+            Effect.gen(function*() {
+              if (removeAllListeners) {
+                resource.removeAllListeners()
+              }
+              yield* Effect.tryPromise(() => resource.close()).pipe(Effect.ignore)
+            })
+        ).pipe(Effect.as(Option.none<Channel>()))
+    })
+  ).pipe(Effect.scoped)
   yield* Effect.logDebug("AMQPChannel: channel closed")
 })
 

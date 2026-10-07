@@ -1,7 +1,7 @@
 import { describe, expect, it, layer } from "@effect/vitest"
-import { Effect, Exit, TestServices } from "effect"
-import * as AMQPChannel from "../src/AMQPChannel.js"
-import { AMQPChannelError } from "../src/AMQPError.js"
+import { Cause, Effect, Exit } from "effect"
+import * as AMQPChannel from "../src/AMQPChannel.ts"
+import { AMQPChannelError } from "../src/AMQPError.ts"
 import {
   assertTestExchange,
   assertTestQueue,
@@ -9,10 +9,10 @@ import {
   simulateConnectionClose,
   testChannel,
   testConfirmChannel
-} from "./dependencies.js"
+} from "./dependencies.ts"
 
 describe("AMQPChannel", () => {
-  layer(testChannel)("connection", (it) => {
+  layer(testChannel, { excludeTestServices: true })("connection", (it) => {
     it.effect("Should be able to connect and test server properties", () =>
       Effect.gen(function*() {
         const channel = yield* AMQPChannel.AMQPChannel
@@ -26,7 +26,7 @@ describe("AMQPChannel", () => {
   })
 
   describe("watchChannel", () => {
-    it.effect("Should reconnect the channel when close", () =>
+    it.live("Should reconnect the channel when close", () =>
       Effect.gen(function*() {
         yield* assertTestExchange
 
@@ -35,9 +35,9 @@ describe("AMQPChannel", () => {
 
         // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel)))
 
-    it.effect("Should reconnect the channel when the connection is close", () =>
+    it.live("Should reconnect the channel when the connection is close", () =>
       Effect.gen(function*() {
         yield* assertTestExchange
 
@@ -46,24 +46,24 @@ describe("AMQPChannel", () => {
 
         // should wait for channel to re-open and assert exchange
         yield* assertTestExchange
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel)))
   })
 
   describe("checkQueue", () => {
-    it.effect("Should return a successful assertion of the queue", () =>
+    it.live("Should return a successful assertion of the queue", () =>
       Effect.gen(function*() {
         yield* assertTestQueue
         const channel = yield* AMQPChannel.AMQPChannel
         const result = yield* channel.checkQueue("TEST_QUEUE")
         expect(result).toMatchObject({ queue: "TEST_QUEUE" })
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+      }).pipe(Effect.provide(testChannel)))
 
-    it.effect("Should return an error when the queue does not exist", () =>
+    it.live("Should return an error when the queue does not exist", () =>
       Effect.gen(function*() {
         const channel = yield* AMQPChannel.AMQPChannel
         const exit = yield* channel.checkQueue("NON_EXISTENT_QUEUE").pipe(Effect.exit)
-        expect(exit).toStrictEqual(Exit.fail(expect.any(AMQPChannelError)))
-      }).pipe(Effect.provide(testChannel), TestServices.provideLive))
+        expect(Exit.isFailure(exit) && Cause.squash(exit.cause)).toBeInstanceOf(AMQPChannelError)
+      }).pipe(Effect.provide(testChannel)))
   })
 
   describe("confirm channel", () => {
@@ -106,8 +106,7 @@ describe("AMQPChannel", () => {
       return setup(r).pipe(
         Effect.andThen(test(r)),
         Effect.ensuring(cleanup(r)),
-        Effect.provide(testConfirmChannel),
-        TestServices.provideLive
+        Effect.provide(testConfirmChannel)
       )
     }
 
@@ -121,7 +120,7 @@ describe("AMQPChannel", () => {
     const expectFailure = (exit: Exit.Exit<unknown, unknown>, reason: string) =>
       expect(exit).toStrictEqual(Exit.fail(expect.objectContaining({ reason })))
 
-    it.effect("publish succeeds once the broker has confirmed the message", () =>
+    it.live("publish succeeds once the broker has confirmed the message", () =>
       withResources("ACK", (r) =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel
@@ -129,7 +128,7 @@ describe("AMQPChannel", () => {
           expect(yield* getContent(r.queue)).toBe("payload")
         })))
 
-    it.effect("publish fails when the broker nacks the message", () =>
+    it.live("publish fails when the broker nacks the message", () =>
       withResources("NACK", (r) =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel
@@ -138,7 +137,7 @@ describe("AMQPChannel", () => {
           expectFailure(exit, "Broker nacked message")
         })))
 
-    it.effect("sendToQueue waits for the broker confirm as well", () =>
+    it.live("sendToQueue waits for the broker confirm as well", () =>
       withResources("SEND_TO_QUEUE", (r) =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel
@@ -147,7 +146,7 @@ describe("AMQPChannel", () => {
           expectFailure(exit, "Broker nacked message")
         })))
 
-    it.effect("publish fails when the target exchange does not exist", () =>
+    it.live("publish fails when the target exchange does not exist", () =>
       withResources("NO_EXCHANGE", () =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel
@@ -157,7 +156,7 @@ describe("AMQPChannel", () => {
           expectFailure(exit, "Channel closed before confirm")
         })))
 
-    it.effect("a publish rejected before reaching the broker leaves the channel usable", () =>
+    it.live("a publish rejected before reaching the broker leaves the channel usable", () =>
       withResources("SYNC_FAILURE", (r) =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel
@@ -169,7 +168,7 @@ describe("AMQPChannel", () => {
           expect(yield* getContent(r.queue)).toBe("payload")
         })))
 
-    it.effect("the channel reopened after a close is still a confirm channel", () =>
+    it.live("the channel reopened after a close is still a confirm channel", () =>
       withResources("REOPEN", (r) =>
         Effect.gen(function*() {
           const channel = yield* AMQPChannel.AMQPChannel

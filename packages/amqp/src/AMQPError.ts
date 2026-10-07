@@ -21,7 +21,7 @@ export type TypeId = typeof TypeId
  */
 export class AMQPConnectionError extends Schema.TaggedError<AMQPConnectionError>()(
   "AMQPConnectionError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0
@@ -37,7 +37,7 @@ export class AMQPConnectionError extends Schema.TaggedError<AMQPConnectionError>
  */
 export class AMQPChannelError extends Schema.TaggedError<AMQPChannelError>()(
   "AMQPChannelError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect) }
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
 ) {
   /**
    * @since  0.1.0

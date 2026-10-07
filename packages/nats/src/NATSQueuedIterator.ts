@@ -4,7 +4,7 @@
 import type * as NATS from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 import * as Stream from "effect/Stream"
-import type * as utils from "./internal/utils.js"
+import type * as utils from "./internal/utils.ts"
 
 /**
  * @category type ids

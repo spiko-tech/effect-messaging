@@ -1,109 +1,115 @@
 /**
  * @since 0.1.0
  */
-export * as JetStreamBatch from "./JetStreamBatch.js"
+
+// @barrel: Auto-generated exports. Do not edit manually.
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamClient from "./JetStreamClient.js"
+export * as JetStreamBatch from "./JetStreamBatch.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamConsumer from "./JetStreamConsumer.js"
+export * as JetStreamClient from "./JetStreamClient.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.js"
+export * as JetStreamConsumer from "./JetStreamConsumer.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.js"
+export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamLister from "./JetStreamLister.js"
+export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamManager from "./JetStreamManager.js"
+export * as JetStreamLister from "./JetStreamLister.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamMessage from "./JetStreamMessage.js"
+export * as JetStreamManager from "./JetStreamManager.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamPublisher from "./JetStreamPublisher.js"
+export * as JetStreamMessage from "./JetStreamMessage.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamStoredMessage from "./JetStreamStoredMessage.js"
+export * as JetStreamPublisher from "./JetStreamPublisher.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamStream from "./JetStreamStream.js"
+export * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamStreamAPI from "./JetStreamStreamAPI.js"
+export * as JetStreamStream from "./JetStreamStream.ts"
 
 /**
  * @since 0.1.0
  */
-export * as JetStreamSubscriber from "./JetStreamSubscriber.js"
+export * as JetStreamStreamAPI from "./JetStreamStreamAPI.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as JetStreamSubscriber from "./JetStreamSubscriber.ts"
 
 /**
  * @since 0.7.0
  */
-export * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.js"
+export * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSConnection from "./NATSConnection.js"
+export * as NATSConnection from "./NATSConnection.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSError from "./NATSError.js"
+export * as NATSError from "./NATSError.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSHeaders from "./NATSHeaders.js"
+export * as NATSHeaders from "./NATSHeaders.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSMessage from "./NATSMessage.js"
+export * as NATSMessage from "./NATSMessage.ts"
 
 /**
  * @since 0.3.0
  */
-export * as NATSPublisher from "./NATSPublisher.js"
+export * as NATSPublisher from "./NATSPublisher.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSQueuedIterator from "./NATSQueuedIterator.js"
+export * as NATSQueuedIterator from "./NATSQueuedIterator.ts"
 
 /**
  * @since 0.3.0
  */
-export * as NATSSubscriber from "./NATSSubscriber.js"
+export * as NATSSubscriber from "./NATSSubscriber.ts"
 
 /**
  * @since 0.1.0
  */
-export * as NATSSubscription from "./NATSSubscription.js"
+export * as NATSSubscription from "./NATSSubscription.ts"

@@ -74,14 +74,22 @@ class NakImpl implements Nak {
   readonly [TypeId]: TypeId = TypeId
   readonly _tag = "Nak" as const
 
-  constructor(readonly millis?: number) {}
+  readonly millis: number | undefined
+
+  constructor(millis?: number) {
+    this.millis = millis
+  }
 }
 
 class TermImpl implements Term {
   readonly [TypeId]: TypeId = TypeId
   readonly _tag = "Term" as const
 
-  constructor(readonly reason?: string) {}
+  readonly reason: string | undefined
+
+  constructor(reason?: string) {
+    this.reason = reason
+  }
 }
 
 /**

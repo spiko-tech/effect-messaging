@@ -1,7 +1,7 @@
 import { JetStreamClient, JetStreamPublisher, NATSConnection } from "@effect-messaging/nats"
 import { Context, Effect, Layer } from "effect"
 
-class MyPublisher extends Context.Tag("MyPublisher")<MyPublisher, JetStreamPublisher.JetStreamPublisher>() {}
+class MyPublisher extends Context.Service<MyPublisher, JetStreamPublisher.JetStreamPublisher>()("MyPublisher") {}
 
 const program = Effect.gen(function*() {
   const publisher = yield* MyPublisher
@@ -30,10 +30,7 @@ const MainLive = PublisherLive.pipe(
   Layer.provide(NATSConnectionLive)
 )
 
-const runnable = program.pipe(
-  Effect.provide(MainLive),
-  Effect.scoped
-)
+const runnable = program.pipe(Effect.provide(MainLive))
 
 // Run the program
 Effect.runPromise(runnable)

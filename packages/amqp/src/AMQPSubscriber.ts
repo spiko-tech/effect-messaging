@@ -6,17 +6,19 @@ import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import * as SubscriberOTel from "@effect-messaging/core/SubscriberOTel"
 import * as SubscriberRunner from "@effect-messaging/core/SubscriberRunner"
-import * as Headers from "@effect/platform/Headers"
-import * as HttpTraceContext from "@effect/platform/HttpTraceContext"
 import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
+import * as Headers from "effect/http/Headers"
+import * as HttpTraceContext from "effect/http/HttpTraceContext"
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
-import * as AMQPChannel from "./AMQPChannel.js"
-import type * as AMQPConnection from "./AMQPConnection.js"
-import * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
-import type * as AMQPError from "./AMQPError.js"
-import type * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.js"
+import * as Scope from "effect/Scope"
+import * as Stream from "effect/Stream"
+import * as AMQPChannel from "./AMQPChannel.ts"
+import type * as AMQPConnection from "./AMQPConnection.ts"
+import * as AMQPConsumeMessage from "./AMQPConsumeMessage.ts"
+import type * as AMQPError from "./AMQPError.ts"
+import type * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.ts"
 
 /**
  * @category type ids
@@ -80,51 +82,62 @@ const subscribe = (
       queueName,
       options.concurrency ? { prefetch: options.concurrency } : undefined
     )
-    return yield* SubscriberRunner.runStream(consumeStream, {
-      name: "AMQPSubscriber",
-      spanName: (message) => `amqp.consume ${message.fields.routingKey}`,
-      parentSpan: (message) =>
-        Option.getOrUndefined(
-          HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
-        ),
-      spanAttributes: (message) => ({
-        [SubscriberOTel.SpanAttributes.SERVER_ADDRESS]: connectionProperties.host,
-        [SubscriberOTel.SpanAttributes.SERVER_PORT]: connectionProperties.port,
-        [SubscriberOTel.SpanAttributes.MESSAGING_MESSAGE_ID]: message.properties.messageId,
-        [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
-        [SubscriberOTel.SpanAttributes.MESSAGING_SYSTEM]: connectionProperties.product,
-        [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
-        [SubscriberOTel.SpanAttributes.MESSAGING_DESTINATION_NAME]: queueName,
-        [SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_TYPE]: "receive",
-        [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
-        [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
-      }),
-      handler: (message) => app.pipe(Effect.provide(AMQPConsumeMessage.layer(message))),
-      options,
-      onSuccess: (message, span) => (response) =>
-        Match.valueTags(response, {
-          Ack: () =>
-            Effect.gen(function*() {
-              span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "ack")
-              yield* channel.ack(message)
-            }),
-          Nack: (r) =>
-            Effect.gen(function*() {
-              span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nack")
-              yield* channel.nack(message, r.allUpTo, r.requeue)
-            }),
-          Reject: (r) =>
-            Effect.gen(function*() {
-              span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "reject")
-              yield* channel.reject(message, r.requeue)
-            })
+    // Cancel broker consumption before waiting for uninterruptible in-flight handlers to settle.
+    const handlerScope = yield* Scope.make()
+    return yield* Stream.runForEach(consumeStream, (consumedMessage) =>
+      SubscriberRunner.runStream(Stream.succeed(consumedMessage), {
+        name: "AMQPSubscriber",
+        spanName: (message) =>
+          `amqp.consume ${message.fields.routingKey}`,
+        parentSpan: (message) =>
+          Option.getOrUndefined(
+            HttpTraceContext.fromHeaders(Headers.fromInput(message.properties.headers))
+          ),
+        spanAttributes: (message) => ({
+          [SubscriberOTel.SpanAttributes.SERVER_ADDRESS]: connectionProperties.host,
+          [SubscriberOTel.SpanAttributes.SERVER_PORT]: connectionProperties.port,
+          [SubscriberOTel.SpanAttributes.MESSAGING_MESSAGE_ID]: message.properties.messageId,
+          [ATTR_MESSAGING_MESSAGE_CONVERSATION_ID]: message.properties.correlationId,
+          [SubscriberOTel.SpanAttributes.MESSAGING_SYSTEM]: connectionProperties.product,
+          [ATTR_MESSAGING_DESTINATION_SUBSCRIPTION_NAME]: queueName,
+          [SubscriberOTel.SpanAttributes.MESSAGING_DESTINATION_NAME]: queueName,
+          [SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_TYPE]: "receive",
+          [ATTR_MESSAGING_AMQP_DESTINATION_ROUTING_KEY]: message.fields.routingKey,
+          [ATTR_MESSAGING_AMQP_MESSAGE_DELIVERY_TAG]: message.fields.deliveryTag
         }),
-      onError: (message, span) => () =>
-        Effect.gen(function*() {
-          span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nack")
-          yield* channel.nack(message, false, false)
-        })
-    })
+        handler: (message) => app.pipe(Effect.provide(AMQPConsumeMessage.layer(message))),
+        options,
+        onSuccess: (message, span) => (response) =>
+          Match.valueTags(response, {
+            Ack: () =>
+              Effect.gen(function*() {
+                span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "ack")
+                yield* channel.ack(message)
+              }),
+            Nack: (r) =>
+              Effect.gen(function*() {
+                span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nack")
+                yield* channel.nack(message, r.allUpTo, r.requeue)
+              }),
+            Reject: (r) =>
+              Effect.gen(function*() {
+                span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "reject")
+                yield* channel.reject(message, r.requeue)
+              })
+          }),
+        onError: (message, span) => () =>
+          Effect.gen(function*() {
+            span.attribute(SubscriberOTel.SpanAttributes.MESSAGING_OPERATION_NAME, "nack")
+            yield* channel.nack(message, false, false)
+          })
+      }).pipe(Effect.forkIn(handlerScope), Effect.asVoid)).pipe(
+        Effect.mapError((error) =>
+          new SubscriberError.SubscriberError({ reason: "AMQPSubscriber failed to subscribe", cause: error })
+        ),
+        Effect.onExit((exit) =>
+          Scope.close(handlerScope, exit)
+        )
+      )
   })
 
 /** @internal */

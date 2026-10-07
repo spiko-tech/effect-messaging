@@ -1,7 +1,7 @@
 /**
  * @since 0.3.0
  */
-import * as internal from "./internal/SubscriberOTel.js"
+import * as internal from "./internal/SubscriberOTel.ts"
 
 /**
  * @since 0.3.0

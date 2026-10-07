@@ -1,6 +1,6 @@
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4.3.6-management
     container_name: rabbitmq-test
     ports:
       - "5679:5672" # AMQP protocol port
@@ -17,7 +17,7 @@ services:
       retries: 5
 
   nats:
-    image: nats:latest
+    image: nats:2.15.0-alpine
     container_name: nats-test
     ports:
       - "4222:4222" # Client connections

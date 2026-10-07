@@ -2,8 +2,8 @@
  * @since 0.3.0
  */
 import type * as Effect from "effect/Effect"
-import type * as SubscriberApp from "./SubscriberApp.js"
-import type * as SubscriberError from "./SubscriberError.js"
+import type * as SubscriberApp from "./SubscriberApp.ts"
+import type * as SubscriberError from "./SubscriberError.ts"
 
 /**
  * @category type ids

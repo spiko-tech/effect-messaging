@@ -9,10 +9,10 @@ import * as Layer from "effect/Layer"
 import type * as Schedule from "effect/Schedule"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
-import * as AMQPConnection from "./AMQPConnection.js"
-import type * as AMQPConsumeMessage from "./AMQPConsumeMessage.js"
-import type * as AMQPError from "./AMQPError.js"
-import * as internal from "./internal/AMQPChannel.js"
+import * as AMQPConnection from "./AMQPConnection.ts"
+import type * as AMQPConsumeMessage from "./AMQPConsumeMessage.ts"
+import type * as AMQPError from "./AMQPError.ts"
+import * as internal from "./internal/AMQPChannel.ts"
 
 /**
  * @category type ids
@@ -106,7 +106,7 @@ export interface AMQPChannel {
  * @category tags
  * @since 0.1.0
  */
-export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
+export const AMQPChannel = Context.Service<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
 
 /**
  * @category models
@@ -115,7 +115,7 @@ export const AMQPChannel = Context.GenericTag<AMQPChannel>("@effect-messaging/am
 export interface AMQPChannelOptions {
   retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
   retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
-  waitChannelTimeout?: Duration.DurationInput
+  waitChannelTimeout?: Duration.Input
   /**
    * When `true`, the channel is opened in publisher-confirm mode and
    * `publish` / `sendToQueue` resolve only once the broker has acknowledged
@@ -139,7 +139,7 @@ export interface AMQPChannelOptions {
    *
    * @since 0.7.0
    */
-  confirmTimeout?: Duration.DurationInput
+  confirmTimeout?: Duration.Input
 }
 
 /**
@@ -252,7 +252,7 @@ export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
       return channel
     }
   ).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.InternalAMQPChannel.new(options))
+    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.makeInternalAMQPChannel(options))
   )
 
 /**
@@ -263,4 +263,4 @@ export const layer = (options: AMQPChannelOptions = {}): Layer.Layer<
   AMQPChannel,
   AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
   AMQPConnection.AMQPConnection
-> => Layer.scoped(AMQPChannel, make(options))
+> => Layer.effect(AMQPChannel, make(options))

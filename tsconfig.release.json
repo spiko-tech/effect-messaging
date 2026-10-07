@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "include": [],
+  "references": [
+    { "path": "packages/amqp/tsconfig.release.json" },
+    { "path": "packages/core/tsconfig.release.json" },
+    { "path": "packages/nats/tsconfig.release.json" }
+  ]
+}

@@ -18,18 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         uses: ./.github/actions/setup
       - run: pnpm check
-      # - run: pnpm test-types --target '>=5.4'
+      - run: pnpm test-types
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install dependencies
         uses: ./.github/actions/setup
       - run: pnpm circular
@@ -46,24 +46,24 @@ jobs:
     timeout-minutes: 10
     services:
       rabbitmq:
-        image: rabbitmq:3-management
+        image: rabbitmq:4.3.6-management
         ports:
           - 5679:5672
           - 15679:15672
         options: >-
-          --health-cmd "rabbitmqctl node_health_check"
+          --health-cmd "rabbitmq-diagnostics -q ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
       nats:
-        image: nats:alpine
+        image: nats:2.15.0-alpine
         ports:
           - 4222:4222
           - 8222:8222
           - 6222:6222
         options: --name nats
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Start JetStream # temporary hack because it is not possible to configure the entrypoint in services
         run: |
           chmod a+x ${{ github.workspace }}/.github/workflows/nats-entrypoint.sh
@@ -73,6 +73,8 @@ jobs:
         uses: ./.github/actions/setup
       - name: Build
         run: pnpm build
+      - name: Check package entry points
+        run: pnpm check-packages
       - name: Test
         run: pnpm vitest
         env:

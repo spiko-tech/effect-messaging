@@ -76,17 +76,24 @@ class NackImpl implements Nack {
   readonly [TypeId]: TypeId = TypeId
   readonly _tag = "Nack" as const
 
-  constructor(
-    readonly allUpTo?: boolean,
-    readonly requeue?: boolean
-  ) {}
+  readonly allUpTo: boolean | undefined
+  readonly requeue: boolean | undefined
+
+  constructor(allUpTo?: boolean, requeue?: boolean) {
+    this.allUpTo = allUpTo
+    this.requeue = requeue
+  }
 }
 
 class RejectImpl implements Reject {
   readonly [TypeId]: TypeId = TypeId
   readonly _tag = "Reject" as const
 
-  constructor(readonly requeue?: boolean) {}
+  readonly requeue: boolean | undefined
+
+  constructor(requeue?: boolean) {
+    this.requeue = requeue
+  }
 }
 
 /**

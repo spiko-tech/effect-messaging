@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "@effect/vitest"
 import { Cause, Data, Deferred, Effect, Exit, Fiber, Stream, Tracer } from "effect"
 import type * as Duration from "effect/Duration"
+import * as TestClock from "effect/testing/TestClock"
 import type { StreamConfig } from "../src/internal/SubscriberRunner.ts"
 import * as SubscriberRunner from "../src/SubscriberRunner.ts"
 
@@ -27,6 +28,101 @@ const makeConfig = <A, E = never>(opts: {
 })
 
 describe("SubscriberRunner", { concurrent: false }, () => {
+  describe("consumption lifecycle", () => {
+    it.effect.each(["interrupt", "fail"] as const)(
+      "finalizes consumption before draining handlers on %s",
+      (mode) =>
+        Effect.gen(function*() {
+          const started = yield* Deferred.make<void>()
+          const finish = yield* Deferred.make<void>()
+          const failSource = yield* Deferred.make<void>()
+          const stopped = yield* Deferred.make<void>()
+          const events: Array<string> = []
+          const source = Stream.unwrap(Effect.acquireRelease(
+            Effect.succeed(
+              Stream.succeed("msg-1").pipe(Stream.concat(
+                mode === "fail"
+                  ? Stream.fromEffect(Deferred.await(failSource).pipe(Effect.andThen(Effect.fail("source failure"))))
+                  : Stream.never
+              ))
+            ),
+            () =>
+              Effect.sync(() => {
+                events.push("consumption stopped")
+              }).pipe(Effect.andThen(Deferred.succeed(stopped, undefined)))
+          ))
+          const config = makeConfig({
+            handler: () =>
+              Effect.gen(function*() {
+                yield* Deferred.succeed(started, undefined)
+                yield* Deferred.await(finish)
+                events.push("handler finished")
+              }),
+            onSuccess: () => () =>
+              Effect.sync(() => {
+                events.push("acknowledged")
+              })
+          })
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(source, config))
+          yield* Deferred.await(started)
+          if (mode === "fail") {
+            yield* Deferred.succeed(failSource, undefined)
+          } else {
+            yield* Effect.sync(() => fiber.interruptUnsafe())
+          }
+          const cleanup = yield* Effect.forkChild(
+            Deferred.await(stopped).pipe(Effect.timeout("1 second"), Effect.exit)
+          )
+          yield* TestClock.adjust("1 second")
+          const cleanupExit = yield* Fiber.join(cleanup)
+          const pending = fiber.pollUnsafe() === undefined
+          yield* Deferred.succeed(finish, undefined)
+          const exit = yield* Fiber.await(fiber)
+
+          expect(cleanupExit).toEqual(Exit.succeed(undefined))
+          expect(pending).toBe(true)
+          expect(events).toEqual(["consumption stopped", "handler finished", "acknowledged"])
+          if (mode === "fail") {
+            expect(exit).toEqual(Exit.fail(expect.objectContaining({
+              _tag: "SubscriberError",
+              reason: "TestSubscriber failed to subscribe",
+              cause: "source failure"
+            })))
+          } else {
+            expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+          }
+        })
+    )
+
+    it.effect.each(["default", "interruptible"] as const)(
+      "starts concurrent handlers and drains all of them when a finite stream ends (%s)",
+      (mode) =>
+        Effect.gen(function*() {
+          const started = yield* Deferred.make<void>()
+          const finish = yield* Deferred.make<void>()
+          const completed: Array<string> = []
+          let startedCount = 0
+          const handler = Effect.fnUntraced(function*(message: string) {
+            startedCount++
+            if (startedCount === 2) yield* Deferred.succeed(started, undefined)
+            yield* Deferred.await(finish)
+            completed.push(message)
+          })
+          const config = makeConfig({
+            handler: (message) => mode === "interruptible" ? Effect.interruptible(handler(message)) : handler(message)
+          })
+          const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(Stream.make("msg-1", "msg-2"), config))
+          yield* Deferred.await(started)
+          const pending = fiber.pollUnsafe() === undefined
+          yield* Deferred.succeed(finish, undefined)
+          yield* Fiber.join(fiber)
+
+          expect(pending).toBe(true)
+          expect(completed.sort()).toEqual(["msg-1", "msg-2"])
+        })
+    )
+  })
+
   describe("handler behavior on interruption", () => {
     it.live(
       "Should let in-flight handler complete on interrupt",

@@ -15,6 +15,7 @@ import * as Cause from "effect/Cause"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Fiber from "effect/Fiber"
+import * as FiberSet from "effect/FiberSet"
 import * as Stream from "effect/Stream"
 import type * as Tracer from "effect/Tracer"
 import * as SubscriberError from "../SubscriberError.ts"
@@ -149,34 +150,40 @@ export const runStream: <M, ES, RS, A, E, R, EX, RX>(
   config: StreamConfig<M, A, E, R, EX, RX>
 ) => {
   const handle = executeHandler(config)
-  return stream.pipe(
-    Stream.mapEffect((message) => {
-      const parentSpan = config.parentSpan(message)
-      const base = {
-        kind: "consumer",
-        captureStackTrace: false,
-        attributes: config.spanAttributes(message)
-      } as const
-      const spanOptions: Tracer.SpanOptions = config.options.producerSpanRelation === "parent"
-        ? { ...base, parent: parentSpan }
-        : {
-          ...base,
-          root: true,
-          links: parentSpan === undefined
-            ? []
-            : [{ span: parentSpan, attributes: {} }]
-        }
-      return Effect.useSpan(
-        config.spanName(message),
-        spanOptions,
-        (span) => handle(message, span)
-      ).pipe(
-        Effect.ignoreCause
+  return Effect.gen(function*() {
+    // Finalize consumption before waiting for uninterruptible in-flight handlers.
+    const handlers = yield* FiberSet.make<void>()
+    yield* stream.pipe(
+      Stream.runForEach((message) => {
+        const parentSpan = config.parentSpan(message)
+        const base = {
+          kind: "consumer",
+          captureStackTrace: false,
+          attributes: config.spanAttributes(message)
+        } as const
+        const spanOptions: Tracer.SpanOptions = config.options.producerSpanRelation === "parent"
+          ? { ...base, parent: parentSpan }
+          : {
+            ...base,
+            root: true,
+            links: parentSpan === undefined
+              ? []
+              : [{ span: parentSpan, attributes: {} }]
+          }
+        return Effect.useSpan(
+          config.spanName(message),
+          spanOptions,
+          (span) => handle(message, span)
+        ).pipe(
+          Effect.ignoreCause,
+          FiberSet.run(handlers),
+          Effect.asVoid
+        )
+      }),
+      Effect.mapError((error) =>
+        new SubscriberError.SubscriberError({ reason: `${config.name} failed to subscribe`, cause: error })
       )
-    }, { concurrency: "unbounded", unordered: true }),
-    Stream.runDrain,
-    Effect.mapError((error) =>
-      new SubscriberError.SubscriberError({ reason: `${config.name} failed to subscribe`, cause: error })
     )
-  )
+    yield* FiberSet.awaitEmpty(handlers)
+  }).pipe(Effect.scoped)
 }

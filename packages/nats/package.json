@@ -1,6 +1,6 @@
 {
   "name": "@effect-messaging/nats",
-  "version": "0.7.6",
+  "version": "1.0.0-beta.0",
   "description": "An NATS toolkit for Effect",
   "keywords": [
     "typescript",

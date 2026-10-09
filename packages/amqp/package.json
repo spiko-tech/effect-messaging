@@ -1,6 +1,6 @@
 {
   "name": "@effect-messaging/amqp",
-  "version": "0.7.0",
+  "version": "1.0.0-beta.0",
   "description": "An AMQP toolkit for Effect",
   "keywords": [
     "typescript",

@@ -17,6 +17,8 @@ For concepts not covered by that guide, search the source in `node_modules/effec
 ## Code Style
 
 - Use Effect ecosystem libraries (effect, @effect/platform, @effect/vitest)
+- Use Effect Schema codecs for external data; keep binary framing, shared constraints and allocation guards inside them
+- Use typed Effect failures, not exceptions; reserve `Effect.try` for throwing external APIs
 - Import style: `import type * as X from "module"` for types, regular imports for values
 - No semicolons, no trailing commas
 - 2-space indentation, 120 char line width

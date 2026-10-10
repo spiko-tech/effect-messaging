@@ -38,3 +38,13 @@ export * as AMQPSubscriber from "./AMQPSubscriber.ts"
  * @since 0.5.0
  */
 export * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.ts"
+
+/**
+ * @since 0.8.0
+ */
+export * as AMQPTopology from "./AMQPTopology.ts"
+
+/**
+ * @since 0.8.0
+ */
+export * as AMQPTypes from "./AMQPTypes.ts"

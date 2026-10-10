@@ -1,49 +1,16 @@
-import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as AMQPChannel from "../src/AMQPChannel.ts"
-import * as AMQPConnection from "../src/AMQPConnection.ts"
+import * as AMQPNodeConnection from "../src/AMQPNodeConnection.ts"
 
-export const testConnection = AMQPConnection.layer({
-  hostname: "localhost",
-  port: 5679,
+export const broker = {
+  hostname: process.env["AMQP_TEST_HOST"] ?? "localhost",
+  port: Number(process.env["AMQP_TEST_PORT"] ?? 5679),
   username: "guest",
   password: "guest"
-})
+}
 
+export const testConnection = AMQPNodeConnection.layer(broker)
 export const testChannel = AMQPChannel.layer().pipe(Layer.provideMerge(testConnection))
-
 export const testConfirmChannel = AMQPChannel.layer({ confirm: true }).pipe(Layer.provideMerge(testConnection))
-
-export const TEST_EXCHANGE = "TEST_EXCHANGE"
-export const TEST_QUEUE = "TEST_QUEUE"
-export const TEST_SUBJECT = "TEST_SUBJECT"
-
-export const assertTestExchange = Effect.gen(function*() {
-  const channel = yield* AMQPChannel.AMQPChannel
-  return yield* channel.assertExchange(TEST_EXCHANGE, "direct", { durable: true })
-})
-
-export const simulateConnectionClose = Effect.gen(function*() {
-  const connection = yield* AMQPConnection.AMQPConnection
-  yield* connection.close({ removeAllListeners: false })
-})
-
-export const simulateChannelClose = Effect.gen(function*() {
-  const channel = yield* AMQPChannel.AMQPChannel
-  yield* channel.close({ removeAllListeners: false })
-})
-
-export const purgeTestQueue = Effect.gen(function*() {
-  const channel = yield* AMQPChannel.AMQPChannel
-  return yield* channel.purgeQueue(TEST_QUEUE)
-})
-
-export const assertTestQueue = Effect.gen(function*() {
-  const channel = yield* AMQPChannel.AMQPChannel
-  return yield* channel.assertQueue(TEST_QUEUE, { durable: true })
-})
-
-export const bindTestQueue = Effect.gen(function*() {
-  const channel = yield* AMQPChannel.AMQPChannel
-  return yield* channel.bindQueue(TEST_QUEUE, TEST_EXCHANGE, TEST_SUBJECT)
-})
+export const encode = (value: string) => new TextEncoder().encode(value)
+export const decode = (value: Uint8Array) => new TextDecoder().decode(value)

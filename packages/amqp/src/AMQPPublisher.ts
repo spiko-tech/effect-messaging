@@ -1,86 +1,69 @@
 /**
+ * Optional @effect-messaging/core publisher adapter.
  * @since 0.3.0
  */
 import * as Publisher from "@effect-messaging/core/Publisher"
 import * as PublisherError from "@effect-messaging/core/PublisherError"
-import type { Options } from "amqplib"
 import * as Effect from "effect/Effect"
+import * as HttpTraceContext from "effect/http/HttpTraceContext"
 import * as Schedule from "effect/Schedule"
 import * as AMQPChannel from "./AMQPChannel.ts"
 import type * as AMQPError from "./AMQPError.ts"
+import type * as AMQPTypes from "./AMQPTypes.ts"
 
-/**
- * @category type ids
- * @since 0.3.0
- */
+/** @since 0.3.0 */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPPublisher")
 
-/**
- * @category type ids
- * @since 0.3.0
- */
-export type TypeId = typeof TypeId
-
-/**
- * @category models
- * @since 0.3.0
- */
+/** @since 0.3.0 */
 export interface AMQPPublishMessage {
-  exchange: string
-  routingKey: string
-  content: Buffer
-  options?: Options.Publish
+  readonly exchange: string
+  readonly routingKey: string
+  readonly content: Uint8Array
+  readonly options?: AMQPTypes.PublishOptions
 }
 
-/**
- * @category models
- * @since 0.3.0
- */
+/** @since 0.3.0 */
 export interface AMQPPublisher extends Publisher.Publisher<AMQPPublishMessage> {
-  readonly [TypeId]: TypeId
+  readonly [TypeId]: typeof TypeId
 }
 
-/** @internal */
-const publish = (
-  channel: AMQPChannel.AMQPChannel,
-  retrySchedule: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
-) =>
-(message: AMQPPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>
-  channel.publish(message.exchange, message.routingKey, message.content, message.options).pipe(
-    Effect.retry(retrySchedule),
-    Effect.catchTag(
-      "AMQPChannelError",
-      (error) => Effect.fail(new PublisherError.PublisherError({ reason: "Failed to publish message", cause: error }))
-    ),
-    Effect.asVoid
-  )
-
-/**
- * @category constructors
- * @since 0.3.2
- */
+/** @since 0.3.2 */
 export interface AMQPPublisherConfig {
-  /**
-   * Retry schedule for a failed `publish`. Defaults to no retry. With
-   * `confirm: true` a failure may concern a message the broker did receive,
-   * so a retry can deliver it twice.
-   */
-  readonly retrySchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
+  /** Explicitly opting into retries can duplicate messages whose outcome is Unknown. */
+  readonly retrySchedule?: Schedule.Schedule<unknown, AMQPError.AMQPError>
 }
 
-/**
- * @category constructors
- * @since 0.3.0
- */
-export const make = (config?: AMQPPublisherConfig): Effect.Effect<AMQPPublisher, never, AMQPChannel.AMQPChannel> =>
+/** @since 0.3.0 */
+export const make = (config: AMQPPublisherConfig = {}): Effect.Effect<AMQPPublisher, never, AMQPChannel.AMQPChannel> =>
   Effect.gen(function*() {
     const channel = yield* AMQPChannel.AMQPChannel
-
-    const publisher: AMQPPublisher = {
+    return {
       [TypeId]: TypeId,
       [Publisher.TypeId]: Publisher.TypeId,
-      publish: publish(channel, config?.retrySchedule ?? Schedule.recurs(0))
+      publish: (message: AMQPPublishMessage) =>
+        Effect.useSpan(
+          `amqp.publish ${message.routingKey}`,
+          {
+            kind: "producer",
+            attributes: {
+              "messaging.system": "rabbitmq",
+              "messaging.operation.name": "publish",
+              "messaging.operation.type": "send",
+              "messaging.destination.name": message.exchange,
+              "messaging.rabbitmq.destination.routing_key": message.routingKey,
+              "messaging.message.id": message.options?.messageId
+            }
+          },
+          (span) =>
+            channel.publish(message.exchange, message.routingKey, message.content, {
+              ...message.options,
+              headers: { ...message.options?.headers, ...HttpTraceContext.toHeaders(span) }
+            }).pipe(
+              Effect.retry(config.retrySchedule ?? Schedule.recurs(0)),
+              Effect.mapError((cause) =>
+                new PublisherError.PublisherError({ reason: "Failed to publish message", cause })
+              )
+            )
+        )
     }
-
-    return publisher
   })

@@ -1,312 +1,156 @@
-import { describe, expect, it, vi } from "@effect/vitest"
-import type { Channel } from "amqplib"
-import { Cause, Deferred, Effect, Exit, Fiber, Option, Ref, Schedule, Stream, SubscriptionRef } from "effect"
+import { describe, expect, it } from "@effect/vitest"
+import { Deferred, Effect, Exit, Fiber, Queue, Schedule, Stream } from "effect"
 import * as TestClock from "effect/testing/TestClock"
-import { EventEmitter } from "node:events"
-import { closeChannel, InternalAMQPChannel } from "../src/internal/AMQPChannel.ts"
-import { closeStream, errorStream, trackResource } from "../src/internal/closeStream.ts"
+import * as AMQPConnection from "../src/AMQPConnection.ts"
+import * as Codec from "../src/internal/codec.ts"
+import { expectFailure } from "./assertions.ts"
+import { encode, testConnection } from "./dependencies.ts"
+import { makeBroker, nextMethod } from "./syntheticBroker.ts"
 
-const makeResource = () => trackResource(new EventEmitter() as unknown as Channel)
-
-const waitForListeners = (resource: Channel, eventName: string, count: number) =>
-  Effect.repeat(Effect.yieldNow, { until: () => resource.listenerCount(eventName) >= count })
-
-const makeClosingChannel = Effect.fnUntraced(function*() {
-  const started = yield* Deferred.make<void>()
-  let finishConfirms = () => {}
-  const resource = Object.assign(makeResource(), {
-    close: vi.fn(async () => {
-      resource.emit("close")
-    }),
-    waitForConfirms: vi.fn(() =>
-      new Promise<void>((resolve) => {
-        finishConfirms = resolve
-        Deferred.doneUnsafe(started, Effect.void)
-      })
-    )
-  })
-  const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(resource))
-  const internal = InternalAMQPChannel.of({
-    channelRef,
-    serverProperties: {
-      host: "localhost",
-      product: "RabbitMQ",
-      version: "test",
-      platform: "test",
-      information: "test",
-      hostname: "localhost",
-      port: "5679"
-    },
-    retryConnectionSchedule: Schedule.spaced("1 second"),
-    retryConsumptionSchedule: Schedule.spaced("1 second"),
-    waitChannelTimeout: "5 seconds",
-    confirm: true,
-    confirmTimeout: "30 seconds"
-  })
-  return {
-    resource,
-    channelRef,
-    started,
-    finishConfirms: () => finishConfirms(),
-    close: closeChannel().pipe(Effect.provideService(InternalAMQPChannel, internal))
-  }
-})
-
-// Vitest clears all mocks before each test, so lifecycle mock assertions must not run concurrently.
-describe("AMQP resource lifecycle", { concurrent: false }, () => {
-  it.live("observes resources closed before monitor registration", () =>
+describe("AMQP resource lifecycle", () => {
+  it.effect("pipelines confirms and correlates multiple acknowledgements and individual nacks", () =>
     Effect.gen(function*() {
-      const resource = makeResource()
-      const ref = yield* SubscriptionRef.make(Option.some(resource))
-      resource.emit("close")
+      const broker = yield* makeBroker()
+      const connection = yield* AMQPConnection.make(broker.factory)
+      const session = yield* Queue.take(broker.sessions)
+      const channel = yield* connection.createChannel({ confirm: true, maxUnconfirmed: 3 })
+      const first = yield* channel.publish("", "queue", encode("first")).pipe(Effect.forkChild)
+      const channelId = yield* Queue.take(session.publishes)
+      const second = yield* channel.publish("", "queue", encode("second")).pipe(Effect.forkChild)
+      yield* Queue.take(session.publishes)
+      const third = yield* channel.publish("", "queue", encode("third")).pipe(Effect.exit, Effect.forkChild)
+      yield* Queue.take(session.publishes)
+      yield* session.reply(channelId, 60, 80, { deliveryTag: 2n, multiple: true })
+      yield* Fiber.join(first)
+      yield* Fiber.join(second)
+      yield* session.reply(channelId, 60, 120, { deliveryTag: 3n, multiple: false, requeue: false })
+      expectFailure(yield* Fiber.join(third), { _tag: "AMQPPublishError", outcome: "Nacked" })
+    }).pipe(Effect.scoped))
 
-      const events = yield* closeStream(ref).pipe(Stream.take(1), Stream.runCollect, Effect.timeout("1 second"))
-
-      expect(events).toEqual([undefined])
-    }))
-
-  it.live("delivers a close event before ending its stream", () =>
+  it.effect("keeps confirms moving while a consumer does not drain its mailbox", () =>
     Effect.gen(function*() {
-      const resource = makeResource()
-      const ref = yield* SubscriptionRef.make(Option.some(resource))
-      const fiber = yield* Effect.forkChild(closeStream(ref).pipe(Stream.take(1), Stream.runCollect))
-      yield* waitForListeners(resource, "close", 3)
-
-      resource.emit("close")
-
-      expect(yield* Fiber.join(fiber)).toEqual([undefined])
-      expect(resource.listenerCount("close")).toBe(0)
-    }))
-
-  it.live("removes monitor listeners when interrupted", () =>
-    Effect.gen(function*() {
-      const resource = makeResource()
-      const ref = yield* SubscriptionRef.make(Option.some(resource))
-      const fiber = yield* Effect.forkChild(closeStream(ref).pipe(Stream.runDrain))
-      yield* waitForListeners(resource, "close", 3)
-
-      yield* Fiber.interrupt(fiber)
-
-      expect(resource.listenerCount("close")).toBe(1)
-    }))
-
-  it.live("handles errors before and after monitor registration", () =>
-    Effect.gen(function*() {
-      const resource = makeResource()
-      const error = new Error("channel failure")
-      expect(() => resource.emit("error", error)).not.toThrow()
-      const ref = yield* SubscriptionRef.make(Option.some(resource))
-      const fiber = yield* Effect.forkChild(errorStream(ref).pipe(Stream.take(1), Stream.runCollect))
-      yield* waitForListeners(resource, "error", 2)
-
-      resource.emit("error", error)
-
-      expect(yield* Fiber.join(fiber)).toEqual([error])
-      expect(resource.listenerCount("error")).toBe(1)
-      expect(resource.listenerCount("close")).toBe(1)
-    }))
-
-  it.effect("closes a channel after an interrupted confirm drain", () =>
-    Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
-
-      yield* Fiber.interrupt(closing)
-
-      expect(channel.resource.close).toHaveBeenCalledTimes(1)
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.none())
-      const exit = yield* Fiber.await(closing)
-      expect(Exit.isFailure(exit)).toBe(true)
-      if (Exit.isFailure(exit)) {
-        expect(Cause.hasInterruptsOnly(exit.cause)).toBe(true)
-      }
-      channel.finishConfirms()
-    }))
-
-  it.effect("drains confirms before closing normally", () =>
-    Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
-
-      expect(channel.resource.close).not.toHaveBeenCalled()
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.some(channel.resource))
-      channel.finishConfirms()
-      yield* Fiber.join(closing)
-
-      expect(channel.resource.close).toHaveBeenCalledTimes(1)
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.none())
-    }))
-
-  it.effect("bounds confirm draining in an uninterruptible finalizer", () =>
-    Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const closing = yield* Effect.forkChild(
-        Effect.void.pipe(Effect.ensuring(channel.close))
-      )
-      yield* Deferred.await(channel.started)
-
-      yield* TestClock.adjust("30 seconds")
-      yield* Fiber.join(closing)
-
-      expect(channel.resource.close).toHaveBeenCalledTimes(1)
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.none())
-      channel.finishConfirms()
-    }))
-
-  it.effect("allows cancellation before acquiring the channel lock", () =>
-    Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const locked = yield* Deferred.make<void>()
-      const release = yield* Deferred.make<void>()
-      const closeStarted = yield* Deferred.make<void>()
-      const holding = yield* Effect.forkChild(
-        SubscriptionRef.updateEffect(channel.channelRef, (current) =>
-          Deferred.succeed(locked, undefined).pipe(
-            Effect.andThen(Deferred.await(release)),
-            Effect.as(current)
-          ))
-      )
-      yield* Deferred.await(locked)
-      const closing = yield* Effect.forkChild(
-        Deferred.succeed(closeStarted, undefined).pipe(Effect.andThen(channel.close))
-      )
-      yield* Deferred.await(closeStarted)
-      const interruption = yield* Effect.forkChild(
-        Fiber.interrupt(closing).pipe(Effect.timeout("1 second"), Effect.exit)
-      )
-
-      yield* TestClock.adjust("1 second")
-      const result = yield* Fiber.join(interruption)
-      yield* Deferred.succeed(release, undefined)
-      yield* Fiber.join(holding)
-
-      expect(result).toEqual(Exit.succeed(undefined))
-      expect(channel.resource.close).not.toHaveBeenCalled()
-      expect(channel.resource.waitForConfirms).not.toHaveBeenCalled()
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.some(channel.resource))
-    }))
-
-  it.effect("holds the channel lock until interrupted native close finishes", () =>
-    Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const nativeCloseStarted = yield* Deferred.make<void>()
-      let finishClose = () => {}
-      channel.resource.close.mockImplementation(() =>
-        new Promise<void>((resolve) => {
-          finishClose = resolve
-          Deferred.doneUnsafe(nativeCloseStarted, Effect.void)
+      const broker = yield* makeBroker()
+      const connection = yield* AMQPConnection.make(broker.factory, { maxPendingOperations: 4 })
+      const session = yield* Queue.take(broker.sessions)
+      const channel = yield* connection.createChannel({ confirm: true })
+      const stalled = yield* Deferred.make<void>()
+      const messages = yield* channel.consume("queue", { prefetch: 4 })
+      yield* messages.pipe(Stream.runForEach(() => Deferred.await(stalled)), Effect.forkChild)
+      const consume = yield* nextMethod(session, 60, 20)
+      for (let i = 1; i <= 4; i++) {
+        yield* session.reply(consume.channel, 60, 60, {
+          consumerTag: "synthetic-consumer",
+          deliveryTag: BigInt(i),
+          redelivered: false,
+          exchange: "",
+          routingKey: "queue"
         })
-      )
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
-      const interruption = yield* Effect.forkChild(Fiber.interrupt(closing))
-      yield* Deferred.await(nativeCloseStarted)
-      const replacement = makeResource()
-      const replacing = yield* Effect.forkChild(
-        SubscriptionRef.set(channel.channelRef, Option.some<Channel>(replacement))
-      )
+        yield* session.send(yield* Codec.encodeContentHeader(consume.channel, 1n, {}))
+        yield* session.send(yield* Codec.encodeFrame(3, consume.channel, encode("x")))
+      }
+      yield* session.send(yield* Codec.encodeFrame(8, 0, new Uint8Array()))
+      const publishing = yield* channel.publish("", "queue", encode("confirmed")).pipe(Effect.forkChild)
+      const channelId = yield* Queue.take(session.publishes)
+      yield* session.reply(channelId, 60, 80, { deliveryTag: 1n, multiple: false })
+      yield* Fiber.join(publishing)
+      expect((yield* connection.state).state).toBe("Ready")
+      yield* Deferred.succeed(stalled, undefined)
+    }).pipe(Effect.scoped))
 
-      yield* TestClock.adjust("1 second")
-      const closePending = interruption.pollUnsafe() === undefined
-      const replacementPending = replacing.pollUnsafe() === undefined
-      const duringClose = yield* SubscriptionRef.get(channel.channelRef)
-      finishClose()
-      yield* Fiber.join(interruption)
-      yield* Fiber.join(replacing)
-
-      expect(closePending).toBe(true)
-      expect(replacementPending).toBe(true)
-      expect(duringClose).toEqual(Option.some(channel.resource))
-      expect(channel.resource.close).toHaveBeenCalledTimes(1)
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.some(replacement))
-      channel.finishConfirms()
-    }))
-
-  it.effect("preserves a replacement queued behind an interrupted close", () =>
+  it.effect("retires a cancelled RPC session so late replies cannot complete the next RPC", () =>
     Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const replacement = Object.assign(makeResource(), { close: vi.fn(async () => {}) })
-      const watching = yield* Deferred.make<void>()
-      const replacingStarted = yield* Deferred.make<void>()
-      const replacementCommitted = yield* Deferred.make<void>()
-      const withPermit = channel.channelRef.semaphore.withPermit
-      let firstPermit = true
-      // Pause after releasing the first lock so the replacement commits before failed-update repair.
-      vi.spyOn(channel.channelRef.semaphore, "withPermit").mockImplementation((self) => {
-        const locked = withPermit(self)
-        if (!firstPermit) return locked
-        firstPermit = false
-        return locked.pipe(Effect.onExit(() => Deferred.await(replacementCommitted)))
+      const broker = yield* makeBroker()
+      const connection = yield* AMQPConnection.make(broker.factory, { retryConnectionSchedule: Schedule.recurs(3) })
+      const session = yield* Queue.take(broker.sessions)
+      const channel = yield* connection.createChannel()
+      const first = yield* channel.assertQueue("first").pipe(Effect.forkChild)
+      const request = yield* nextMethod(session, 50, 10)
+      yield* Fiber.interrupt(first)
+      const replacement = yield* Queue.take(broker.sessions)
+      yield* connection.awaitReady
+      const second = yield* channel.assertQueue("second").pipe(Effect.forkChild)
+      const next = yield* nextMethod(replacement, 50, 10)
+      yield* session.reply(request.channel, 50, 11, { queue: "first", messageCount: 0, consumerCount: 0 })
+      yield* replacement.reply(next.channel, 50, 11, { queue: "second", messageCount: 0, consumerCount: 0 })
+      expect((yield* Fiber.join(second)).queue).toBe("second")
+    }).pipe(Effect.scoped))
+
+  it.effect("classifies a lost in-flight confirm as Unknown and never replays it", () =>
+    Effect.gen(function*() {
+      const broker = yield* makeBroker()
+      const connection = yield* AMQPConnection.make(broker.factory, {
+        retryConnectionSchedule: Schedule.recurs(3)
       })
-      const updates = yield* Ref.make<Array<Option.Option<Channel>>>([])
-      const changes = yield* Effect.forkChild(
-        SubscriptionRef.changes(channel.channelRef).pipe(
-          Stream.tap((current) => Ref.update(updates, (values) => [...values, current])),
-          Stream.tap(() => Deferred.succeed(watching, undefined)),
-          Stream.runDrain,
-          Effect.timeout("1 second"),
-          Effect.exit
-        )
-      )
-      yield* Deferred.await(watching)
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
-      const replacing = yield* Effect.forkChild(
-        Deferred.succeed(replacingStarted, undefined).pipe(
-          Effect.andThen(SubscriptionRef.set(channel.channelRef, Option.some<Channel>(replacement))),
-          Effect.andThen(Deferred.succeed(replacementCommitted, undefined))
-        )
-      )
-      yield* Deferred.await(replacingStarted)
+      const session = yield* Queue.take(broker.sessions)
+      const channel = yield* connection.createChannel({ confirm: true })
+      const publishing = yield* channel.publish("", "queue", encode("payload")).pipe(Effect.exit, Effect.forkChild)
+      yield* Queue.take(session.publishes)
+      yield* session.disconnect
+      expectFailure(yield* Fiber.join(publishing), { _tag: "AMQPPublishError", outcome: "Unknown" })
+      yield* connection.awaitReady
+      const recovered = yield* Queue.take(broker.sessions)
+      const next = yield* channel.publish("", "queue", encode("next")).pipe(Effect.forkChild)
+      const channelId = yield* Queue.take(recovered.publishes)
+      // A replay would consume sequence 1 and leave this fresh publish waiting for sequence 2.
+      yield* recovered.reply(channelId, 60, 80, { deliveryTag: 1n, multiple: false })
+      yield* Fiber.join(next)
+      expect(yield* Queue.size(recovered.publishes)).toBe(0)
+    }).pipe(Effect.scoped))
 
-      yield* Fiber.interrupt(closing)
-      yield* Fiber.join(replacing)
-      yield* TestClock.adjust("1 second")
-
-      expect(channel.resource.close).toHaveBeenCalledTimes(1)
-      expect(replacement.close).not.toHaveBeenCalled()
-      expect(yield* SubscriptionRef.get(channel.channelRef)).toEqual(Option.some(replacement))
-      expect(yield* Fiber.join(changes)).toEqual(Exit.fail(expect.objectContaining({ _tag: "TimeoutError" })))
-      const replacements = (yield* Ref.get(updates)).filter((current) =>
-        Option.isSome(current) && current.value === replacement
-      )
-      expect(replacements).toHaveLength(1)
-      channel.finishConfirms()
-    }))
-
-  it.effect("does not replay intentional shutdown to a late monitor", () =>
+  it.effect("times out a missing confirm with an Unknown outcome", () =>
     Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
-      const monitor = yield* Effect.forkChild(
-        closeStream(channel.channelRef).pipe(Stream.take(1), Stream.runCollect, Effect.timeout("1 second"), Effect.exit)
-      )
-
+      const broker = yield* makeBroker()
+      const connection = yield* AMQPConnection.make(broker.factory)
+      const session = yield* Queue.take(broker.sessions)
+      const channel = yield* connection.createChannel({ confirm: true, confirmTimeout: "1 second" })
+      const publishing = yield* channel.publish("", "queue", encode("payload")).pipe(Effect.exit, Effect.forkChild)
+      yield* Queue.take(session.publishes)
       yield* TestClock.adjust("1 second")
+      expectFailure(yield* Fiber.join(publishing), { _tag: "AMQPPublishError", outcome: "Unknown" })
+    }).pipe(Effect.scoped))
 
-      expect(yield* Fiber.join(monitor)).toEqual(Exit.fail(expect.objectContaining({ _tag: "TimeoutError" })))
-      channel.finishConfirms()
-      yield* Fiber.join(closing)
-    }))
-
-  it.effect("does not reconnect if the channel closes during intentional shutdown", () =>
+  it.live("permanently closes a channel without closing its connection", () =>
     Effect.gen(function*() {
-      const channel = yield* makeClosingChannel()
-      const monitor = yield* Effect.forkChild(
-        closeStream(channel.channelRef).pipe(Stream.take(1), Stream.runCollect, Effect.timeout("1 second"), Effect.exit)
-      )
-      yield* waitForListeners(channel.resource, "close", 3)
-      const closing = yield* Effect.forkChild(channel.close)
-      yield* Deferred.await(channel.started)
+      const connection = yield* AMQPConnection.AMQPConnection
+      const channel = yield* connection.createChannel()
+      const queue = yield* channel.assertQueue("", { exclusive: true })
+      yield* channel.close
+      yield* channel.close
+      expect(Exit.isFailure(yield* channel.sendToQueue(queue, encode("closed")).pipe(Effect.exit))).toBe(true)
+      yield* connection.reconnect
+      expect(Exit.isFailure(yield* channel.checkQueue(queue).pipe(Effect.exit))).toBe(true)
+      const replacement = yield* connection.createChannel()
+      yield* replacement.assertQueue("", { exclusive: true })
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 
-      channel.resource.emit("close")
-      yield* TestClock.adjust("1 second")
+  it.live("does not restore consumers cancelled before recovery", () =>
+    Effect.gen(function*() {
+      const connection = yield* AMQPConnection.AMQPConnection
+      const channel = yield* connection.createChannel()
+      const queue = yield* channel.assertQueue("", { exclusive: true })
+      const consumer = yield* channel.consume(queue, { consumerTag: "lifecycle-cancel" })
+      const consuming = yield* consumer.pipe(Stream.runDrain, Effect.forkChild)
+      expect((yield* channel.checkQueue(queue)).consumerCount).toBe(1)
+      yield* Fiber.interrupt(consuming)
+      expect((yield* channel.checkQueue(queue)).consumerCount).toBe(0)
+      for (let i = 0; i < 3; i++) {
+        yield* connection.reconnect
+        expect((yield* channel.checkQueue(queue)).consumerCount).toBe(0)
+      }
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 
-      expect(yield* Fiber.join(monitor)).toEqual(Exit.fail(expect.objectContaining({ _tag: "TimeoutError" })))
-      channel.finishConfirms()
-      yield* Fiber.join(closing)
-    }))
+  it.live("closes idempotently and never reconnects after shutdown", () =>
+    Effect.gen(function*() {
+      const connection = yield* AMQPConnection.AMQPConnection
+      const channel = yield* connection.createChannel()
+      yield* channel.assertQueue("", { exclusive: true })
+      yield* connection.reconnect
+      yield* connection.close
+      yield* connection.close
+      const state = yield* connection.state
+      expect(state.state).toBe("Closed")
+      expect(Exit.isFailure(yield* connection.reconnect.pipe(Effect.exit))).toBe(true)
+      expect(yield* connection.state).toEqual(state)
+      expect(Exit.isFailure(yield* connection.createChannel().pipe(Effect.exit))).toBe(true)
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 })

@@ -1,512 +1,283 @@
-import type { Mock } from "@effect/vitest"
-import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Schedule } from "effect"
+import { describe, expect, it } from "@effect/vitest"
+import { Deferred, Effect, Fiber, Layer, Option, Queue, Ref, Stream } from "effect"
+import * as TestClock from "effect/testing/TestClock"
 import * as AMQPChannel from "../src/AMQPChannel.ts"
+import * as AMQPConnection from "../src/AMQPConnection.ts"
 import * as AMQPConsumeMessage from "../src/AMQPConsumeMessage.ts"
-import * as AMQPPublisher from "../src/AMQPPublisher.ts"
 import * as AMQPSubscriber from "../src/AMQPSubscriber.ts"
 import * as AMQPSubscriberResponse from "../src/AMQPSubscriberResponse.ts"
-import {
-  assertTestExchange,
-  assertTestQueue,
-  bindTestQueue,
-  purgeTestQueue,
-  simulateChannelClose,
-  simulateConnectionClose,
-  TEST_EXCHANGE,
-  TEST_QUEUE,
-  TEST_SUBJECT,
-  testChannel
-} from "./dependencies.ts"
+import { decode, encode, testConfirmChannel } from "./dependencies.ts"
 
-const publishAndAssertConsume = (
-  { content, onMessage, publisher, times }: {
-    publisher: AMQPPublisher.AMQPPublisher
-    onMessage: Mock<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>
-    content: Buffer
-    times: number
-  }
-) =>
-  Effect.gen(function*() {
-    yield* publisher.publish({
-      exchange: TEST_EXCHANGE,
-      routingKey: TEST_SUBJECT,
-      content
-    })
-
-    // Wait for the message to be consumed
-    yield* Effect.sleep("100 millis")
-    // Verify the message was consumed
-    expect(onMessage).toHaveBeenCalledTimes(times)
-    expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
-      fields: expect.objectContaining({ routingKey: TEST_SUBJECT }),
-      content
-    }))
-  })
-
-const setup = Effect.gen(function*() {
-  // Create the test exchange, queue and binding
-  yield* assertTestExchange
-  yield* assertTestQueue
-  yield* bindTestQueue
-  // Purge the test queue
-  yield* purgeTestQueue
+const message = (deliveryTag: bigint, content = "payload"): AMQPConsumeMessage.AMQPConsumeMessage => ({
+  content: encode(content),
+  fields: { consumerTag: "test-consumer", deliveryTag, redelivered: false, exchange: "test", routingKey: "key" },
+  properties: {}
 })
 
-describe("AMQPChannel", { concurrent: false }, () => {
-  describe("subscribe", () => {
-    it.live("Should consume published events even when connection or channel fails", () =>
-      Effect.gen(function*() {
-        yield* setup
+// Public adapter boundary: missing operations fail loudly instead of mocking wire-engine internals.
+const adapterFixture = Effect.fnUntraced(function*() {
+  const deliveries = yield* Queue.unbounded<AMQPConsumeMessage.AMQPConsumeMessage>()
+  const settled = yield* Queue.unbounded<{
+    readonly kind: "ack" | "nack" | "reject"
+    readonly deliveryTag: bigint
+    readonly requeue?: boolean | undefined
+  }>()
+  const cancelled = yield* Deferred.make<void>()
+  const connection = yield* AMQPConnection.AMQPConnection.pipe(Effect.provide(Layer.mock(
+    AMQPConnection.AMQPConnection,
+    {
+      [AMQPConnection.TypeId]: AMQPConnection.TypeId,
+      serverProperties: Effect.succeed({ product: "RabbitMQ", hostname: "localhost", port: 5679 })
+    }
+  )))
+  const layer = Layer.mock(AMQPChannel.AMQPChannel, {
+    [AMQPChannel.TypeId]: AMQPChannel.TypeId,
+    connection,
+    consume: () =>
+      Effect.succeed(
+        Stream.fromQueue(deliveries).pipe(
+          Stream.ensuring(Deferred.succeed(cancelled, undefined))
+        )
+      ),
+    ack: (m) => Queue.offer(settled, { kind: "ack", deliveryTag: m.fields.deliveryTag }).pipe(Effect.asVoid),
+    nack: (m, _allUpTo, requeue) =>
+      Queue.offer(settled, {
+        kind: "nack",
+        deliveryTag: m.fields.deliveryTag,
+        requeue
+      }).pipe(Effect.asVoid),
+    reject: (m, requeue) =>
+      Queue.offer(settled, {
+        kind: "reject",
+        deliveryTag: m.fields.deliveryTag,
+        requeue
+      }).pipe(Effect.asVoid)
+  })
+  return { deliveries, settled, cancelled, layer }
+})
 
-        const publisher = yield* AMQPPublisher.make({
-          retrySchedule: Schedule.exponential("100 millis", 1.5).pipe(
-            Schedule.jittered,
-            (schedule) => Schedule.max([schedule, Schedule.recurs(10)])
+describe("AMQPSubscriber", () => {
+  it.effect("interrupts timed-out handlers and nacks without requeue", () =>
+    Effect.gen(function*() {
+      const fixture = yield* adapterFixture()
+      const started = yield* Deferred.make<void>()
+      const interrupted = yield* Deferred.make<void>()
+      const program = Effect.gen(function*() {
+        const subscriber = yield* AMQPSubscriber.make("test", { handlerTimeout: "1 second" })
+        return yield* subscriber.subscribe(
+          Deferred.succeed(started, undefined).pipe(
+            Effect.andThen(Effect.never),
+            Effect.onInterrupt(() => Deferred.succeed(interrupted, undefined))
           )
-        })
-        const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
+        )
+      })
+      const fiber = yield* program.pipe(Effect.provide(fixture.layer), Effect.forkChild)
+      yield* Queue.offer(fixture.deliveries, message(1n))
+      yield* Deferred.await(started)
+      yield* TestClock.adjust("1 second")
+      yield* Deferred.await(interrupted)
+      expect(yield* Queue.take(fixture.settled)).toEqual({ kind: "nack", deliveryTag: 1n, requeue: false })
+      yield* Fiber.interrupt(fiber)
+    }))
 
-        const onMessage = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-
-        // Start the subscription
-        yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
-          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-          onMessage(message)
+  it.effect("cancels consumption before draining an in-flight uninterruptible handler", () =>
+    Effect.gen(function*() {
+      const fixture = yield* adapterFixture()
+      const started = yield* Deferred.make<void>()
+      const finish = yield* Deferred.make<void>()
+      const program = Effect.gen(function*() {
+        const subscriber = yield* AMQPSubscriber.make("test", { handlerTimeout: "10 seconds" })
+        return yield* subscriber.subscribe(Effect.gen(function*() {
+          yield* Deferred.succeed(started, undefined)
+          yield* Deferred.await(finish)
           return AMQPSubscriberResponse.ack()
-        })))
-
-        // Message 1
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 1"),
-          times: 1
-        })
-
-        // Message 2
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 2"),
-          times: 2
-        })
-
-        // simulate connection failure
-        yield* simulateConnectionClose
-
-        // Message 3
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 3"),
-          times: 3
-        })
-
-        // Message 4
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 4"),
-          times: 4
-        })
-
-        // simulate channel failure
-        yield* simulateChannelClose
-
-        // Message 5
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 5"),
-          times: 5
-        })
-
-        // Message 6
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 6"),
-          times: 6
-        })
-
-        // simulate connection failure again
-        yield* simulateConnectionClose
-
-        // Message 7
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 7"),
-          times: 7
-        })
-
-        // Message 8
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: Buffer.from("Message 8"),
-          times: 8
-        })
-      }).pipe(Effect.provide(testChannel)))
-  })
-
-  describe("handler timeout", { concurrent: false }, () => {
-    it.live(
-      "Should interrupt the handler when it exceeds the timeout, nacking the message",
-      () =>
-        Effect.gen(function*() {
-          yield* setup
-
-          const publisher = yield* AMQPPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            onHandlingStarted(message)
-            // long running task that exceeds the timeout
-            yield* Effect.sleep("400 millis")
-            onHandlingFinished(message)
-            return AMQPSubscriberResponse.ack()
-          })
-
-          const startSubscription = Effect.gen(function*() {
-            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
-              handlerTimeout: "150 millis"
-            })
-            yield* subscriber.subscribe(handler)
-          }).pipe(Effect.provide(AMQPChannel.layer()))
-
-          // Start the subscription
-          yield* Effect.forkChild(startSubscription)
-
-          yield* publisher.publish({
-            exchange: TEST_EXCHANGE,
-            routingKey: TEST_SUBJECT,
-            content: Buffer.from("My Message that should timeout")
-          })
-
-          // Wait for the handler to start processing
-          yield* Effect.sleep("100 millis")
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Wait for the timeout to fire (150 millis) + some margin
-          yield* Effect.sleep("300 millis")
-
-          // The handler should have been interrupted by the timeout, NOT run to completion
-          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-
-          // Start a new subscription to verify the message is NOT redelivered (it was nacked without requeue)
-          yield* Effect.forkChild(startSubscription)
-
-          yield* Effect.sleep("300 millis")
-          // The message should not be consumed again because it was nacked by the timeout
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-        }).pipe(Effect.provide(testChannel)),
-      { timeout: 15000 }
-    )
-  })
-
-  describe("handler timeout + interruption", { concurrent: false }, () => {
-    it.live(
-      "Should let in-flight handler finish even when handlerTimeout is configured and fiber is interrupted",
-      () =>
-        Effect.gen(function*() {
-          yield* setup
-
-          const publisher = yield* AMQPPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            onHandlingStarted(message)
-            yield* Effect.sleep("300 millis")
-            onHandlingFinished(message)
-            return AMQPSubscriberResponse.ack()
-          })
-
-          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE, {
-            handlerTimeout: "500 millis"
-          })
-
-          const subscriptionFiber = yield* Effect.forkChild(subscriber.subscribe(handler))
-
-          yield* Effect.sleep("100 millis")
-
-          yield* publisher.publish({
-            exchange: TEST_EXCHANGE,
-            routingKey: TEST_SUBJECT,
-            content: Buffer.from("My Message that will NOT be interrupted")
-          })
-
-          yield* Effect.sleep("200 millis")
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Interrupt the subscription fiber while handler is still running
-          yield* Effect.sync(() => subscriptionFiber.interruptUnsafe(subscriptionFiber.id))
-
-          // Handler should complete despite the interrupt
-          yield* Effect.sleep("300 millis")
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(Effect.provide(testChannel)),
-      { timeout: 15000 }
-    )
-  })
-
-  describe("consumer cancellation on interruption", { concurrent: false }, () => {
-    it.live(
-      "Should cancel the consumer on interrupt, let in-flight handler complete, and leave new messages for the next subscriber",
-      () =>
-        Effect.gen(function*() {
-          yield* setup
-
-          const publisher = yield* AMQPPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            onHandlingStarted(message)
-            // Long running task - 600ms
-            yield* Effect.sleep("600 millis")
-            onHandlingFinished(message)
-            return AMQPSubscriberResponse.ack()
-          })
-
-          const startSubscription = Effect.gen(function*() {
-            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
-            yield* subscriber.subscribe(handler)
-          }).pipe(Effect.provide(AMQPChannel.layer()))
-
-          // Start the subscription
-          const subscriptionFiber = yield* Effect.forkChild(startSubscription)
-
-          // Publish message A and wait for handler to start processing
-          yield* publisher.publish({
-            exchange: TEST_EXCHANGE,
-            routingKey: TEST_SUBJECT,
-            content: Buffer.from("Message A")
-          })
-
-          yield* Effect.sleep("100 millis")
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-
-          // Interrupt the subscription fiber (simulating graceful shutdown).
-          // The consumer should stop accepting new messages, but the in-flight handler should continue.
-          yield* Effect.sync(() => subscriptionFiber.interruptUnsafe(subscriptionFiber.id))
-
-          // Publish message B after interrupt - it should NOT be picked up by the cancelled consumer.
-          yield* Effect.sleep("200 millis")
-          yield* publisher.publish({
-            exchange: TEST_EXCHANGE,
-            routingKey: TEST_SUBJECT,
-            content: Buffer.from("Message B")
-          })
-
-          // Wait for the in-flight handler to finish (started at t=0.1s, 600ms duration, so finishes around t=0.7s)
-          yield* Effect.sleep("500 millis")
-          // The in-flight handler should have completed (uninterruptible guarantee)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-          // Message B should NOT have been consumed - the consumer was cancelled on interrupt
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Start a new subscription to verify message B is still in the queue
-          const messagesReceivedByNewSubscriber: Array<string> = []
-          const newHandler = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            messagesReceivedByNewSubscriber.push(message.content.toString())
-            return AMQPSubscriberResponse.ack()
-          })
-
-          const newSubscription = Effect.gen(function*() {
-            const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
-            yield* subscriber.subscribe(newHandler)
-          }).pipe(Effect.provide(AMQPChannel.layer()))
-
-          yield* Effect.forkChild(newSubscription)
-          yield* Effect.sleep("200 millis")
-
-          // The new subscriber should pick up message B
-          expect(messagesReceivedByNewSubscriber).toEqual(["Message B"])
-        }).pipe(Effect.provide(testChannel)),
-      { timeout: 15000 }
-    )
-
-    it.live(
-      "Should cancel individual consumer without affecting others on shared channel",
-      () =>
-        Effect.gen(function*() {
-          yield* setup
-
-          const publisher = yield* AMQPPublisher.make()
-
-          // Track which messages each subscriber receives
-          const messagesA: Array<string> = []
-          const messagesB: Array<string> = []
-
-          const handlerA = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            messagesA.push(message.content.toString())
-            return AMQPSubscriberResponse.ack()
-          })
-
-          const handlerB = Effect.gen(function*() {
-            const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-            messagesB.push(message.content.toString())
-            return AMQPSubscriberResponse.ack()
-          })
-
-          // Both subscribers share a SINGLE AMQPChannel (no individual AMQPChannel.layer() wrapping).
-          // Subscriber A is forked into its own fiber so it can be interrupted independently.
-          const sharedChannelProgram = Effect.gen(function*() {
-            const subscriberA = yield* AMQPSubscriber.make(TEST_QUEUE, { concurrency: 1 })
-            const subscriberB = yield* AMQPSubscriber.make(TEST_QUEUE, { concurrency: 1 })
-
-            // Fork subscriber A so we can interrupt it independently
-            const fiberA = yield* Effect.forkChild(subscriberA.subscribe(handlerA))
-
-            // Fork subscriber B — it should keep running after A is interrupted
-            yield* Effect.forkChild(subscriberB.subscribe(handlerB))
-
-            // Wait for both consumers to be registered with the broker
-            yield* Effect.sleep("200 millis")
-
-            // Publish a message and verify at least one subscriber processes it
-            yield* publisher.publish({
-              exchange: TEST_EXCHANGE,
-              routingKey: TEST_SUBJECT,
-              content: Buffer.from("Message 1")
-            })
-            yield* Effect.sleep("200 millis")
-            expect(messagesA.length + messagesB.length).toBe(1)
-
-            // Interrupt subscriber A — its consumer should be cancelled on the broker,
-            // but the shared channel (and subscriber B) should remain alive.
-            yield* Effect.sync(() => fiberA.interruptUnsafe(fiberA.id))
-            yield* Effect.sleep("200 millis")
-
-            // Publish 4 messages after interrupting A.
-            // Without addFinalizer: A's consumer tag is still registered on the broker,
-            // AMQP round-robins messages to it, they are delivered but never acked (dead consumer),
-            // so subscriber B only receives ~half the messages.
-            // With addFinalizer: A's consumer is properly cancelled, all messages go to B.
-            for (let i = 2; i <= 5; i++) {
-              yield* publisher.publish({
-                exchange: TEST_EXCHANGE,
-                routingKey: TEST_SUBJECT,
-                content: Buffer.from(`Message ${i}`)
-              })
-            }
-
-            yield* Effect.sleep("500 millis")
-
-            // Subscriber A should NOT have received any of the 4 new messages
-            // (it may have received Message 1 from round-robin, but nothing after interrupt)
-            const totalBeforeInterrupt = messagesA.length + messagesB.length - 4
-            expect(totalBeforeInterrupt).toBeLessThanOrEqual(1)
-
-            // All 4 new messages should have been received by B
-            // (total across both should be 5: 1 before interrupt + 4 after)
-            expect(messagesA.length + messagesB.length).toBe(5)
-          }).pipe(Effect.provide(AMQPChannel.layer()))
-
-          yield* sharedChannelProgram
-        }).pipe(Effect.provide(testChannel)),
-      { timeout: 15000 }
-    )
-  })
-
-  describe("explicit response types", () => {
-    it.live("Should nack the message when handler returns nack()", () =>
-      Effect.gen(function*() {
-        yield* setup
-
-        const publisher = yield* AMQPPublisher.make()
-
-        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-        let attemptCount = 0
-
-        const handler = Effect.gen(function*() {
-          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-          attemptCount++
-          onHandlingStarted(message)
-
-          if (attemptCount === 1) {
-            // First attempt: nack with requeue to trigger redelivery
-            return AMQPSubscriberResponse.nack({ requeue: true })
-          }
-
-          // Subsequent attempts: ack
+        }))
+      })
+      const fiber = yield* program.pipe(Effect.provide(fixture.layer), Effect.forkChild)
+      yield* Queue.offer(fixture.deliveries, message(1n))
+      yield* Deferred.await(started)
+      const interrupting = yield* Fiber.interrupt(fiber).pipe(Effect.forkChild)
+      yield* Deferred.await(fixture.cancelled)
+      expect(yield* Deferred.isDone(finish)).toBe(false)
+      yield* Queue.offer(fixture.deliveries, message(2n))
+      yield* Deferred.succeed(finish, undefined)
+      yield* Fiber.join(interrupting)
+      expect(yield* Queue.take(fixture.settled)).toEqual({ kind: "ack", deliveryTag: 1n })
+      expect(yield* Queue.size(fixture.deliveries)).toBe(1)
+    }))
+
+  it.effect("bounds active handlers by concurrency instead of spawning unbounded fibers", () =>
+    Effect.gen(function*() {
+      const fixture = yield* adapterFixture()
+      const started = yield* Queue.unbounded<bigint>()
+      const permits = yield* Queue.unbounded<void>()
+      const active = yield* Ref.make(0)
+      const peak = yield* Ref.make(0)
+      const program = Effect.gen(function*() {
+        const subscriber = yield* AMQPSubscriber.make("test", { concurrency: 2 })
+        return yield* subscriber.subscribe(Effect.gen(function*() {
+          const m = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          const count = yield* Ref.updateAndGet(active, (n) => n + 1)
+          yield* Ref.update(peak, (n) => Math.max(n, count))
+          yield* Queue.offer(started, m.fields.deliveryTag)
+          yield* Queue.take(permits)
+          yield* Ref.update(active, (n) => n - 1)
           return AMQPSubscriberResponse.ack()
-        })
+        }))
+      })
+      const fiber = yield* program.pipe(Effect.provide(fixture.layer), Effect.forkChild)
+      for (let i = 1; i <= 6; i++) yield* Queue.offer(fixture.deliveries, message(BigInt(i)))
+      for (let batch = 0; batch < 3; batch++) {
+        yield* Queue.take(started)
+        yield* Queue.take(started)
+        expect(yield* Ref.get(active)).toBe(2)
+        yield* Queue.offer(permits, undefined)
+        yield* Queue.offer(permits, undefined)
+        yield* Queue.take(fixture.settled)
+        yield* Queue.take(fixture.settled)
+      }
+      yield* Fiber.interrupt(fiber)
+      expect(yield* Ref.get(peak)).toBe(2)
+    }))
 
-        const startSubscription = Effect.gen(function*() {
-          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
-          yield* subscriber.subscribe(handler)
-        }).pipe(Effect.provide(AMQPChannel.layer()))
-
-        // Start the subscription
-        yield* Effect.forkChild(startSubscription)
-
-        yield* publisher.publish({
-          exchange: TEST_EXCHANGE,
-          routingKey: TEST_SUBJECT,
-          content: Buffer.from("Message that will be nacked first")
-        })
-
-        // Wait for message to be processed and redelivered
-        yield* Effect.sleep("400 millis")
-
-        // The message should be processed twice: once nacked, once acked
-        expect(onHandlingStarted).toHaveBeenCalledTimes(2)
-      }).pipe(Effect.provide(testChannel)), { timeout: 15000 })
-
-    it.live("Should reject the message without requeue when handler returns reject()", () =>
-      Effect.gen(function*() {
-        yield* setup
-
-        const publisher = yield* AMQPPublisher.make()
-
-        const onHandlingStarted = vi.fn<(message: AMQPConsumeMessage.AMQPConsumeMessage) => void>()
-
-        const handler = Effect.gen(function*() {
-          const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
-          onHandlingStarted(message)
-
-          // Reject the message without requeue - message won't be redelivered
+  it.effect("maps explicit ack, nack and reject responses to settlements", () =>
+    Effect.gen(function*() {
+      const fixture = yield* adapterFixture()
+      const program = Effect.gen(function*() {
+        const subscriber = yield* AMQPSubscriber.make("test", { concurrency: 1 })
+        return yield* subscriber.subscribe(Effect.gen(function*() {
+          const m = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          if (m.fields.deliveryTag === 1n) return AMQPSubscriberResponse.ack()
+          if (m.fields.deliveryTag === 2n) return AMQPSubscriberResponse.nack({ requeue: true })
           return AMQPSubscriberResponse.reject({ requeue: false })
-        })
+        }))
+      })
+      const fiber = yield* program.pipe(Effect.provide(fixture.layer), Effect.forkChild)
+      for (let i = 1; i <= 3; i++) yield* Queue.offer(fixture.deliveries, message(BigInt(i)))
+      expect(yield* Queue.take(fixture.settled)).toEqual({ kind: "ack", deliveryTag: 1n })
+      expect(yield* Queue.take(fixture.settled)).toEqual({ kind: "nack", deliveryTag: 2n, requeue: true })
+      expect(yield* Queue.take(fixture.settled)).toEqual({ kind: "reject", deliveryTag: 3n, requeue: false })
+      yield* Fiber.interrupt(fiber)
+    }))
 
-        const startSubscription = Effect.gen(function*() {
-          const subscriber = yield* AMQPSubscriber.make(TEST_QUEUE)
-          yield* subscriber.subscribe(handler)
-        }).pipe(Effect.provide(AMQPChannel.layer()))
+  it.effect("uses propagated trace context as the handler span parent", () =>
+    Effect.gen(function*() {
+      const fixture = yield* adapterFixture()
+      const observed = yield* Deferred.make<{ readonly traceId: string; readonly parentId?: string | undefined }>()
+      const traceId = "0123456789abcdef0123456789abcdef"
+      const parentId = "0123456789abcdef"
+      const program = Effect.gen(function*() {
+        const subscriber = yield* AMQPSubscriber.make("test", { producerSpanRelation: "parent" })
+        return yield* subscriber.subscribe(Effect.gen(function*() {
+          const span = yield* Effect.currentSpan
+          yield* Deferred.succeed(observed, {
+            traceId: span.traceId,
+            parentId: Option.isSome(span.parent) ? span.parent.value.spanId : undefined
+          })
+          return AMQPSubscriberResponse.ack()
+        }))
+      })
+      const fiber = yield* program.pipe(Effect.provide(fixture.layer), Effect.forkChild)
+      yield* Queue.offer(fixture.deliveries, {
+        ...message(1n),
+        properties: { headers: { traceparent: `00-${traceId}-${parentId}-01` } }
+      })
+      expect(yield* Deferred.await(observed)).toEqual({ traceId, parentId })
+      yield* Queue.take(fixture.settled)
+      yield* Fiber.interrupt(fiber)
+    }))
 
-        // Start the subscription
-        yield* Effect.forkChild(startSubscription)
+  it.live("consumes and acknowledges published bytes across connection recovery", () =>
+    Effect.gen(function*() {
+      const channel = yield* AMQPChannel.AMQPChannel
+      const queue = yield* channel.assertQueue("", { exclusive: true })
+      const named = yield* channel.assertQueue(`effect-native-${queue.queue}.subscriber`, { exclusive: true })
+      const subscriber = yield* AMQPSubscriber.make(named, { concurrency: 1 })
+      const received = yield* Queue.unbounded<string>()
+      const fiber = yield* subscriber.subscribe(Effect.gen(function*() {
+        const m = yield* AMQPConsumeMessage.AMQPConsumeMessage
+        yield* Queue.offer(received, decode(m.content))
+        return AMQPSubscriberResponse.ack()
+      })).pipe(Effect.forkChild)
+      yield* channel.sendToQueue(named, encode("before"))
+      expect(yield* Queue.take(received)).toBe("before")
+      yield* channel.connection.reconnect
+      yield* channel.sendToQueue(named, encode("after"))
+      expect(yield* Queue.take(received)).toBe("after")
+      yield* Fiber.interrupt(fiber)
+      expect((yield* channel.checkQueue(named)).consumerCount).toBe(0)
+    }).pipe(Effect.provide(testConfirmChannel)))
 
-        yield* publisher.publish({
-          exchange: TEST_EXCHANGE,
-          routingKey: TEST_SUBJECT,
-          content: Buffer.from("Message that will be rejected")
-        })
+  it.live("cancels one subscriber without disrupting another on a shared channel", () =>
+    Effect.gen(function*() {
+      const channel = yield* AMQPChannel.AMQPChannel
+      const a = yield* channel.assertQueue("", { exclusive: true })
+      const b = yield* channel.assertQueue("", { exclusive: true })
+      const received = yield* Queue.unbounded<string>()
+      const handler = Effect.gen(function*() {
+        const m = yield* AMQPConsumeMessage.AMQPConsumeMessage
+        yield* Queue.offer(received, decode(m.content))
+        return AMQPSubscriberResponse.ack()
+      })
+      const subscriberA = yield* AMQPSubscriber.make(a.queue)
+      const subscriberB = yield* AMQPSubscriber.make(b.queue)
+      const fiberA = yield* subscriberA.subscribe(handler).pipe(Effect.forkChild)
+      const fiberB = yield* subscriberB.subscribe(handler).pipe(Effect.forkChild)
+      yield* channel.sendToQueue(a, encode("a-ready"))
+      expect(yield* Queue.take(received)).toBe("a-ready")
+      yield* channel.sendToQueue(b, encode("b-ready"))
+      expect(yield* Queue.take(received)).toBe("b-ready")
+      yield* Fiber.interrupt(fiberA)
+      expect((yield* channel.checkQueue(a)).consumerCount).toBe(0)
+      expect((yield* channel.checkQueue(b)).consumerCount).toBe(1)
+      yield* channel.sendToQueue(a, encode("left-for-next"))
+      yield* channel.sendToQueue(b, encode("still-active"))
+      expect(yield* Queue.take(received)).toBe("still-active")
+      const pending = yield* channel.get(a)
+      expect(Option.isSome(pending)).toBe(true)
+      if (Option.isSome(pending)) {
+        expect(decode(pending.value.content)).toBe("left-for-next")
+        yield* channel.ack(pending.value)
+      }
+      yield* Fiber.interrupt(fiberB)
+    }).pipe(Effect.provide(testConfirmChannel)))
 
-        // Wait for message to be processed
-        yield* Effect.sleep("200 millis")
-
-        // The message should be processed only once (reject without requeue prevents redelivery)
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-        // Wait a bit more to ensure no redelivery happens
-        yield* Effect.sleep("300 millis")
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.provide(testChannel)), { timeout: 15000 })
-  })
+  it.live(
+    "keeps concurrency permits across reconnect while old handlers are still in flight",
+    () =>
+      Effect.gen(function*() {
+        const channel = yield* AMQPChannel.AMQPChannel
+        const seed = yield* channel.assertQueue("", { exclusive: true })
+        const queue = yield* channel.assertQueue(`effect-native-${seed.queue}.permits`, { exclusive: true })
+        const started = yield* Queue.unbounded<string>()
+        const permits = yield* Queue.unbounded<void>()
+        const active = yield* Ref.make(0)
+        const peak = yield* Ref.make(0)
+        const subscriber = yield* AMQPSubscriber.make(queue.queue, { concurrency: 2 })
+        const fiber = yield* subscriber.subscribe(Effect.gen(function*() {
+          const m = yield* AMQPConsumeMessage.AMQPConsumeMessage
+          const count = yield* Ref.updateAndGet(active, (n) => n + 1)
+          yield* Ref.update(peak, (n) => Math.max(n, count))
+          yield* Queue.offer(started, decode(m.content))
+          yield* Queue.take(permits)
+          yield* Ref.update(active, (n) => n - 1)
+          return AMQPSubscriberResponse.ack()
+        })).pipe(Effect.forkChild)
+        yield* channel.sendToQueue(queue, encode("old-1"))
+        yield* channel.sendToQueue(queue, encode("old-2"))
+        expect(new Set([yield* Queue.take(started), yield* Queue.take(started)])).toEqual(new Set(["old-1", "old-2"]))
+        yield* channel.connection.reconnect
+        yield* channel.sendToQueue(queue, encode("new-1"))
+        yield* channel.sendToQueue(queue, encode("new-2"))
+        yield* Queue.offer(permits, undefined)
+        yield* Queue.offer(permits, undefined)
+        expect(new Set([yield* Queue.take(started), yield* Queue.take(started)])).toEqual(new Set(["new-1", "new-2"]))
+        yield* Queue.offer(permits, undefined)
+        yield* Queue.offer(permits, undefined)
+        yield* Fiber.interrupt(fiber)
+        expect(yield* Ref.get(peak)).toBe(2)
+        expect(yield* Ref.get(active)).toBe(0)
+      }).pipe(Effect.provide(testConfirmChannel)),
+    { timeout: 15000 }
+  )
 })

@@ -5,8 +5,8 @@ import * as Subscriber from "@effect-messaging/core/Subscriber"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import * as SubscriberOTel from "@effect-messaging/core/SubscriberOTel"
 import * as SubscriberRunner from "@effect-messaging/core/SubscriberRunner"
-import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
+import type * as NATSOptions from "./NATSOptions.ts"
 
 import * as Option from "effect/Option"
 import * as NATSConnection from "./NATSConnection.ts"
@@ -44,7 +44,7 @@ export interface NATSSubscriberOptions extends SubscriberRunner.SubscriberRunner
 /** @internal */
 const subscribe = (
   subscription: NATSSubscription.NATSSubscription,
-  connectionInfo: NATSCore.ServerInfo,
+  connectionInfo: NATSOptions.ServerInfo,
   options: NATSSubscriberOptions
 ) =>
 <E, R>(
@@ -83,9 +83,7 @@ const healthCheck = (
       isClosed
         ? Effect.fail(new SubscriberError.SubscriberError({ reason: "Subscription is closed" }))
         : Effect.void
-    ),
-    Effect.catchTag("NATSSubscriptionError", (error) =>
-      new SubscriberError.SubscriberError({ reason: "Healthcheck failed", cause: error }))
+    )
   )
 
 /**
@@ -137,7 +135,7 @@ export const fromSubscription = (
  */
 export const make = (
   subject: string,
-  subscriptionOptions?: NATSCore.SubscriptionOptions,
+  subscriptionOptions?: NATSOptions.SubscriptionOptions,
   options: NATSSubscriberOptions = {}
 ): Effect.Effect<
   NATSSubscriber,

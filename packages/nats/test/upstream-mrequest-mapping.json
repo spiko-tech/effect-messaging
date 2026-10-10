@@ -1,0 +1,288 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/mrequest_test.ts": 21
+  },
+  "total": 21,
+  "covered": 21,
+  "inapplicable": 0,
+  "notes": [
+    "Private queued-iterator processed counters are represented by actual collected reply counts. Server-side interest is independently observed through broker monitoring. Timer scale is100 ms instead of2000 ms; late response occurs at75 ms."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many count",
+      "upstreamLine": 62,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many count noMux",
+      "upstreamLine": 66,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many jitter",
+      "upstreamLine": 101,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many jitter noMux",
+      "upstreamLine": 105,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - nomux request many sentinel",
+      "upstreamLine": 147,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - nomux request many sentinel noMux",
+      "upstreamLine": 151,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - nomux request many sentinel partial",
+      "upstreamLine": 155,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - nomux request many sentinel partial noMux",
+      "upstreamLine": 159,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many wait for timer - no response",
+      "upstreamLine": 193,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many wait for timer noMux - no response",
+      "upstreamLine": 197,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many waits for timer late response",
+      "upstreamLine": 233,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many waits for timer late response noMux",
+      "upstreamLine": 237,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - $label noMux=$noMux",
+          "evidence": "Strategy and noMux table mirrors upstream true/false values: echoed input hello,5 count / 10 stall / 11 sentinel / 10 partial / 0 silent / 1 late deliveries; fast versus timer completion and broker subscription count 1 dedicated or 2 multiplexed are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many stops on error",
+      "upstreamLine": 264,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - request many stops on error noMux=%s",
+          "evidence": "Absent service terminates reply Stream with no_responders and original subject; after flush broker interest is0 dedicated or1 global mux."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - request many stops on error noMux",
+      "upstreamLine": 268,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - request many stops on error noMux=%s",
+          "evidence": "Absent service terminates reply Stream with no_responders and original subject; after flush broker interest is0 dedicated or1 global mux."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - pub permission error",
+      "upstreamLine": 272,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - %s permission error",
+          "evidence": "Denied publication or denied dedicated reply subscription rejects multi-response Stream, emits error status, and removes temporary dedicated interest."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - sub permission error",
+      "upstreamLine": 315,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - %s permission error",
+          "evidence": "Denied publication or denied dedicated reply subscription rejects multi-response Stream, emits error status, and removes temporary dedicated interest."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - lost sub permission",
+      "upstreamLine": 365,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - %s permission error",
+          "evidence": "Denied publication or denied dedicated reply subscription rejects multi-response Stream, emits error status, and removes temporary dedicated interest."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - timeout doesn't leak subs",
+      "upstreamLine": 433,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - timeout doesn't leak subs",
+          "evidence": "Silent responder produces empty successful timed reply Stream and broker subscription count remains exactly one."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - no responder doesn't leak subs",
+      "upstreamLine": 454,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - request many stops on error noMux=%s",
+          "evidence": "Absent service terminates reply Stream with no_responders and original subject; after flush broker interest is0 dedicated or1 global mux."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "mreq - no mux request no perms doesn't leak subs",
+      "upstreamLine": 480,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "mreq - no mux request no perms doesn't leak subs",
+          "evidence": "Denied publication fails dedicated reply Stream and after flush broker has zero subscriptions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/mrequest_test.ts",
+      "upstreamTestName": "basics - request many tracing",
+      "upstreamLine": 515,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSMRequestParity.test.ts",
+          "testName": "basics - request many tracing",
+          "evidence": "Ordinary requestMany gets two replies, traceOnly gets zero; tracing subscriber gets two events while responder receives only one ordinary request."
+        }
+      ]
+    }
+  ]
+}

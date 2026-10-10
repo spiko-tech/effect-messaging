@@ -1,110 +1,55 @@
 /**
  * @since 0.1.0
  */
-import type * as JetStream from "@nats-io/jetstream"
-import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
-import * as utils from "./internal/utils.ts"
-import * as JetStreamConsumers from "./JetStreamConsumer.ts"
-import * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
-import * as NATSError from "./NATSError.ts"
+import type * as Effect from "effect/Effect"
+import type * as Option from "effect/Option"
+import * as internal from "./internal/jetstreamStreams.ts"
+import type * as JetStreamConsumer from "./JetStreamConsumer.ts"
+import type * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
+import type * as T from "./JetStreamTypes.ts"
+import type * as NATSError from "./NATSError.ts"
 
-const wrapAsync = utils.wrapAsync(NATSError.JetStreamStreamError)
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const JetStreamStreamTypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamStream")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
+export const JetStreamStreamTypeId: typeof internal.StreamTypeId = internal.StreamTypeId
+/** @since 0.1.0 */
 export type JetStreamStreamTypeId = typeof JetStreamStreamTypeId
-
-/**
- * Represents a JetStream stream
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamStream {
   readonly [JetStreamStreamTypeId]: JetStreamStreamTypeId
   readonly name: string
   readonly info: (
-    ...args: Parameters<JetStream.Stream["info"]>
-  ) => Effect.Effect<JetStream.StreamInfo, NATSError.JetStreamStreamError>
-  readonly getMessage: (
-    ...args: Parameters<JetStream.Stream["getMessage"]>
-  ) => Effect.Effect<
+    cached?: boolean,
+    options?: Partial<T.StreamInfoRequestOptions>
+  ) => Effect.Effect<T.StreamInfo, NATSError.JetStreamStreamError>
+  readonly getMessage: (query: T.MsgRequest) => Effect.Effect<
     Option.Option<JetStreamStoredMessage.JetStreamStoredMessage>,
     NATSError.JetStreamStreamError
   >
-  readonly deleteMessage: (
-    ...args: Parameters<JetStream.Stream["deleteMessage"]>
-  ) => Effect.Effect<boolean, NATSError.JetStreamStreamError>
-  readonly alternates: Effect.Effect<Array<JetStream.StreamAlternate>, NATSError.JetStreamStreamError>
+  readonly deleteMessage: (seq: number, erase?: boolean) => Effect.Effect<boolean, NATSError.JetStreamStreamError>
+  readonly alternates: Effect.Effect<Array<T.StreamAlternate>, NATSError.JetStreamStreamError>
   readonly best: Effect.Effect<JetStreamStream, NATSError.JetStreamStreamError>
+  readonly resetConsumer: (consumer: string, seq?: number) => Effect.Effect<
+    T.ConsumerResetResponse,
+    NATSError.JetStreamStreamError
+  >
+  readonly getPushConsumer: (
+    stream: string,
+    name?: string | Partial<T.OrderedPushConsumerOptions>
+  ) => Effect.Effect<JetStreamConsumer.PushConsumer, NATSError.JetStreamStreamError>
   readonly getConsumer: (
-    ...args: Parameters<JetStream.Stream["getConsumer"]>
-  ) => Effect.Effect<JetStreamConsumers.Consumer, NATSError.JetStreamStreamError>
-
-  /** @internal */
-  readonly stream: JetStream.Stream
+    name?: string | Partial<T.OrderedConsumerOptions>
+  ) => Effect.Effect<JetStreamConsumer.Consumer, NATSError.JetStreamStreamError>
 }
-
 /** @internal */
-export const makeJetStreamStream = (stream: JetStream.Stream): JetStreamStream => ({
-  [JetStreamStreamTypeId]: JetStreamStreamTypeId,
-  name: stream.name,
-  info: (...args) => wrapAsync(() => stream.info(...args), "Failed to get stream info"),
-  getMessage: (...args) =>
-    wrapAsync(() => stream.getMessage(...args), "Failed to get message").pipe(
-      Effect.map((message) => Option.fromNullishOr(message)),
-      Effect.map(Option.map(JetStreamStoredMessage.make))
-    ),
-  deleteMessage: (...args) => wrapAsync(() => stream.deleteMessage(...args), "Failed to delete message"),
-  alternates: wrapAsync(() => stream.alternates(), "Failed to get stream alternates"),
-  best: wrapAsync(() => stream.best(), "Failed to get best stream").pipe(Effect.map(makeJetStreamStream)),
-  getConsumer: (...args) =>
-    wrapAsync(() => stream.getConsumer(...args), "Failed to get consumer").pipe(
-      Effect.map(JetStreamConsumers.makeConsumer)
-    ),
-  stream
-})
-
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const JetStreamStreamsTypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamStreams")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+export const makeJetStreamStream = internal.makeStream
+/** @since 0.1.0 */
+export const JetStreamStreamsTypeId: typeof internal.StreamsTypeId = internal.StreamsTypeId
+/** @since 0.1.0 */
 export type JetStreamStreamsTypeId = typeof JetStreamStreamsTypeId
-
-/**
- * Represents streams API
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamStreams {
   readonly [JetStreamStreamsTypeId]: JetStreamStreamsTypeId
-  readonly get: (
-    ...args: Parameters<JetStream.Streams["get"]>
-  ) => Effect.Effect<JetStreamStream, NATSError.JetStreamStreamError>
-
-  /** @internal */
-  readonly streams: JetStream.Streams
+  readonly get: (name: string) => Effect.Effect<JetStreamStream, NATSError.JetStreamStreamError>
 }
-
 /** @internal */
-export const makeJetStreamStreams = (streams: JetStream.Streams): JetStreamStreams => ({
-  [JetStreamStreamsTypeId]: JetStreamStreamsTypeId,
-  get: (...args) => wrapAsync(() => streams.get(...args), "Failed to get stream").pipe(Effect.map(makeJetStreamStream)),
-  streams
-})
+export const makeJetStreamStreams = internal.makeStreams

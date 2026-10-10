@@ -256,17 +256,20 @@ importers:
       '@effect-messaging/core':
         specifier: workspace:^
         version: link:../core
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
       '@effect/vitest':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
       '@nats-io/jetstream':
-        specifier: ^3.4.0
+        specifier: 3.4.0
         version: 3.4.0
       '@nats-io/nats-core':
-        specifier: ^3.4.0
+        specifier: 3.4.0
         version: 3.4.0
       '@nats-io/transport-node':
-        specifier: ^3.4.0
+        specifier: 3.4.0
         version: 3.4.0
       effect:
         specifier: 4.0.2

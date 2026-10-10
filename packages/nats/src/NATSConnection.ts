@@ -1,151 +1,128 @@
 /**
+ * A scoped NATS connection over replaceable Effect sockets.
  * @since 0.1.0
  */
-import * as NATSCore from "@nats-io/nats-core"
-import * as TransportNode from "@nats-io/transport-node"
-import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as Option from "effect/Option"
+import type * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
-import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.ts"
-import * as NATSError from "./NATSError.ts"
-import * as NATSMessage from "./NATSMessage.ts"
-import * as NATSSubscription from "./NATSSubscription.ts"
+import type * as Socket from "effect/socket/Socket"
+import type * as Stream from "effect/Stream"
+import * as internal from "./internal/client.ts"
+import * as Services from "./internal/clientServices.ts"
+import type * as NATSError from "./NATSError.ts"
+import type * as NATSMessage from "./NATSMessage.ts"
+import type * as NATSOptions from "./NATSOptions.ts"
+import type * as NATSSubscription from "./NATSSubscription.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSConnection")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
+export const TypeId: typeof Services.ConnectionTypeId = Services.ConnectionTypeId
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
 
 /**
- * Represents a NATS Connection
- *
- * @category models
- * @since 0.1.0
+ * Evaluated for every physical connection. Return a fresh Socket; the client
+ * owns reader acquisition, TLS negotiation and reconnection.
+ * @since 1.0.0
  */
+export type SocketFactory<R = never> = (
+  server: string,
+  metadata: NATSOptions.Server
+) => Effect.Effect<Socket.Socket, Socket.SocketError, R>
+
+/** @since 1.0.0 */
+export interface Server extends NATSOptions.Server {}
+
+/** @since 1.0.0 */
+export interface ConnectionState {
+  readonly state: "Connecting" | "Connected" | "Reconnecting" | "Draining" | "Closed"
+  readonly generation: number
+  readonly server: string
+  readonly error?: NATSError.NATSConnectionError
+}
+
+/** @since 0.1.0 */
 export interface NATSConnection {
   readonly [TypeId]: TypeId
-  info: Option.Option<NATSCore.ServerInfo>
+  readonly info: Option.Option<NATSOptions.ServerInfo>
   readonly publish: (
-    ...params: Parameters<NATSCore.NatsConnection["publish"]>
+    subject: string,
+    payload?: NATSOptions.Payload,
+    options?: NATSOptions.PublishOptions
   ) => Effect.Effect<void, NATSError.NATSConnectionError>
-  readonly publishMessage: (
-    ...params: Parameters<NATSCore.NatsConnection["publishMessage"]>
-  ) => Effect.Effect<void, NATSError.NATSConnectionError>
-  readonly respondMessage: (
-    ...params: Parameters<NATSCore.NatsConnection["respondMessage"]>
-  ) => Effect.Effect<boolean, NATSError.NATSConnectionError>
+  readonly publishMessage: (message: NATSMessage.NATSMessage) => Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly respondMessage: (message: NATSMessage.NATSMessage) => Effect.Effect<boolean, NATSError.NATSConnectionError>
   readonly request: (
-    ...params: Parameters<NATSCore.NatsConnection["request"]>
+    subject: string,
+    payload?: NATSOptions.Payload,
+    options?: Partial<NATSOptions.RequestOptions>
   ) => Effect.Effect<NATSMessage.NATSMessage, NATSError.NATSConnectionError>
-  readonly subscribe: (
-    ...params: Parameters<NATSCore.NatsConnection["subscribe"]>
-  ) => Effect.Effect<NATSSubscription.NATSSubscription, NATSError.NATSConnectionError>
-  readonly flush: Effect.Effect<void, NATSError.NATSConnectionError>
   readonly requestMany: (
-    ...params: Parameters<NATSCore.NatsConnection["requestMany"]>
+    subject: string,
+    payload?: NATSOptions.Payload,
+    options?: Partial<NATSOptions.RequestManyOptions>
   ) => Effect.Effect<
     Stream.Stream<NATSMessage.NATSMessage, NATSError.NATSConnectionError>,
     NATSError.NATSConnectionError
   >
+  /** Creates a unique reply subject using this connection's configured inbox prefix. @since 1.0.0 */
+  readonly createInbox: Effect.Effect<string>
+  readonly subscribe: (
+    subject: string,
+    options?: NATSOptions.SubscriptionOptions
+  ) => Effect.Effect<NATSSubscription.NATSSubscription, NATSError.NATSConnectionError>
+  readonly flush: Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly drain: Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly close: Effect.Effect<void>
+  readonly closed: Effect.Effect<Option.Option<NATSError.NATSConnectionError>>
+  readonly isClosed: Effect.Effect<boolean>
+  readonly isDraining: Effect.Effect<boolean>
   readonly getServer: Effect.Effect<string, NATSError.NATSConnectionError>
-  readonly status: Effect.Effect<
-    Stream.Stream<NATSCore.Status, NATSError.NATSConnectionError>,
-    NATSError.NATSConnectionError
-  >
-  readonly stats: Effect.Effect<NATSCore.Stats, NATSError.NATSConnectionError>
+  readonly getServers: Effect.Effect<ReadonlyArray<Server>>
+  readonly setServers: (servers: ReadonlyArray<string>) => Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly reconnect: Effect.Effect<void, NATSError.NATSConnectionError>
+  readonly status: Effect.Effect<Stream.Stream<NATSOptions.Status, NATSError.NATSConnectionError>>
+  readonly state: Effect.Effect<ConnectionState>
+  readonly changes: Stream.Stream<ConnectionState>
+  readonly stats: Effect.Effect<NATSOptions.Stats>
   readonly rtt: Effect.Effect<number, NATSError.NATSConnectionError>
-
-  /** @internal */
-  readonly nc: NATSCore.NatsConnection
 }
 
-/**
- * @category tags
- * @since 0.1.0
- */
-export const NATSConnection = Context.Service<NATSConnection>("@effect-messaging/nats/NATSConnection")
+/** @since 0.1.0 */
+export const NATSConnection = Services.Connection
 
-const wrapAsync = utils.wrapAsync(NATSError.NATSConnectionError)
-const wrap = utils.wrap(NATSError.NATSConnectionError)
+/** @since 1.0.0 */
+export const make = <R>(
+  socketFactory: SocketFactory<R>,
+  options: NATSOptions.ConnectionOptions = {}
+): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope | R> =>
+  internal.make(socketFactory, options)
 
-/** @internal */
-const make = (
-  connect: () => Promise<NATSCore.NatsConnection>
-): Effect.Effect<NATSConnection, NATSError.NATSConnectionError, Scope.Scope> =>
-  Effect.gen(function*() {
-    const nc = yield* wrapAsync(connect, "Failed to create NATS connection")
+/** @since 1.0.0 */
+export const layer = <R>(
+  socketFactory: SocketFactory<R>,
+  options: NATSOptions.ConnectionOptions = {}
+): Layer.Layer<NATSConnection, NATSError.NATSConnectionError, R> =>
+  Layer.effect(NATSConnection, make(socketFactory, options))
 
-    const connection: NATSConnection = {
-      [TypeId]: TypeId,
-      info: Option.fromNullishOr(nc.info),
-      publish: (...params) => wrap(() => nc.publish(...params), "Failed to publish message"),
-      publishMessage: (...params) => wrap(() => nc.publishMessage(...params), "Failed to publish message"),
-      respondMessage: (...params) => wrap(() => nc.respondMessage(...params), "Failed to respond to message"),
-      request: (...params) =>
-        wrapAsync(() => nc.request(...params), "Failed to request message").pipe(
-          Effect.map(NATSMessage.make)
-        ),
-      subscribe: (...params) =>
-        wrap(() => nc.subscribe(...params), `Failed to subscribe to subject ${params[0]}`)
-          .pipe(Effect.map(NATSSubscription.make)),
-      flush: wrapAsync(() => nc.flush(), "Failed to flush"),
-      requestMany: (...params) =>
-        wrapAsync(() => nc.requestMany(...params), "Failed to request many messages").pipe(
-          Effect.map((asyncIterable) =>
-            Stream.fromAsyncIterable(
-              asyncIterable,
-              (error) =>
-                new NATSError.NATSConnectionError({
-                  reason: "An error occurred in requestMany async iterable",
-                  cause: error
-                })
-            ).pipe(Stream.map(NATSMessage.make))
-          )
-        ),
-      getServer: wrap(() => nc.getServer(), "Failed to get server"),
-      status: wrap(
-        () =>
-          Stream.fromAsyncIterable(
-            nc.status(),
-            (error) =>
-              new NATSError.NATSConnectionError({ reason: "An error occurred in status async iterable", cause: error })
-          ),
-        "Failed to get status stream"
-      ),
-      stats: wrap(() => nc.stats(), "Failed to get stats"),
-      rtt: wrapAsync(() => nc.rtt(), "Failed to measure round-trip time"),
-      nc
-    }
-
-    yield* Effect.addFinalizer(() => Effect.promise(() => nc.drain()))
-
-    return connection
-  })
-
-/**
- * @since 0.1.0
- * @category Layers
- */
-export const layerWebSocket = (options: NATSCore.ConnectionOptions): Layer.Layer<
+/** @since 0.1.0 */
+export const layerWebSocket = (options: NATSOptions.WsConnectionOptions = {}): Layer.Layer<
   NATSConnection,
   NATSError.NATSConnectionError
-> => Layer.effect(NATSConnection, make(() => NATSCore.wsconnect(options)))
+> =>
+  Layer.unwrap(
+    Effect.promise(() => import("./NATSWebSocketConnection.ts")).pipe(
+      Effect.map((websocket) => websocket.layer(options))
+    )
+  )
 
 /**
+ * Prefer the explicit NATSNodeConnection module for Node transport wiring.
+ * Loading the Node adapter lazily keeps browser imports independent of Node.
  * @since 0.1.0
- * @category Layers
  */
-export const layerNode = (options: TransportNode.NodeConnectionOptions): Layer.Layer<
+export const layerNode = (options: NATSOptions.NodeConnectionOptions = {}): Layer.Layer<
   NATSConnection,
   NATSError.NATSConnectionError
-> => Layer.effect(NATSConnection, make(() => TransportNode.connect(options)))
+> =>
+  Layer.unwrap(Effect.promise(() => import("./NATSNodeConnection.ts")).pipe(Effect.map((node) => node.layer(options))))

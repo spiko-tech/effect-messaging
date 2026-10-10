@@ -1,39 +1,31 @@
 /**
  * @since 0.1.0
  */
-import type * as JetStream from "@nats-io/jetstream"
-import type * as NATSCore from "@nats-io/nats-core"
 import * as Context from "effect/Context"
-import type * as Effect from "effect/Effect"
+import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as Option from "effect/Option"
-import { wrap, wrapAsync } from "./internal/utils.ts"
+import * as Schema from "effect/Schema"
+import * as Wire from "./internal/jetstreamSchemas.ts"
+import type * as T from "./JetStreamTypes.ts"
+import type * as NATSConnection from "./NATSConnection.ts"
 import * as NATSError from "./NATSError.ts"
+import type * as NATSHeaders from "./NATSHeaders.ts"
+import type * as NATSMessage from "./NATSMessage.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamMessage")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
-
-/**
- * Represents a JetStream message
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamMessage {
   readonly [TypeId]: TypeId
   readonly redelivered: boolean
-  readonly info: JetStream.DeliveryInfo
+  readonly info: T.DeliveryInfo
   readonly seq: number
-  readonly headers: Option.Option<NATSCore.MsgHdrs>
+  readonly reply: Option.Option<string>
+  readonly headers: Option.Option<NATSHeaders.MsgHdrs>
+  readonly size: number
   readonly data: Uint8Array
   readonly subject: string
   readonly sid: number
@@ -41,65 +33,124 @@ export interface JetStreamMessage {
   readonly timestamp: string
   readonly timestampNanos: bigint
   readonly ack: Effect.Effect<void, NATSError.JetStreamMessageError>
-  readonly nak: (
-    ...params: Parameters<JetStream.JsMsg["nak"]>
-  ) => Effect.Effect<void, NATSError.JetStreamMessageError>
+  readonly nak: (millis?: number) => Effect.Effect<void, NATSError.JetStreamMessageError>
   readonly working: Effect.Effect<void, NATSError.JetStreamMessageError>
-  readonly term: (
-    ...params: Parameters<JetStream.JsMsg["term"]>
+  readonly term: (reason?: string) => Effect.Effect<void, NATSError.JetStreamMessageError>
+  readonly ackAck: (options?: { readonly timeout?: number }) => Effect.Effect<boolean, NATSError.JetStreamMessageError>
+  readonly next: (
+    subject: string,
+    options?: Partial<T.PullOptions>
   ) => Effect.Effect<void, NATSError.JetStreamMessageError>
-  readonly ackAck: (
-    ...params: Parameters<JetStream.JsMsg["ackAck"]>
-  ) => Effect.Effect<boolean, NATSError.JetStreamMessageError>
-  readonly json: <T = unknown>() => Effect.Effect<T, NATSError.JetStreamMessageError>
+  readonly json: <A = unknown>() => Effect.Effect<A, NATSError.JetStreamMessageError>
+  readonly decode: <S extends Schema.Top>(
+    schema: S
+  ) => Effect.Effect<S["Type"], NATSError.JetStreamMessageError, S["DecodingServices"]>
   readonly string: () => string
-
-  /** @internal */
-  readonly jsMsg: JetStream.JsMsg
 }
 
-const wrapSync = wrap(NATSError.JetStreamMessageError)
-const wrapPromise = wrapAsync(NATSError.JetStreamMessageError)
+const AckTokens = Schema.Tuple([
+  Schema.Literal("$JS"),
+  Schema.Literal("ACK"),
+  Schema.String,
+  Schema.String,
+  Schema.String,
+  Schema.String,
+  Schema.NumberFromString.check(Schema.isFinite()),
+  Schema.NumberFromString.check(Schema.isFinite()),
+  Schema.NumberFromString.check(Schema.isFinite()),
+  Schema.String.check(Schema.isPattern(/^\d+$/)),
+  Schema.NumberFromString.check(Schema.isFinite())
+])
 
 /** @internal */
-export const make = (jsMsg: JetStream.JsMsg): JetStreamMessage => ({
-  [TypeId]: TypeId,
-  redelivered: jsMsg.redelivered,
-  info: jsMsg.info,
-  seq: jsMsg.seq,
-  headers: Option.fromNullishOr(jsMsg.headers),
-  data: jsMsg.data,
-  subject: jsMsg.subject,
-  sid: jsMsg.sid,
-  time: jsMsg.time,
-  timestamp: jsMsg.timestamp,
-  timestampNanos: jsMsg.timestampNanos,
-  ack: wrapSync(() => jsMsg.ack(), "Failed to acknowledge message"),
-  nak: (...params) => wrapSync(() => jsMsg.nak(...params), "Failed to negative acknowledge message"),
-  working: wrapSync(() => jsMsg.working(), "Failed to send working status"),
-  term: (...params) => wrapSync(() => jsMsg.term(...params), "Failed to terminate message"),
-  ackAck: (...params) => wrapPromise(() => jsMsg.ackAck(...params), "Failed to acknowledge message with ack"),
-  json: <T = unknown>() => wrapSync(() => jsMsg.json<T>(), "Failed to parse JSON"),
-  string: () => jsMsg.string(),
-  jsMsg
+export const make = Effect.fnUntraced(function*(
+  message: NATSMessage.NATSMessage,
+  connection: NATSConnection.NATSConnection,
+  ackTimeout = 5000
+): Effect.fn.Return<JetStreamMessage, NATSError.JetStreamMessageError> {
+  const reply = Option.getOrElse(message.reply, () => "")
+  const tokens = reply.split(".")
+  if (tokens.length === 9) tokens.splice(2, 0, "_", "")
+  const parsed = yield* Schema.decodeUnknownEffect(AckTokens)(tokens.slice(0, 11)).pipe(
+    Effect.mapError((cause) => new NATSError.JetStreamMessageError({ reason: "Invalid JetStream ack subject", cause }))
+  )
+  const timestampNanos = BigInt(parsed[9])
+  const info = yield* Schema.decodeUnknownEffect(Wire.DeliveryInfo)({
+    domain: parsed[2] === "_" ? "" : parsed[2],
+    account_hash: parsed[3],
+    stream: parsed[4],
+    consumer: parsed[5],
+    deliveryCount: parsed[6],
+    streamSequence: parsed[7],
+    deliverySequence: parsed[8],
+    timestampNanos: Number(timestampNanos),
+    pending: parsed[10],
+    redelivered: parsed[6] > 1
+  }).pipe(Effect.mapError((cause) => new NATSError.JetStreamMessageError({ reason: "Invalid delivery info", cause })))
+  const time = yield* Schema.decodeUnknownEffect(Schema.DateFromMillis)(Number(timestampNanos / BigInt(1_000_000)))
+    .pipe(
+      Effect.mapError((cause) => new NATSError.JetStreamMessageError({ reason: "Invalid JetStream timestamp", cause }))
+    )
+  let didAck = false
+  const mapError = Effect.mapError((cause: unknown) =>
+    new NATSError.JetStreamMessageError({ reason: "JetStream acknowledgement failed", cause })
+  )
+  const acknowledge = Effect.fnUntraced(function*(payload: string, final = true) {
+    if (didAck) return
+    // Reserve final acknowledgements before yielding so concurrent ack attempts cannot duplicate them.
+    if (final) didAck = true
+    yield* connection.publish(reply, payload).pipe(mapError)
+  })
+  return {
+    [TypeId]: TypeId,
+    redelivered: info.redelivered,
+    info,
+    seq: info.streamSequence,
+    reply: message.reply,
+    headers: message.headers,
+    size: message.size,
+    data: message.data,
+    subject: message.subject,
+    sid: message.sid,
+    time,
+    timestamp: time.toISOString(),
+    timestampNanos,
+    ack: acknowledge("+ACK"),
+    nak: (millis) =>
+      acknowledge(millis === undefined ? "-NAK" : `-NAK ${JSON.stringify({ delay: millis * 1_000_000 })}`),
+    working: acknowledge("+WPI", false),
+    term: (reason = "") => acknowledge(reason ? `+TERM ${reason}` : "+TERM"),
+    ackAck: Effect.fnUntraced(function*(options = {}) {
+      if (didAck) return false
+      didAck = true
+      yield* connection.request(reply, "+ACK", { timeout: options.timeout ?? ackTimeout }).pipe(mapError)
+      return true
+    }),
+    next: Effect.fnUntraced(function*(subject, options = {}) {
+      if (didAck) return
+      didAck = true
+      yield* connection.publish(
+        reply,
+        `+NXT ${
+          JSON.stringify({
+            batch: 1,
+            ...options,
+            ...(options.expires === undefined ? {} : { expires: options.expires * 1_000_000 })
+          })
+        }`,
+        { reply: subject }
+      ).pipe(mapError)
+    }),
+    json: <A = unknown>() => message.json<A>().pipe(mapError),
+    decode: (schema) => message.decode(schema).pipe(mapError),
+    string: () => new TextDecoder().decode(message.data)
+  }
 })
 
-/**
- * Context tag for accessing the current JetStream message in a handler
- *
- * @category tags
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const JetStreamConsumeMessage = Context.Service<JetStreamMessage>(
   "@effect-messaging/nats/JetStreamConsumeMessage"
 )
-
-/**
- * Layer for providing the current JetStream message to a handler
- *
- * @category layers
- * @since 0.1.0
- */
-export const layer = (
-  message: JetStreamMessage
-): Layer.Layer<JetStreamMessage> => Layer.succeed(JetStreamConsumeMessage, message)
+/** @since 0.1.0 */
+export const layer = (message: JetStreamMessage): Layer.Layer<JetStreamMessage> =>
+  Layer.succeed(JetStreamConsumeMessage, message)

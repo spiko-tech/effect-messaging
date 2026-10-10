@@ -1,0 +1,1300 @@
+{
+  "upstreamVersion": "v3.4.0",
+  "total": 100,
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - jetstream not enabled",
+      "upstreamLine": 88,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - jetstream not enabled",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - account info",
+      "upstreamLine": 100,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - account info",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - account not enabled",
+      "upstreamLine": 108,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - account not enabled",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - empty stream config fails",
+      "upstreamLine": 137,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - empty stream config fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - empty stream config update fails",
+      "upstreamLine": 151,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - empty stream config update fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update stream name is internally added",
+      "upstreamLine": 172,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update stream name is internally added",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - delete empty stream name fails",
+      "upstreamLine": 187,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - delete empty stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - info empty stream name fails",
+      "upstreamLine": 201,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - info empty stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - info msg not found stream name fails",
+      "upstreamLine": 215,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - info msg not found stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - delete msg empty stream name fails",
+      "upstreamLine": 228,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - delete msg empty stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - delete msg not found stream name fails",
+      "upstreamLine": 242,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - delete msg not found stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - no stream lister is empty",
+      "upstreamLine": 255,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - no stream lister is empty",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream names is empty",
+      "upstreamLine": 263,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream names is empty",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - lister after empty, empty",
+      "upstreamLine": 271,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - lister after empty, empty",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - add stream",
+      "upstreamLine": 282,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - add stream",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge not found stream name fails",
+      "upstreamLine": 313,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge not found stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge empty stream name fails",
+      "upstreamLine": 326,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge empty stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream purge",
+      "upstreamLine": 340,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream purge",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge by sequence",
+      "upstreamLine": 357,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge by sequence",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge by filtered sequence",
+      "upstreamLine": 386,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge by filtered sequence",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge by subject",
+      "upstreamLine": 416,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge by subject [416]",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge by subject",
+      "upstreamLine": 446,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge by subject [446]",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge keep",
+      "upstreamLine": 476,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge keep",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge filtered keep",
+      "upstreamLine": 507,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge filtered keep",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - purge seq and keep fails",
+      "upstreamLine": 542,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - purge seq and keep fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream delete",
+      "upstreamLine": 555,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream delete",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream delete message",
+      "upstreamLine": 571,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream delete message",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream delete info",
+      "upstreamLine": 592,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream delete info",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer info on empty stream name fails",
+      "upstreamLine": 611,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer info on empty stream name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer info on empty consumer name fails",
+      "upstreamLine": 625,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer info on empty consumer name fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer info on not found stream fails",
+      "upstreamLine": 639,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer info on not found stream fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer info on not found consumer",
+      "upstreamLine": 651,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer info on not found consumer",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer info",
+      "upstreamLine": 664,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer info",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - no consumer lister with empty stream fails",
+      "upstreamLine": 679,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - no consumer lister with empty stream fails",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - no consumer lister with no consumers empty",
+      "upstreamLine": 692,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - no consumer lister with no consumers empty",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - lister",
+      "upstreamLine": 701,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - lister",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update stream",
+      "upstreamLine": 720,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update stream",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - get message",
+      "upstreamLine": 734,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - get message",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - get message (not found)",
+      "upstreamLine": 763,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - get message (not found)",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - get message payload",
+      "upstreamLine": 771,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - get message payload",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - advisories",
+      "upstreamLine": 795,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - advisories",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - validate name",
+      "upstreamLine": 812,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - validate name",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - minValidation",
+      "upstreamLine": 842,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - minValidation",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - cross account streams",
+      "upstreamLine": 876,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - cross account streams",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - cross account consumers",
+      "upstreamLine": 954,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - cross account consumers",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - jetstream error info",
+      "upstreamLine": 1021,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - jetstream error info",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update consumer",
+      "upstreamLine": 1040,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update consumer",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream info subjects",
+      "upstreamLine": 1075,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream info subjects",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - account limits",
+      "upstreamLine": 1110,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - account limits",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream update preserves other value",
+      "upstreamLine": 1166,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream update preserves other value",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer name",
+      "upstreamLine": 1184,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer name",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer name apis are not used on old servers",
+      "upstreamLine": 1320,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer name apis are not used on old servers",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer name apis are not used when disabled",
+      "upstreamLine": 1334,
+      "status": "outside-baseline",
+      "reason": "This upstream test injects private NatsConnectionImpl.features.disable(JS_NEW_CONSUMER_CREATE_API). The private per-connection feature-disable API is removed in the Effect-native design; public legacy-server routing is covered by the exact named durable legacy supported case."
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - mirror_direct options",
+      "upstreamLine": 1347,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - mirror_direct options",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumers with name and durable_name",
+      "upstreamLine": 1378,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumers with name and durable_name",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer name is validated",
+      "upstreamLine": 1411,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer name is validated",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - discard_new_per_subject option",
+      "upstreamLine": 1461,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - discard_new_per_subject option",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - paginated subjects",
+      "upstreamLine": 1507,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - paginated subjects",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - paged stream list",
+      "upstreamLine": 1543,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - paged stream list",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - paged consumer infos",
+      "upstreamLine": 1580,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - paged consumer infos",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - list filter",
+      "upstreamLine": 1621,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - list filter",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream names list filtering subject",
+      "upstreamLine": 1666,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream names list filtering subject",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - remap domain",
+      "upstreamLine": 1718,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - remap domain",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - filter_subjects",
+      "upstreamLine": 1745,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - filter_subjects",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - filter_subjects rejects filter_subject",
+      "upstreamLine": 1768,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - filter_subjects rejects filter_subject",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update filter_subject",
+      "upstreamLine": 1795,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update filter_subject",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update filter_subjects",
+      "upstreamLine": 1819,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update filter_subjects",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - update from filter_subject to filter_subjects",
+      "upstreamLine": 1843,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - update from filter_subject to filter_subjects",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stored msg decode",
+      "upstreamLine": 1899,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stored msg decode",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream/consumer metadata",
+      "upstreamLine": 1921,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream/consumer metadata",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer api action",
+      "upstreamLine": 2024,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer api action",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - validate stream name in operations",
+      "upstreamLine": 2066,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - validate stream name in operations",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - validate consumer name",
+      "upstreamLine": 2139,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - validate consumer name",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - validate consumer name in operations",
+      "upstreamLine": 2187,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - validate consumer name in operations",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - source transforms",
+      "upstreamLine": 2236,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - source transforms",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - source transforms rejected on old servers",
+      "upstreamLine": 2291,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - source transforms rejected on old servers",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream compression not supported",
+      "upstreamLine": 2366,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream compression not supported",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream compression",
+      "upstreamLine": 2390,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream compression",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream consumer limits",
+      "upstreamLine": 2411,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream consumer limits",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream consumer limits override",
+      "upstreamLine": 2446,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream consumer limits override",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream consumer limits rejected on old servers",
+      "upstreamLine": 2487,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream consumer limits rejected on old servers",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - api check not ok",
+      "upstreamLine": 2512,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - api check not ok",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - api check ok",
+      "upstreamLine": 2532,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - api check ok",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer create paused",
+      "upstreamLine": 2551,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer create paused",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - pause/unpause",
+      "upstreamLine": 2574,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - pause/unpause",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - consumer pedantic",
+      "upstreamLine": 2605,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - consumer pedantic",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - storage",
+      "upstreamLine": 2639,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - storage",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - pull consumer priority groups",
+      "upstreamLine": 2666,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - pull consumer priority groups",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - stream message ttls",
+      "upstreamLine": 2751,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - stream message ttls",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - message ttls",
+      "upstreamLine": 2791,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - message ttls",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - mirrors can be removed",
+      "upstreamLine": 2831,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - mirrors can be removed",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel sets header on stream create",
+      "upstreamLine": 2859,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel sets header on stream create",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel default omits header",
+      "upstreamLine": 2884,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel default omits header",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel header on consumer create",
+      "upstreamLine": 2909,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel header on consumer create",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel header on stream update",
+      "upstreamLine": 2935,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel header on stream update",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel stream update no header when delta plain",
+      "upstreamLine": 2958,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel stream update no header when delta plain",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel header on consumer update",
+      "upstreamLine": 2987,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel header on consumer update",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - sendRequiredApiLevel consumer update unrelated edit no header",
+      "upstreamLine": 3024,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - sendRequiredApiLevel consumer update unrelated edit no header",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - mirror/source consumer (ADR-60)",
+      "upstreamLine": 3062,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - mirror/source consumer (ADR-60)",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_test.ts",
+      "upstreamTestName": "jsm - mirror/source consumer requires name and deliver_subject (ADR-60)",
+      "upstreamLine": 3137,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManagementParity.test.ts",
+          "testName": "jsm - mirror/source consumer requires name and deliver_subject (ADR-60)",
+          "evidence": "Read the complete pinned upstream case and ported its assertions to native Effect/Stream/Option. Live integration validates broker state and typed API errors with scoped cleanup; isolated account, cross-account, JWT tier, pagination, metadata/version and ADR-60 cases use corresponding fixtures. Native Option.none substitutes null; typed Effect failure substitutes Promise rejection."
+        }
+      ]
+    }
+  ]
+}

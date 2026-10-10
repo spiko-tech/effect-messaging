@@ -1,317 +1,130 @@
-import type { Mock } from "@effect/vitest"
-import { describe, expect, it, vi } from "@effect/vitest"
-import { Effect, Fiber } from "effect"
+import { describe, expect, it } from "@effect/vitest"
+import { Deferred, Effect, Fiber, Queue } from "effect"
+import * as NATSConnection from "../src/NATSConnection.ts"
 import * as NATSMessage from "../src/NATSMessage.ts"
 import * as NATSPublisher from "../src/NATSPublisher.ts"
 import * as NATSSubscriber from "../src/NATSSubscriber.ts"
 import { testConnection } from "./dependencies.ts"
 
-// Use unique subject for this test file to avoid conflicts
-const TEST_SUBJECT = "nats.subscriber.test.subject"
-
-const publishAndAssertConsume = (
-  { content, onMessage, publisher, times }: {
-    publisher: NATSPublisher.NATSPublisher
-    onMessage: Mock<(message: NATSMessage.NATSMessage) => void>
-    content: Uint8Array
-    times: number
-  }
-) =>
-  Effect.gen(function*() {
-    yield* publisher.publish({
-      subject: TEST_SUBJECT,
-      payload: content
-    })
-
-    // Wait for the message to be consumed
-    yield* Effect.sleep("200 millis")
-    // Verify the message was consumed
-    expect(onMessage).toHaveBeenCalledTimes(times)
-    expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
-      subject: TEST_SUBJECT
-    }))
+const subject = "nats.subscriber.test.subject"
+const publish = (publisher: NATSPublisher.NATSPublisher, text: string) =>
+  publisher.publish({
+    subject,
+    payload: new TextEncoder().encode(text)
   })
 
 describe("NATSSubscriber", { concurrent: false }, () => {
-  describe("subscribe", () => {
-    it.live("Should consume published events", () =>
+  it.live("consumes published events in order", () =>
+    Effect.gen(function*() {
+      const publisher = yield* NATSPublisher.make()
+      const subscriber = yield* NATSSubscriber.make(subject)
+      const consumed = yield* Queue.unbounded<string>()
+      yield* subscriber.subscribe(Effect.gen(function*() {
+        const message = yield* NATSMessage.NATSConsumeMessage
+        yield* Queue.offer(consumed, yield* message.string)
+      })).pipe(Effect.forkChild)
+      for (const text of ["first", "second", "third"]) {
+        yield* publish(publisher, text)
+        expect(yield* Queue.take(consumed)).toBe(text)
+      }
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
+
+  it.live("does not persist messages published before the subscription", () =>
+    Effect.gen(function*() {
+      const connection = yield* NATSConnection.NATSConnection
+      const publisher = yield* NATSPublisher.make()
+      yield* publish(publisher, "before")
+      yield* connection.flush
+      const subscriber = yield* NATSSubscriber.make(subject)
+      const consumed = yield* Queue.unbounded<string>()
+      yield* subscriber.subscribe(Effect.gen(function*() {
+        const message = yield* NATSMessage.NATSConsumeMessage
+        yield* Queue.offer(consumed, yield* message.string)
+      })).pipe(Effect.forkChild)
+      yield* publish(publisher, "after")
+      expect(yield* Queue.take(consumed)).toBe("after")
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
+
+  it.live.each([undefined, "5 seconds"] as const)(
+    "lets an in-flight handler complete when interrupted, handlerTimeout=%s",
+    (handlerTimeout) =>
       Effect.gen(function*() {
         const publisher = yield* NATSPublisher.make()
+        const started = yield* Deferred.make<void>()
+        const release = yield* Deferred.make<void>()
+        const finished = yield* Deferred.make<void>()
+        const subscriber = yield* NATSSubscriber.make(
+          subject,
+          undefined,
+          handlerTimeout === undefined ? {} : { handlerTimeout }
+        )
+        const subscription = yield* subscriber.subscribe(Effect.gen(function*() {
+          yield* Deferred.succeed(started, undefined)
+          yield* Deferred.await(release)
+          yield* Deferred.succeed(finished, undefined)
+        })).pipe(Effect.forkChild)
+        yield* publish(publisher, "in-flight")
+        yield* Deferred.await(started)
+        const interruption = yield* Fiber.interrupt(subscription).pipe(Effect.forkChild)
+        yield* Deferred.succeed(release, undefined)
+        yield* Deferred.await(finished)
+        yield* Fiber.join(interruption)
+        expect(yield* Deferred.isDone(finished)).toBe(true)
+      }).pipe(Effect.scoped, Effect.provide(testConnection))
+  )
 
-        // IMPORTANT: For NATS Core, subscriber MUST be started BEFORE publishing
-        // because there is no persistence - messages are fire-and-forget
-        const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
+  it.live("interrupts a handler at its configured timeout and processes the next message", () =>
+    Effect.gen(function*() {
+      const publisher = yield* NATSPublisher.make()
+      const started = yield* Deferred.make<void>()
+      const interrupted = yield* Deferred.make<void>()
+      const finished = yield* Deferred.make<void>()
+      const subscriber = yield* NATSSubscriber.make(subject, undefined, { handlerTimeout: "25 millis" })
+      yield* subscriber.subscribe(Effect.gen(function*() {
+        const message = yield* NATSMessage.NATSConsumeMessage
+        const text = yield* message.string
+        if (text === "timeout") {
+          yield* Deferred.succeed(started, undefined)
+          return yield* Effect.never.pipe(Effect.onInterrupt(() => Deferred.succeed(interrupted, undefined)))
+        } else {
+          yield* Deferred.succeed(finished, undefined)
+        }
+      })).pipe(Effect.forkChild)
+      yield* publish(publisher, "timeout")
+      yield* Deferred.await(started)
+      yield* Deferred.await(interrupted)
+      yield* publish(publisher, "next")
+      yield* Deferred.await(finished)
+      expect(yield* Deferred.isDone(interrupted)).toBe(true)
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 
-        const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
+  it.live("continues processing when a handler fails", () =>
+    Effect.gen(function*() {
+      const publisher = yield* NATSPublisher.make()
+      const subscriber = yield* NATSSubscriber.make(subject)
+      const attempted = yield* Queue.unbounded<string>()
+      const finished = yield* Deferred.make<void>()
+      yield* subscriber.subscribe(Effect.gen(function*() {
+        const message = yield* NATSMessage.NATSConsumeMessage
+        const text = yield* message.string
+        yield* Queue.offer(attempted, text)
+        if (text === "fail") return yield* Effect.fail("Simulated handler error")
+        yield* Deferred.succeed(finished, undefined)
+      })).pipe(Effect.forkChild)
+      yield* publish(publisher, "fail")
+      expect(yield* Queue.take(attempted)).toBe("fail")
+      yield* publish(publisher, "success")
+      expect(yield* Queue.take(attempted)).toBe("success")
+      yield* Deferred.await(finished)
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 
-        // Start the subscription
-        yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
-          const message = yield* NATSMessage.NATSConsumeMessage
-          onMessage(message)
-        })))
-
-        // Give the subscription time to start
-        yield* Effect.sleep("100 millis")
-
-        // Message 1
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: new TextEncoder().encode("Message 1"),
-          times: 1
-        })
-
-        // Message 2
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: new TextEncoder().encode("Message 2"),
-          times: 2
-        })
-
-        // Message 3
-        yield* publishAndAssertConsume({
-          publisher,
-          onMessage,
-          content: new TextEncoder().encode("Message 3"),
-          times: 3
-        })
-      }).pipe(Effect.scoped, Effect.provide(testConnection)))
-
-    it.live("Should NOT receive messages published before subscription started (no persistence)", () =>
-      Effect.gen(function*() {
-        const publisher = yield* NATSPublisher.make()
-
-        const onMessage = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-
-        // Publish BEFORE subscribing - this message will be lost
-        yield* publisher.publish({
-          subject: TEST_SUBJECT,
-          payload: new TextEncoder().encode("Message published before subscription")
-        })
-
-        // Wait a bit to ensure the message is sent
-        yield* Effect.sleep("100 millis")
-
-        // Now start the subscriber
-        const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
-
-        yield* Effect.forkChild(subscriber.subscribe(Effect.gen(function*() {
-          const message = yield* NATSMessage.NATSConsumeMessage
-          onMessage(message)
-        })))
-
-        // Give the subscription time to start
-        yield* Effect.sleep("100 millis")
-
-        // The message published before subscription should NOT be received
-        expect(onMessage).toHaveBeenCalledTimes(0)
-
-        // Now publish a message AFTER subscription - this should be received
-        yield* publisher.publish({
-          subject: TEST_SUBJECT,
-          payload: new TextEncoder().encode("Message published after subscription")
-        })
-
-        yield* Effect.sleep("200 millis")
-
-        // Only the second message should be received
-        expect(onMessage).toHaveBeenCalledTimes(1)
-        expect(onMessage).toHaveBeenCalledWith(expect.objectContaining({
-          subject: TEST_SUBJECT
-        }))
-      }).pipe(Effect.scoped, Effect.provide(testConnection)))
-  })
-
-  describe("handler behavior on interruption", { concurrent: false }, () => {
-    it.live(
-      "Should let in-flight handler complete on interrupt",
-      () =>
-        Effect.gen(function*() {
-          const publisher = yield* NATSPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* NATSMessage.NATSConsumeMessage
-            onHandlingStarted(message)
-            yield* Effect.sleep("300 millis")
-            onHandlingFinished(message)
-          })
-
-          const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
-
-          // Start the subscription
-          const subscriptionFiber = yield* Effect.forkChild(subscriber.subscribe(handler))
-
-          // Give the subscription time to start
-          yield* Effect.sleep("100 millis")
-
-          yield* publisher.publish({
-            subject: TEST_SUBJECT,
-            payload: new TextEncoder().encode("My Message that will NOT be interrupted")
-          })
-
-          // Wait for the message to be consumed
-          yield* Effect.sleep("200 millis")
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Interrupt the subscription fiber
-          yield* Fiber.interrupt(subscriptionFiber).pipe(Effect.forkChild)
-
-          // The handler should complete despite the interrupt (uninterruptible)
-          yield* Effect.sleep("300 millis")
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(Effect.scoped, Effect.provide(testConnection)),
-      { timeout: 15000 }
-    )
-
-    it.live(
-      "Should let in-flight handler complete on interrupt when handlerTimeout is configured",
-      () =>
-        Effect.gen(function*() {
-          const publisher = yield* NATSPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* NATSMessage.NATSConsumeMessage
-            onHandlingStarted(message)
-            yield* Effect.sleep("300 millis")
-            onHandlingFinished(message)
-          })
-
-          // handlerTimeout longer than handler duration — should not time out
-          const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT, undefined, {
-            handlerTimeout: "500 millis"
-          })
-
-          const subscriptionFiber = yield* Effect.forkChild(subscriber.subscribe(handler))
-
-          yield* Effect.sleep("100 millis")
-
-          yield* publisher.publish({
-            subject: TEST_SUBJECT,
-            payload: new TextEncoder().encode("My Message that will NOT be interrupted")
-          })
-
-          yield* Effect.sleep("200 millis")
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-
-          // Interrupt the subscription fiber while handler is still running
-          yield* Fiber.interrupt(subscriptionFiber).pipe(Effect.forkChild)
-
-          // Handler should complete despite the interrupt
-          yield* Effect.sleep("300 millis")
-          expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-        }).pipe(Effect.scoped, Effect.provide(testConnection)),
-      { timeout: 15000 }
-    )
-
-    it.live(
-      "Should interrupt the handler when it exceeds the timeout",
-      () =>
-        Effect.gen(function*() {
-          const publisher = yield* NATSPublisher.make()
-
-          const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-          const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-
-          const handler = Effect.gen(function*() {
-            const message = yield* NATSMessage.NATSConsumeMessage
-            onHandlingStarted(message)
-            // This will timeout since handlerTimeout is 200ms
-            yield* Effect.sleep("500 millis")
-            onHandlingFinished(message)
-          })
-
-          const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT, undefined, {
-            handlerTimeout: "200 millis"
-          })
-
-          // Start the subscription
-          yield* Effect.forkChild(subscriber.subscribe(handler))
-
-          // Give the subscription time to start
-          yield* Effect.sleep("100 millis")
-
-          yield* publisher.publish({
-            subject: TEST_SUBJECT,
-            payload: new TextEncoder().encode("My Message that will timeout")
-          })
-
-          // Wait for the timeout
-          yield* Effect.sleep("500 millis")
-
-          // Handler started but did not finish due to timeout
-          expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-          expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-        }).pipe(Effect.scoped, Effect.provide(testConnection)),
-      { timeout: 15000 }
-    )
-  })
-
-  describe("error handling", () => {
-    it.live("Should continue processing messages when handler fails", () =>
-      Effect.gen(function*() {
-        const publisher = yield* NATSPublisher.make()
-
-        const onHandlingStarted = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-        const onHandlingFinished = vi.fn<(message: NATSMessage.NATSMessage) => void>()
-        let messageCount = 0
-
-        const handler = Effect.gen(function*() {
-          const message = yield* NATSMessage.NATSConsumeMessage
-          messageCount++
-          onHandlingStarted(message)
-
-          if (messageCount === 1) {
-            // Fail on first message
-            return yield* Effect.fail("Simulated handler error")
-          }
-
-          onHandlingFinished(message)
-        })
-
-        const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
-
-        // Start the subscription
-        yield* Effect.forkChild(subscriber.subscribe(handler))
-
-        // Give the subscription time to start
-        yield* Effect.sleep("100 millis")
-
-        // First message - will fail
-        yield* publisher.publish({
-          subject: TEST_SUBJECT,
-          payload: new TextEncoder().encode("Message that will fail")
-        })
-
-        yield* Effect.sleep("200 millis")
-        expect(onHandlingStarted).toHaveBeenCalledTimes(1)
-        expect(onHandlingFinished).toHaveBeenCalledTimes(0)
-
-        // Second message - should succeed
-        yield* publisher.publish({
-          subject: TEST_SUBJECT,
-          payload: new TextEncoder().encode("Message that will succeed")
-        })
-
-        yield* Effect.sleep("200 millis")
-        expect(onHandlingStarted).toHaveBeenCalledTimes(2)
-        expect(onHandlingFinished).toHaveBeenCalledTimes(1)
-      }).pipe(Effect.scoped, Effect.provide(testConnection)), { timeout: 15000 })
-  })
-
-  describe("healthCheck", () => {
-    it.live("Should succeed when subscription is healthy", () =>
-      Effect.gen(function*() {
-        const subscriber = yield* NATSSubscriber.make(TEST_SUBJECT)
-
-        // Health check should succeed
-        yield* subscriber.healthCheck
-      }).pipe(Effect.scoped, Effect.provide(testConnection)))
-  })
+  it.live("checks subscription health and reports a closed connection", () =>
+    Effect.gen(function*() {
+      const connection = yield* NATSConnection.NATSConnection
+      const subscriber = yield* NATSSubscriber.make(subject)
+      yield* subscriber.healthCheck
+      yield* connection.close
+      const error = yield* subscriber.healthCheck.pipe(Effect.flip)
+      expect(error._tag).toBe("SubscriberError")
+    }).pipe(Effect.scoped, Effect.provide(testConnection)))
 })

@@ -1,47 +1,39 @@
 /**
  * @since 0.1.0
  */
-import type * as JetStream from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Stream from "effect/Stream"
-import type * as utils from "./internal/utils.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamLister")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
-
-/**
- * Represents a NATS JetStream Lister wrapper with Effect methods
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamLister<T, E> {
   readonly [TypeId]: TypeId
-  readonly next: () => Effect.Effect<Array<T>>
-  readonly stream: Stream.Stream<T, E, never>
-
-  /** @internal */
-  readonly lister: JetStream.Lister<T>
+  readonly next: () => Effect.Effect<Array<T>, E>
+  readonly stream: Stream.Stream<T, E>
 }
-
 /** @internal */
-export const make =
-  <E>(ErrorClass: utils.NATSErrorConstructor<E>) => <T>(lister: JetStream.Lister<T>): JetStreamLister<T, E> => ({
+export const make = <T, E>(
+  page: (offset: number) => Effect.Effect<readonly [ReadonlyArray<T>, Option.Option<number>], E>
+): JetStreamLister<T, E> => {
+  let cursor: Option.Option<number> = Option.some(0)
+  return {
     [TypeId]: TypeId,
-    next: () => Effect.promise(() => lister.next()),
-    stream: Stream.fromAsyncIterable(
-      lister,
-      (error) => new ErrorClass({ reason: "An error occurred in lister async iterable", cause: error })
-    ),
-
-    lister
-  })
+    next: Effect.fnUntraced(function*() {
+      if (Option.isNone(cursor)) return []
+      const [values, next] = yield* page(cursor.value)
+      cursor = next
+      return Array.from(values)
+    }),
+    stream: Stream.paginate(0, page)
+  }
+}
+/** @internal */
+export const mapError = <T, E, E2>(lister: JetStreamLister<T, E>, f: (error: E) => E2): JetStreamLister<T, E2> => ({
+  [TypeId]: TypeId,
+  next: () => lister.next().pipe(Effect.mapError(f)),
+  stream: lister.stream.pipe(Stream.mapError(f))
+})

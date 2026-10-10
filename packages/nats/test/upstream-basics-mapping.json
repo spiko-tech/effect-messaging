@@ -1,0 +1,1164 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/basics_test.ts": 88
+  },
+  "total": 88,
+  "covered": 88,
+  "inapplicable": 0,
+  "notes": [
+    "Local controlled brokers replace public demo endpoints. Private Promise, iterator, listener and DNS internals map to observable Effect lifecycle and address fallback laws."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - connect port",
+      "upstreamLine": 53,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - connect default",
+      "upstreamLine": 59,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - connect host",
+      "upstreamLine": 65,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - connect hostport",
+      "upstreamLine": 70,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - scott",
+      "upstreamLine": 75,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - connect servers",
+      "upstreamLine": 80,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - fail connect",
+      "upstreamLine": 86,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - local initial connection fails, infoSent=%s",
+          "evidence": "Both unavailable listener and valid INFO followed by abrupt EOF before PONG fail typed connection acquisition."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - publish",
+      "upstreamLine": 96,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - publish",
+          "evidence": "Empty publication without interested subscribers is accepted and confirmed by flush."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no publish without subject",
+      "upstreamLine": 103,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "rejects invalid subjects %j before writing to the socket",
+          "evidence": "Empty string subject rejects with typed invalid_subject error."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - pubsub",
+      "upstreamLine": 115,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - pubsub and subscriptions iterate",
+          "evidence": "Scoped Stream receives one world message, increments processed count, and releases subscription after take(1)."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscribe and unsubscribe",
+      "upstreamLine": 131,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscribe and unsubscribe",
+          "evidence": "Subscription subject/initial received/max/id and updated max are asserted; explicit unsubscribe closes subscription."
+        },
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "queue groups deliver each publication once while ordinary subscriptions receive every publication",
+          "evidence": "Queue option is verified by broker distribution among group members; native abstraction does not expose upstream private registration fields."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscriptions iterate",
+      "upstreamLine": 166,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - pubsub and subscriptions iterate",
+          "evidence": "Scoped Stream receives one world message, increments processed count, and releases subscription after take(1)."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscriptions pass exact subject to cb",
+      "upstreamLine": 182,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - correct message metadata, reply=%s",
+          "evidence": "Wildcard delivery retains actual subject and data; true variant retains reply; false variant respond returns false without a reply subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscribe returns Subscription",
+      "upstreamLine": 199,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscribe returns Subscription",
+          "evidence": "Returned subscription exposes the first native subscription ID."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - wildcard subscriptions",
+      "upstreamLine": 207,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - wildcard subscriptions",
+          "evidence": "Exact single-token and multi-token wildcard delivery totals match upstream 3/2/5."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - correct data in message",
+      "upstreamLine": 235,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - correct message metadata, reply=%s",
+          "evidence": "Wildcard delivery retains actual subject and data; true variant retains reply; false variant respond returns false without a reply subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - correct reply in message",
+      "upstreamLine": 255,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - correct message metadata, reply=%s",
+          "evidence": "Wildcard delivery retains actual subject and data; true variant retains reply; false variant respond returns false without a reply subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - respond returns false if no reply subject set",
+      "upstreamLine": 273,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - correct message metadata, reply=%s",
+          "evidence": "Wildcard delivery retains actual subject and data; true variant retains reply; false variant respond returns false without a reply subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - closed cannot subscribe",
+      "upstreamLine": 290,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - closed cannot %s",
+          "evidence": "Each operation after explicit connection close rejects with closed code."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - close cannot request",
+      "upstreamLine": 304,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - closed cannot %s",
+          "evidence": "Each operation after explicit connection close rejects with closed code."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - flush returns promise",
+      "upstreamLine": 318,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - flush returns effect",
+          "evidence": "Effect-native flush is an Effect and completes a real broker processing barrier."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - unsubscribe after close",
+      "upstreamLine": 328,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - unsubscribe after close",
+          "evidence": "Connection close followed by subscription unsubscribe is safe and stays closed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - unsubscribe stops messages",
+      "upstreamLine": 336,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - unsubscribe stops messages",
+          "evidence": "Unsubscribe in first callback prevents later publications from being received; received count remains one."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request",
+      "upstreamLine": 355,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - requests preserve binary replies, noMux=%s",
+          "evidence": "Both mux policies echo byte payload Uint8Array.of(1234) exactly through native request/reply."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request no responders",
+      "upstreamLine": 369,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request no responders, noMux=%s",
+          "evidence": "Both mux policies reject empty-service request immediately with no_responders and original subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request no responders noMux",
+      "upstreamLine": 382,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request no responders, noMux=%s",
+          "evidence": "Both mux policies reject empty-service request immediately with no_responders and original subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request timeout",
+      "upstreamLine": 394,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request timeout, noMux=%s",
+          "evidence": "Silent responder causes typed timeout in both request modes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request timeout noMux",
+      "upstreamLine": 405,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request timeout, noMux=%s",
+          "evidence": "Silent responder causes typed timeout in both request modes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request cancel rejects",
+      "upstreamLine": 416,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "interrupting a pending request permits a subsequent request to finish",
+          "evidence": "Effect cancellation interrupts pending request fiber; a new request completes on same connection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - old style requests",
+      "upstreamLine": 437,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request with headers and custom reply=%s",
+          "evidence": "Header payload echoed exactly; custom true variant uses dedicated caller-specified reply subject, checked on response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - reply can only be used with noMux",
+      "upstreamLine": 456,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - reply can only be used with noMux",
+          "evidence": "Custom reply with multiplexed request rejects invalid_argument."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request with headers",
+      "upstreamLine": 475,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request with headers and custom reply=%s",
+          "evidence": "Header payload echoed exactly; custom true variant uses dedicated caller-specified reply subject, checked on response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request with headers and custom subject",
+      "upstreamLine": 495,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request with headers and custom reply=%s",
+          "evidence": "Header payload echoed exactly; custom true variant uses dedicated caller-specified reply subject, checked on response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request requires a subject",
+      "upstreamLine": 517,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request requires a subject",
+          "evidence": "JavaScript request without subject must fail typed invalid_subject, not throw a defect."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - closed returns error",
+      "upstreamLine": 530,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAdversarial.test.ts",
+          "testName": "protocol corruption after CONNECT closes pending operations rather than reconnecting",
+          "evidence": "Closed awaiter preserves typed protocol_error following corrupt server protocol."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscription with timeout",
+      "upstreamLine": 540,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "subscription timeout fails a silent stream with a typed error",
+          "evidence": "Silent stream reaches subscription timeout, fails NATSSubscriptionError, closes, and leaves connection flush usable."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscription expecting 2 doesn't fire timeout",
+      "upstreamLine": 555,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscription expecting 2 doesn't fire timeout",
+          "evidence": "First message cancels 25 ms timer despite max 2; closed remains absent at75 ms and second message completes normally."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscription timeout auto cancels",
+      "upstreamLine": 575,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscription timeout auto cancels",
+          "evidence": "Receiving max 2 messages completes subscription and cancels timeout without closure error."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux requests create normal subs",
+      "upstreamLine": 595,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - no mux requests create normal subs",
+          "evidence": "Broker connz proves one responder and one dedicated request subscription, without a third global mux inbox; interruption removes dedicated interest."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux requests timeout",
+      "upstreamLine": 609,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request timeout, noMux=%s",
+          "evidence": "Silent responder causes typed timeout in both request modes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux requests",
+      "upstreamLine": 623,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - requests preserve binary replies, noMux=%s",
+          "evidence": "Dedicated reply subscription echoes byte payload Uint8Array.of(1234) exactly. Mux mode is separately exercised by typed payload loop."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux request timeout doesn't leak subs",
+      "upstreamLine": 639,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - no mux %s doesn't leak subs",
+          "evidence": "Broker subscription count returns exactly to baseline after timeout and synthesized no-responder response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux request no responders doesn't leak subs",
+      "upstreamLine": 657,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - no mux %s doesn't leak subs",
+          "evidence": "Broker subscription count returns exactly to baseline after timeout and synthesized no-responder response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - no mux request no perms doesn't leak subs",
+      "upstreamLine": 670,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - no mux request no perms doesn't leak subs",
+          "evidence": "Denied publication and denied reply subscription both fail permissions and remove all dedicated subscription interest according to connz."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - max_payload errors",
+      "upstreamLine": 712,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - max_payload errors",
+          "evidence": "Advertised 1024-byte limit rejects oversized publish/request/respond; failed response leaves requester to typed timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - close cancels requests",
+      "upstreamLine": 765,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - close cancels requests",
+          "evidence": "Admitted pending request fails closed when owning connection is explicitly closed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - empty message",
+      "upstreamLine": 783,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - data types empty %j",
+          "evidence": "Both undefined and zero-length bytes survive publish/request/requestMany with zero-length payload."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - msg buffers dont overwrite",
+      "upstreamLine": 802,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - msg buffers dont overwrite",
+          "evidence": "100 publications reuse and mutate one maximum-sized buffer; every retained delivery has correct full byte array, derived subject and reply."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - get client ip",
+      "upstreamLine": 857,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - info and api_lvl and client ip",
+          "evidence": "Negotiated info exposes numeric API level and a valid IP address; explicit close clears current info."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subs pending count",
+      "upstreamLine": 867,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subs pending count",
+          "evidence": "Ten pending messages decrement as stream processing increases; pending plus processed remains 10 each time."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - create inbox",
+      "upstreamLine": 890,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - create inbox",
+          "evidence": "Effect inbox generator accepts null/undefined/empty defaults and custom prefix with unique suffix; non-string JavaScript input rejects Schema validation."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - custom prefix",
+      "upstreamLine": 914,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - custom prefix, noMux=%s",
+          "evidence": "Responder observes caller-configured inbox prefix with both request modes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - custom prefix noMux",
+      "upstreamLine": 929,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - custom prefix, noMux=%s",
+          "evidence": "Responder observes caller-configured inbox prefix with both request modes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - debug",
+      "upstreamLine": 944,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscription with timeout cancels on message",
+      "upstreamLine": 951,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscription expecting 2 doesn't fire timeout",
+          "evidence": "First message cancels 25 ms timer despite max 2; closed remains absent at75 ms and second message completes normally."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - subscription cb with timeout cancels on message",
+      "upstreamLine": 966,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - subscription cb with timeout cancels on message",
+          "evidence": "First callback admission cancels25 ms timer with max 2; closure remains absent past 75 ms."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - resolve",
+      "upstreamLine": 984,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeTransport.test.ts",
+          "testName": "default DNS resolution falls back between families while resolve false uses the first address",
+          "evidence": "Local dual-family DNS resolves both addresses; bind opposite first address. Default policy connects through family fallback, while resolve:false fails on first address, proving adapter resolution policy without exposing upstream private metadata."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - port and server are mutually exclusive",
+      "upstreamLine": 995,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSOptions.test.ts",
+          "testName": "rejects $label without opening a socket",
+          "evidence": "Parameterized servers combined with port rejects invalid_argument before SocketFactory is acquired."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - rtt",
+      "upstreamLine": 1006,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - rtt rejects disconnected and closed states",
+          "evidence": "Real roundtrip is nonnegative; controlled broker stop observes disconnected RTT rejection then closed rejection after final reconnect failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many count",
+      "upstreamLine": 1031,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many $label",
+          "evidence": "Exact count 5, stall 10, sentinel 11 including empty terminator, partial 10, and silent 0 assertions distinguish immediate completion from full timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many jitter",
+      "upstreamLine": 1062,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many $label",
+          "evidence": "Exact count 5, stall 10, sentinel 11 including empty terminator, partial 10, and silent 0 assertions distinguish immediate completion from full timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many sentinel",
+      "upstreamLine": 1093,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many $label",
+          "evidence": "Exact count 5, stall 10, sentinel 11 including empty terminator, partial 10, and silent 0 assertions distinguish immediate completion from full timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many sentinel - partial response",
+      "upstreamLine": 1125,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many $label",
+          "evidence": "Exact count 5, stall 10, sentinel 11 including empty terminator, partial 10, and silent 0 assertions distinguish immediate completion from full timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many wait for timer - no respone",
+      "upstreamLine": 1156,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many $label",
+          "evidence": "Exact count 5, stall 10, sentinel 11 including empty terminator, partial 10, and silent 0 assertions distinguish immediate completion from full timeout."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request many waits for timer late response",
+      "upstreamLine": 1185,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - request many waits for timer late response",
+          "evidence": "Timer strategy accepts delayed response and still runs until configured maxWait."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - server version",
+      "upstreamLine": 1214,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - server version minimum feature requirements",
+          "evidence": "Native minimum-version abstraction accepts 2.8.2 and pull byte minimum 2.8.3; future major 3.0.0 fails with precise required-version reason, replacing private features map."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - info",
+      "upstreamLine": 1229,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - info and api_lvl and client ip",
+          "evidence": "Negotiated info exposes numeric API level and a valid IP address; explicit close clears current info."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - info api_lvl",
+      "upstreamLine": 1235,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - info and api_lvl and client ip",
+          "evidence": "Negotiated info exposes numeric API level and a valid IP address; explicit close clears current info."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - initial connect error",
+      "upstreamLine": 1246,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - local initial connection fails, infoSent=%s",
+          "evidence": "Both unavailable listener and valid INFO followed by abrupt EOF before PONG fail typed connection acquisition."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - close promise resolves",
+      "upstreamLine": 1275,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - close promise resolves and status closes",
+          "evidence": "Concurrent closed waiter resolves and status stream finishes after emitting close."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - inbox prefixes cannot have wildcards",
+      "upstreamLine": 1283,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - inbox prefixes cannot have wildcards",
+          "evidence": "Public Effect inbox helper rejects single-token and multi-token wildcard prefixes."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - msg typed payload",
+      "upstreamLine": 1301,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - msg typed payload",
+          "evidence": "Echoed null, number, string, arrays and object JSON decode exactly; empty payload JSON fails and plain string decodes correctly."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - ipv4 mapped to ipv6",
+      "upstreamLine": 1345,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - connect $label",
+          "evidence": "Parameterized real-broker connection options flush successfully and explicit close sets closed state; remote demo host replaced by controlled local endpoint."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - data types empty",
+      "upstreamLine": 1352,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - data types empty %j",
+          "evidence": "Both undefined and zero-length bytes survive publish/request/requestMany with zero-length payload."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - data types string",
+      "upstreamLine": 1383,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - data types string %j",
+          "evidence": "Empty and nonempty strings retain encoded bytes through publish/request/requestMany."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - json reviver",
+      "upstreamLine": 1417,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - json reviver",
+          "evidence": "Schema decoding applies custom Date and boolean revival to JSON response."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - sync subscription",
+      "upstreamLine": 1446,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - sync subscription becomes scoped stream pulls",
+          "evidence": "Stream.toPull yields message then terminates after unsubscribe, adapting upstream synchronous iterator to Effect pulls."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - publish message",
+      "upstreamLine": 1464,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - %s message",
+          "evidence": "Connection convenience methods publish or respond synthetic native message; receiver observes expected subject and payload."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - respond message",
+      "upstreamLine": 1486,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - %s message",
+          "evidence": "Connection convenience methods publish or respond synthetic native message; receiver observes expected subject and payload."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - resolve false",
+      "upstreamLine": 1508,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeTransport.test.ts",
+          "testName": "default DNS resolution falls back between families while resolve false uses the first address",
+          "evidence": "Local dual-family DNS resolves both addresses; bind opposite first address. Default policy connects through family fallback, while resolve:false fails on first address, proving adapter resolution policy without exposing upstream private metadata."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - stats",
+      "upstreamLine": 1519,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - stats match broker counters",
+          "evidence": "Native input/output message and byte counts after plain and header publication match independently decoded broker connz counters."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - slow",
+      "upstreamLine": 1560,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - slow",
+          "evidence": "Pending 11 crosses slow 10 and emits one notification; pending 12 does not duplicate; dequeue and refill recross emits another event."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - msg sids",
+      "upstreamLine": 1634,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - msg sids",
+          "evidence": "Delivered messages retain respective subscription IDs and size includes subject, reply and payload lengths."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - internal close listener",
+      "upstreamLine": 1702,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - internal close listener becomes cancellable scoped waiters",
+          "evidence": "Interrupting one closed waiter prevents its continuation, concurrent remaining waiters fan out safely, and later waits resolve immediately."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - publish tracing",
+      "upstreamLine": 1746,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - %s tracing",
+          "evidence": "Normal plus trace-only publication/request emits two tracing messages while ordinary subscriber receives only normal message."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - request tracing",
+      "upstreamLine": 1766,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - %s tracing",
+          "evidence": "Normal plus trace-only publication/request emits two tracing messages while ordinary subscriber receives only normal message."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - close status",
+      "upstreamLine": 1799,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - close promise resolves and status closes",
+          "evidence": "Concurrent closed waiter resolves and status stream finishes after emitting close."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/basics_test.ts",
+      "upstreamTestName": "basics - pub subject verified",
+      "upstreamLine": 1815,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBasicParity.test.ts",
+          "testName": "basics - pub subject verified",
+          "evidence": "Subject carrying protocol injection whitespace is rejected invalid_subject before wire publication."
+        }
+      ]
+    }
+  ]
+}

@@ -30,9 +30,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
           yield* client.publish(TEST_SUBJECT, "Fetch Message 2")
           yield* client.publish(TEST_SUBJECT, "Fetch Message 3")
 
-          // Small delay to ensure messages are stored
-          yield* Effect.sleep("100 millis")
-
           // Fetch messages
           const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
           const fetched = yield* consumer.fetch({ max_messages: 3, expires: 5000 })
@@ -70,7 +67,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
           }
 
           yield* client.publish(TEST_SUBJECT, JSON.stringify(payload))
-          yield* Effect.sleep("100 millis")
 
           const fetched = yield* consumer.fetch({ max_messages: 1, expires: 5000 })
           const messages = yield* fetched.stream.pipe(
@@ -97,7 +93,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
           const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
 
           yield* client.publish(TEST_SUBJECT, "Redelivery Test")
-          yield* Effect.sleep("100 millis")
 
           // First fetch - nak the message
           const fetched1 = yield* consumer.fetch({ max_messages: 1, expires: 5000 })
@@ -111,7 +106,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
           expect(messagesArray1[0].redelivered).toBe(false)
 
           yield* messagesArray1[0].nak()
-          yield* Effect.sleep("100 millis")
 
           // Second fetch - should get the same message redelivered
           const fetched2 = yield* consumer.fetch({ max_messages: 1, expires: 5000 })
@@ -139,8 +133,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
 
           yield* client.publish(TEST_SUBJECT, "Next Message 1")
           yield* client.publish(TEST_SUBJECT, "Next Message 2")
-
-          yield* Effect.sleep("100 millis")
 
           const msg1Option = yield* consumer.next({ expires: 5000 })
           expect(Option.isSome(msg1Option)).toBe(true)
@@ -174,8 +166,6 @@ describe("JetStreamClient", { concurrent: false }, () => {
           yield* client.publish(TEST_SUBJECT, "Consume Message 1")
           yield* client.publish(TEST_SUBJECT, "Consume Message 2")
           yield* client.publish(TEST_SUBJECT, "Consume Message 3")
-
-          yield* Effect.sleep("100 millis")
 
           // Start consuming - this returns an iterator that continuously receives messages
           const consumerMessages = yield* consumer.consume()

@@ -31,8 +31,6 @@ describe("JetStreamManager", { concurrent: false }, () => {
           yield* client.publish(TEST_SUBJECT, "Manager Test Message 2")
           yield* client.publish(TEST_SUBJECT, "Manager Test Message 3")
 
-          yield* Effect.sleep("100 millis")
-
           const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
           const fetched = yield* consumer.fetch({ max_messages: 3, expires: 5000 })
           const messages = yield* fetched.stream.pipe(
@@ -86,7 +84,6 @@ describe("JetStreamManager", { concurrent: false }, () => {
           expect(streamInfo.state.messages).toBe(0)
 
           yield* client.publish(TEST_SUBJECT, "Info Test")
-          yield* Effect.sleep("50 millis")
 
           const updatedStreamInfo = yield* manager.streams.info(TEST_STREAM)
           expect(updatedStreamInfo.state.messages).toBe(1)
@@ -108,8 +105,6 @@ describe("JetStreamManager", { concurrent: false }, () => {
           yield* client.publish(TEST_SUBJECT, "Purge Test 1")
           yield* client.publish(TEST_SUBJECT, "Purge Test 2")
           yield* client.publish(TEST_SUBJECT, "Purge Test 3")
-
-          yield* Effect.sleep("100 millis")
 
           const streamInfo = yield* manager.streams.info(TEST_STREAM)
           expect(streamInfo.state.messages).toBe(3)
@@ -150,8 +145,6 @@ describe("JetStreamManager", { concurrent: false }, () => {
 
           yield* client.publish(subject1, "Message on subject 1")
           yield* client.publish(subject2, "Message on subject 2")
-
-          yield* Effect.sleep("100 millis")
 
           const consumer = yield* client.consumers.get(TEST_STREAM, TEST_CONSUMER)
           const fetched = yield* consumer.fetch({ max_messages: 2, expires: 5000 })

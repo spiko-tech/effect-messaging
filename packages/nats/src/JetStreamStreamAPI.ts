@@ -1,114 +1,67 @@
 /**
  * @since 0.1.0
  */
-import type * as JetStream from "@nats-io/jetstream"
-import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
-import * as utils from "./internal/utils.ts"
-import * as JetStreamLister from "./JetStreamLister.ts"
-import * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
-import * as NATSError from "./NATSError.ts"
+import type * as Effect from "effect/Effect"
+import type * as Option from "effect/Option"
+import * as internal from "./internal/jetstreamStreams.ts"
+import type * as JetStreamLister from "./JetStreamLister.ts"
+import type * as JetStreamStoredMessage from "./JetStreamStoredMessage.ts"
+import type * as JetStreamStream from "./JetStreamStream.ts"
+import type * as T from "./JetStreamTypes.ts"
+import type * as NATSError from "./NATSError.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamStreamAPI")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
+export const TypeId: typeof internal.StreamAPITypeId = internal.StreamAPITypeId
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
-
-/**
- * Represents a NATS JetStream Stream API
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamStreamAPI {
   readonly [TypeId]: TypeId
+  readonly get: (stream: string) => Effect.Effect<JetStreamStream.JetStreamStream, NATSError.JetStreamStreamAPIError>
   readonly info: (
-    ...params: Parameters<JetStream.StreamAPI["info"]>
-  ) => Effect.Effect<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError, never>
+    stream: string,
+    options?: Partial<T.StreamInfoRequestOptions>
+  ) => Effect.Effect<T.StreamInfo, NATSError.JetStreamStreamAPIError>
   readonly add: (
-    ...params: Parameters<JetStream.StreamAPI["add"]>
-  ) => Effect.Effect<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError, never>
+    config: Partial<T.StreamConfig> & { readonly name: string }
+  ) => Effect.Effect<T.StreamInfo, NATSError.JetStreamStreamAPIError>
   readonly update: (
-    ...params: Parameters<JetStream.StreamAPI["update"]>
-  ) => Effect.Effect<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError, never>
+    stream: string,
+    config: Partial<T.StreamUpdateConfig>
+  ) => Effect.Effect<T.StreamInfo, NATSError.JetStreamStreamAPIError>
   readonly purge: (
-    ...params: Parameters<JetStream.StreamAPI["purge"]>
-  ) => Effect.Effect<JetStream.PurgeResponse, NATSError.JetStreamStreamAPIError, never>
-  readonly delete: (
-    ...params: Parameters<JetStream.StreamAPI["delete"]>
-  ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError, never>
-  readonly list: (
-    ...params: Parameters<JetStream.StreamAPI["list"]>
-  ) => Effect.Effect<
-    JetStreamLister.JetStreamLister<JetStream.StreamInfo, NATSError.JetStreamStreamAPIError>,
-    NATSError.JetStreamStreamAPIError,
-    never
+    stream: string,
+    options?: Partial<T.PurgeOpts>
+  ) => Effect.Effect<T.PurgeResponse, NATSError.JetStreamStreamAPIError>
+  readonly delete: (stream: string) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError>
+  readonly list: (subject?: string) => Effect.Effect<
+    JetStreamLister.JetStreamLister<
+      T.StreamInfo,
+      NATSError.JetStreamStreamAPIError
+    >
   >
   readonly deleteMessage: (
-    ...params: Parameters<JetStream.StreamAPI["deleteMessage"]>
-  ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError, never>
-  readonly getMessage: (
-    ...params: Parameters<JetStream.StreamAPI["getMessage"]>
-  ) => Effect.Effect<
+    stream: string,
+    seq: number,
+    erase?: boolean
+  ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError>
+  readonly getMessage: (stream: string, query: T.MsgRequest) => Effect.Effect<
     Option.Option<JetStreamStoredMessage.JetStreamStoredMessage>,
-    NATSError.JetStreamStreamAPIError,
-    never
+    NATSError.JetStreamStreamAPIError
   >
-  readonly find: (
-    ...params: Parameters<JetStream.StreamAPI["find"]>
-  ) => Effect.Effect<string, NATSError.JetStreamStreamAPIError, never>
-  readonly names: (
-    ...params: Parameters<JetStream.StreamAPI["names"]>
-  ) => Effect.Effect<
-    JetStreamLister.JetStreamLister<string, NATSError.JetStreamStreamAPIError>,
-    NATSError.JetStreamStreamAPIError,
-    never
+  readonly find: (subject: string) => Effect.Effect<string, NATSError.JetStreamStreamAPIError>
+  readonly names: (subject?: string) => Effect.Effect<
+    JetStreamLister.JetStreamLister<
+      string,
+      NATSError.JetStreamStreamAPIError
+    >
   >
-
-  /** @internal */
-  readonly streams: JetStream.StreamAPI
+  readonly leaderStepdown: (
+    stream: string,
+    options?: { readonly placement?: { readonly cluster: string } }
+  ) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError>
+  readonly removePeer: (stream: string, peer: string) => Effect.Effect<boolean, NATSError.JetStreamStreamAPIError>
 }
 
-const wrap = utils.wrap(NATSError.JetStreamStreamAPIError)
-const wrapAsync = utils.wrapAsync(NATSError.JetStreamStreamAPIError)
-
 /** @internal */
-export const make = (streams: JetStream.StreamAPI): JetStreamStreamAPI => ({
-  [TypeId]: TypeId,
-  info: (...params: Parameters<JetStream.StreamAPI["info"]>) =>
-    wrapAsync(() => streams.info(...params), "Failed to get stream info"),
-  add: (...params: Parameters<JetStream.StreamAPI["add"]>) =>
-    wrapAsync(() => streams.add(...params), "Failed to add stream"),
-  update: (...params: Parameters<JetStream.StreamAPI["update"]>) =>
-    wrapAsync(() => streams.update(...params), "Failed to update stream"),
-  purge: (...params: Parameters<JetStream.StreamAPI["purge"]>) =>
-    wrapAsync(() => streams.purge(...params), "Failed to purge stream"),
-  delete: (...params: Parameters<JetStream.StreamAPI["delete"]>) =>
-    wrapAsync(() => streams.delete(...params), "Failed to delete stream"),
-  list: (...params: Parameters<JetStream.StreamAPI["list"]>) =>
-    wrap(() => streams.list(...params), "Failed to list streams").pipe(
-      Effect.map(JetStreamLister.make(NATSError.JetStreamStreamAPIError))
-    ),
-  deleteMessage: (...params: Parameters<JetStream.StreamAPI["deleteMessage"]>) =>
-    wrapAsync(() => streams.deleteMessage(...params), "Failed to delete message"),
-  getMessage: (...params: Parameters<JetStream.StreamAPI["getMessage"]>) =>
-    wrapAsync(() => streams.getMessage(...params), "Failed to get message").pipe(
-      Effect.map((message) => Option.fromNullishOr(message)),
-      Effect.map(Option.map(JetStreamStoredMessage.make))
-    ),
-  find: (...params: Parameters<JetStream.StreamAPI["find"]>) =>
-    wrapAsync(() => streams.find(...params), "Failed to find stream"),
-  names: (...params: Parameters<JetStream.StreamAPI["names"]>) =>
-    wrap(() => streams.names(...params), "Failed to list stream names").pipe(
-      Effect.map(JetStreamLister.make(NATSError.JetStreamStreamAPIError))
-    ),
-
-  streams
-})
+export const make = internal.makeAPI

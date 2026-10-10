@@ -1,0 +1,846 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "ten core binary/buffer/properties/protocol/codec/IP/version/types/utility files",
+  "total": 66,
+  "covered": 29,
+  "outsideBaseline": 37,
+  "uncovered": 0,
+  "notes": [
+    "All66 exact case names inventoried. Outside-baseline entries explicitly identify removed private representations; attached native evidence is supplementary and never counts as covered.",
+    "Native Effect timeout, Deferred, Duration and explicit retry policies replace standalone utility wrappers.",
+    "No public facade was introduced solely for private helper assertions.",
+    "These private cases may remain in full upstream source inventory but must be excluded from covered counts and stated publish baseline."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/binary_test.ts",
+      "upstreamTestName": "binary - invalid2octet",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves upstream binary payload $label through a real broker",
+          "evidence": "Exact upstream byte array parameter, including invalid UTF-8 and NUL, roundtrips against isolated broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/binary_test.ts",
+      "upstreamTestName": "binary - invalidSequenceIdentifier",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves upstream binary payload $label through a real broker",
+          "evidence": "Exact upstream byte array parameter, including invalid UTF-8 and NUL, roundtrips against isolated broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/binary_test.ts",
+      "upstreamTestName": "binary - invalid3octet",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves upstream binary payload $label through a real broker",
+          "evidence": "Exact upstream byte array parameter, including invalid UTF-8 and NUL, roundtrips against isolated broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/binary_test.ts",
+      "upstreamTestName": "binary - invalid4octet",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves upstream binary payload $label through a real broker",
+          "evidence": "Exact upstream byte array parameter, including invalid UTF-8 and NUL, roundtrips against isolated broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/binary_test.ts",
+      "upstreamTestName": "binary - embeddednull",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves upstream binary payload $label through a real broker",
+          "evidence": "Exact upstream byte array parameter, including invalid UTF-8 and NUL, roundtrips against isolated broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - new buffer",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "DenoBuffer ArrayBuffer constructor is private and removed; native Parser accepts wire chunks and returns owned payloads."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - basic operations",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private reset/truncate/read/write cursor API has no native counterpart; Parser consumes complete frames and compacts remaining wire bytes."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - read/write byte",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private DenoBuffer byte read/write API is removed; ordered byte-wise parsing law is tested instead."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - write string",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private DenoBuffer.writeString is removed; native TextEncoder and Parser wire framing preserve the same text bytes."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - write empty string",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private zero-capacity allocation assertion has no exposed native buffer object; empty encode/feed behavior is tested."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - read empty at EOF",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private Reader.read returns nullable EOF or zero; native Socket Reader uses Effect and chunk arrays, so representation is absent."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - large byte writes",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private standalone DenoBuffer write API is absent; native parser growth and complete payload ownership are tested."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - too large byte writes",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "bounded parser accepts the exact payload budget and rejects budget plus one before payload arrival",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private grow(Number.MAX_VALUE) allocation API is absent; native explicit protocol payload budgets reject oversized declarations."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - grow write max buffer",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "bounded parser accepts the exact payload budget and rejects budget plus one before payload arrival",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private DenoBuffer MAX_SIZE and write count are absent; native configurable parser payload bound is tested at exact limit."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - grow read close max buffer plus 1",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "bounded parser accepts the exact payload budget and rejects budget plus one before payload arrival",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private Reader.readFrom/MAX_SIZE helper is absent; native parser rejects payload budget plus one."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - grow read close to max buffer",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "bounded parser accepts the exact payload budget and rejects budget plus one before payload arrival",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private readFrom/MAX_SIZE implementation limit is absent; native parser exact budget remains accepted."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - read close to max buffer with initial grow",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "bounded parser accepts the exact payload budget and rejects budget plus one before payload arrival",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private preallocation grow/readFrom API is absent; native automatic wire-buffer growth is tested."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - large byte reads",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private synchronous Reader cursor API is absent; chunk-size variation tests preserve complete parsed payloads."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - cap with pre allocated slice",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private capacity property and preallocated buffer constructor are absent in native architecture."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - read from sync",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private synchronous readFrom and nullable Reader argument helpers are absent; Socket uses Effect acquisition and typed errors."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - test grow",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private grow API and reader offsets are absent; parser growth/compaction correctness is tested across payload sizes and chunk boundaries."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - read all",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private synchronous readAll Reader utility is absent; native complete frame data retrieval replaces it."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - write all",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private synchronous writeAll Writer utility is absent; native socket Writer effects and parser ordered bytes replace it."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - bytes array buffer length",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "returned payloads have exact independent backing buffers across growth and compaction",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private bytes(copy) API is absent; native parsed payloads are independent exact-sized backing arrays."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - bytes copy false",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "returned payloads have exact independent backing buffers across growth and compaction",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private aliasing via bytes(copy:false) is intentionally absent; native Parser copies payload ownership and does not expose scratch capacity."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - bytes copy false grow exact bytes",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "returned payloads have exact independent backing buffers across growth and compaction",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private aliasing/preallocation bytes(copy:false) assertion is absent; native exact independent payload backing buffer is tested."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - concat",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private variadic concat(undefined,...) helper is removed; native Uint8Array wire framing and ordered chunk ingestion replace it."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - append",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private allocating append helper is removed; native byte-wise parser ingestion preserves appended byte order."
+    },
+    {
+      "upstreamFile": "core/tests/buffer_test.ts",
+      "upstreamTestName": "buffer - assert",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "incremental parser grows and compacts without losing %s payload bytes",
+          "evidence": "Supplementary native application evidence; does not claim the removed private helper assertion is equivalent"
+        }
+      ],
+      "reason": "Private buffer AssertionError constructor/assert helper is removed; native protocol validation reports NATSProtocolError instead."
+    },
+    {
+      "upstreamFile": "core/tests/databuffer_test.ts",
+      "upstreamTestName": "databuffer - empty",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Supplementary empty-input and accumulated-payload evidence"
+        }
+      ],
+      "reason": "Private DataBuffer fill/peek/drain/chunk-count APIs are removed; native Parser carries incremental wire buffering without exposing those representations."
+    },
+    {
+      "upstreamFile": "core/tests/databuffer_test.ts",
+      "upstreamTestName": "databuffer - simple",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary empty-input and accumulated-payload evidence"
+        }
+      ],
+      "reason": "Private DataBuffer fill/peek/drain/chunk-count APIs are removed; native Parser carries incremental wire buffering without exposing those representations."
+    },
+    {
+      "upstreamFile": "core/tests/databuffer_test.ts",
+      "upstreamTestName": "databuffer - from empty",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Supplementary empty-input and accumulated-payload evidence"
+        }
+      ],
+      "reason": "Private DataBuffer fill/peek/drain/chunk-count APIs are removed; native Parser carries incremental wire buffering without exposing those representations."
+    },
+    {
+      "upstreamFile": "core/tests/databuffer_test.ts",
+      "upstreamTestName": "databuffer - multi-fill",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "byte fragments retain order across repeated complete and partial messages",
+          "evidence": "Supplementary empty-input and accumulated-payload evidence"
+        }
+      ],
+      "reason": "Private DataBuffer fill/peek/drain/chunk-count APIs are removed; native Parser carries incremental wire buffering without exposing those representations."
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - VERSION is semver",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter default captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - connect is a function",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "the native connection constructor is callable and applies default endpoint policy %j",
+          "evidence": "Native public wire/application law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - default connect properties",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter default captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - configured token options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter token captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - configured user/pass options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter user captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - tls doesn't leak options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter tls captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - port is only honored if no servers provided",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "the native connection constructor is callable and applies default endpoint policy %j",
+          "evidence": "No servers defaults port4222; explicit port9999 configures dial endpoint; simultaneous port+servers validation separately rejects ambiguity"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - multi",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "CONNECT preserves the upstream %s option law",
+          "evidence": "Parameter multi captures actual CONNECT JSON on native Socket; exact relevant upstream serialization assertions"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/properties_test.ts",
+      "upstreamTestName": "properties - hasWsProtocol",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "WebSocket endpoint parsing accepts case-insensitive protocols and normalized IP forms",
+          "evidence": "Explicit native WebSocket facade replaces implicit global transport classifier; WS/ws/WSS/wss recognized case-insensitively"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/protocol_test.ts",
+      "upstreamTestName": "protocol - mux subscription cancel",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "interrupting a pending request permits a subsequent request to finish",
+          "evidence": "Effect interruption cancels native mux request state; subsequent request succeeds"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/protocol_test.ts",
+      "upstreamTestName": "protocol - bad dispatch is noop",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "unknown message IDs and unmatched mux replies are ignored without disturbing live subscriptions",
+          "evidence": "Unknown sid and mux reply ignored; IDs1/2 allocated; cancellation idempotent; remaining connection healthy"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/protocol_test.ts",
+      "upstreamTestName": "protocol - subs all",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "unknown message IDs and unmatched mux replies are ignored without disturbing live subscriptions",
+          "evidence": "Unknown sid and mux reply ignored; IDs1/2 allocated; cancellation idempotent; remaining connection healthy"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/protocol_test.ts",
+      "upstreamTestName": "protocol - cancel unknown sub",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "unknown message IDs and unmatched mux replies are ignored without disturbing live subscriptions",
+          "evidence": "Unknown sid and mux reply ignored; IDs1/2 allocated; cancellation idempotent; remaining connection healthy"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/protocol_test.ts",
+      "upstreamTestName": "protocol - protolen -1 on empty",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Private protoLen/extractProtocolMessage replaced by empty Parser frame list and standard empty command/string codec"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/encoders_test.ts",
+      "upstreamTestName": "encoders - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "empty input and command encoding preserve standard byte and string identity laws",
+          "evidence": "Empty encoding, concatenated1234 byte values49..52 and empty decoding all asserted"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parseip_test.ts",
+      "upstreamTestName": "ipparser",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "platform IP classification preserves IPv4 and IPv6 boundary laws",
+          "evidence": "Supplementary actual Node adapter delegate law: valid IPv4/IPv6 boundaries and invalid addresses; separate public WS normalization tests compressed/expanded IPs"
+        }
+      ],
+      "reason": "Private parseIP/ipV4 raw16-byte representation is removed. Node net.isIP and WHATWG URL parsing own native address classification/normalization; leading-zero and scoped-address acceptance differ between these private helpers."
+    },
+    {
+      "upstreamFile": "core/tests/parseip_test.ts",
+      "upstreamTestName": "ipparser - isIP",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "platform IP classification preserves IPv4 and IPv6 boundary laws",
+          "evidence": "Supplementary actual Node adapter delegate law: valid IPv4/IPv6 boundaries and invalid addresses; separate public WS normalization tests compressed/expanded IPs"
+        }
+      ],
+      "reason": "Private parseIP/ipV4 raw16-byte representation is removed. Node net.isIP and WHATWG URL parsing own native address classification/normalization; leading-zero and scoped-address acceptance differ between these private helpers."
+    },
+    {
+      "upstreamFile": "core/tests/parseip_test.ts",
+      "upstreamTestName": "ipparser - IPv6 edge cases",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "platform IP classification preserves IPv4 and IPv6 boundary laws",
+          "evidence": "Supplementary actual Node adapter delegate law: valid IPv4/IPv6 boundaries and invalid addresses; separate public WS normalization tests compressed/expanded IPs"
+        }
+      ],
+      "reason": "Private parseIP/ipV4 raw16-byte representation is removed. Node net.isIP and WHATWG URL parsing own native address classification/normalization; leading-zero and scoped-address acceptance differ between these private helpers."
+    },
+    {
+      "upstreamFile": "core/tests/parseip_test.ts",
+      "upstreamTestName": "ipparser - IPv4 edge cases",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "platform IP classification preserves IPv4 and IPv6 boundary laws",
+          "evidence": "Supplementary actual Node adapter delegate law: valid IPv4/IPv6 boundaries and invalid addresses; separate public WS normalization tests compressed/expanded IPs"
+        }
+      ],
+      "reason": "Private parseIP/ipV4 raw16-byte representation is removed. Node net.isIP and WHATWG URL parsing own native address classification/normalization; leading-zero and scoped-address acceptance differ between these private helpers."
+    },
+    {
+      "upstreamFile": "core/tests/semver_test.ts",
+      "upstreamTestName": "semver",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "version gates preserve numeric comparison for %s and %s",
+          "evidence": "All seven upstream comparison pairs pass native server feature gates"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/semver_test.ts",
+      "upstreamTestName": "semver - feature basics",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "version feature gates track server updates and reject unsupported requirements",
+          "evidence": "Supplementary requirement4vs5 and updated2.8.3vs2.8.2 native version law; no claim of private disable/reset parity"
+        }
+      ],
+      "reason": "Private mutable Features.disable/isDisabled/resetDisabled registry is removed. Native version gates recompute from current server metadata; no private feature-disable facade is introduced."
+    },
+    {
+      "upstreamFile": "core/tests/semver_test.ts",
+      "upstreamTestName": "semver - parse",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "version gate validates upstream semver form %s",
+          "evidence": "All five malformed strings reject; v-prefix and suffix parse for feature gate"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/types_test.ts",
+      "upstreamTestName": "types - json types",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves the upstream %s message type through a real broker",
+          "evidence": "Parameter json matches upstream6691/string/binary assertions; native Schema decode additionally validates JSON"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/types_test.ts",
+      "upstreamTestName": "types - string types",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves the upstream %s message type through a real broker",
+          "evidence": "Parameter string matches upstream6691/string/binary assertions; native Schema decode additionally validates JSON"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/types_test.ts",
+      "upstreamTestName": "types - binary types",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "preserves the upstream %s message type through a real broker",
+          "evidence": "Parameter binary matches upstream6691/string/binary assertions; native Schema decode additionally validates JSON"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - simple mutex",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "Effect semaphore serializes competing work and releases the waiting permit",
+          "evidence": "Supplementary equivalent serialization/release application law"
+        }
+      ],
+      "reason": "Private SimpleMutex.max/current/waiting representation is removed; Effect Semaphore is the ecosystem concurrency abstraction."
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - backoff",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "native reconnect delay callbacks preserve capped user-defined backoff sequences",
+          "evidence": "Native configurable callback implements0/100/200 capped sequence; TestClock proves actual physical retry times. Native Random jitter bounds separately covered."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - deadline",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "Effect timeout and Deferred preserve typed deadline and rejection laws",
+          "evidence": "Effect timeout rejects at100ms; Duration millis1000/nanos1e9 converts exactly"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - nanos",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "Effect timeout and Deferred preserve typed deadline and rejection laws",
+          "evidence": "Effect timeout rejects at100ms; Duration millis1000/nanos1e9 converts exactly"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - backoff bad arg",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "native reconnect delay callbacks preserve capped user-defined backoff sequences",
+          "evidence": "Supplementary valid callback sequence evidence; no assertion of invalid-input fallback"
+        }
+      ],
+      "reason": "Removed standalone backoff helper forgiving invalid-array fallback is not native behavior; typed connection configuration and explicit delay callbacks replace it."
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - debug deferred",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "Effect timeout and Deferred preserve typed deadline and rejection laws",
+          "evidence": "Supplementary actual typed Deferred rejection preserves hello world"
+        }
+      ],
+      "reason": "Private debugDeferred logging wrapper is removed; Effect Deferred retains typed rejection, without private console instrumentation."
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - randomToken shape",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "native inbox randomness produces unique single-token reply identifiers",
+          "evidence": "Supplementary native32-character shape and no embedded dots, not identical8-character private representation"
+        }
+      ],
+      "reason": "Private randomToken exactly8 alphanumeric characters is not retained; native UUID-derived32 hex identifiers preserve wildcard-safe single-token request namespace."
+    },
+    {
+      "upstreamFile": "core/tests/util_test.ts",
+      "upstreamTestName": "util - randomToken uniqueness",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSInternalLawsParity.test.ts",
+          "testName": "native inbox randomness produces unique single-token reply identifiers",
+          "evidence": "Ten thousand native reply identifiers exceed9990 unique, matching collision-resistance application law"
+        }
+      ]
+    }
+  ]
+}

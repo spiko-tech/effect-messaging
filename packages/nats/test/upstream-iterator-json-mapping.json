@@ -1,0 +1,257 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/iterators_test.ts": 10,
+    "core/tests/json_test.ts": 10
+  },
+  "total": 20,
+  "covered": 20,
+  "inapplicable": 0,
+  "notes": [
+    "syncIterator maps to scoped Stream.toPull: values arrive individually, pending pull blocks until publication, concurrent consumption and callback iteration reject without canceling the valid pull.",
+    "QueuedIteratorImpl maps to the queue-backed native iterator, preserving queued values before stop and refusing post-stop additions."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - unsubscribe breaks and closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - unsubscribe breaks and closes",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - autounsub breaks and closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - autounsub breaks and closes",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - permission error breaks and closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "a permission-denied subscription fails its stream without closing the connection",
+          "evidence": "Real permissioned broker fails and closes only the denied subscription"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - unsubscribing closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - unsubscribing closes",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - connection close closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - connection close closes",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - cb subs fail iterator",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - cb subs fail iterator",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - cb message counts",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - cb message counts",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - push on done is noop",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - push on done is noop",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - break cleans up",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - break cleans up",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/iterators_test.ts",
+      "upstreamTestName": "iterators - sync iterator",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "iterators - sync iterator",
+          "evidence": "Equivalent observable stream ownership and lifecycle law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - string",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - empty",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - null",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - number",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - false",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - true",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - empty array",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - any array",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - empty object",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/json_test.ts",
+      "upstreamTestName": "json - object",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSIteratorMessageParity.test.ts",
+          "testName": "json - $name",
+          "evidence": "All actual upstream input values"
+        }
+      ]
+    }
+  ]
+}

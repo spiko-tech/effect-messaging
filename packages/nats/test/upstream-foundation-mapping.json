@@ -1,0 +1,432 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/headers_test.ts": 25,
+    "core/tests/authenticator_test.ts": 9
+  },
+  "total": 34,
+  "covered": 34,
+  "inapplicable": 0,
+  "notes": [
+    "testName is the exact native declaration string; % placeholders denote parameterized cases.",
+    "Private Parser/MsgImpl assertions map to native Parser Message frame and MsgHdrs public laws.",
+    "Authenticator Promise callbacks map to Effect authentication; reconnect tests use completion signals instead of arbitrary delays.",
+    "This artifact covers only these two upstream files, not all official client tests."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - illegal key",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "rejects invalid header name %j",
+          "evidence": "All upstream invalid names plus ASCII enumeration"
+        },
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "rejects header injection %j",
+          "evidence": "Both CR and LF rejected"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - case sensitive",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "exact matching distinguishes differently cased names",
+          "evidence": "Separate values, append, delete and replacement"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - case insensitive",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "ignore-case set replaces all matching variants and delete removes every variant",
+          "evidence": "Both has/values casing variants and append aggregation"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - mime",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "canonical MIME set append and delete share the same normalized key",
+          "evidence": "Set replacement, canonical append and deletion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - publish has headers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "published headers retain both exact keys through a broker round trip",
+          "evidence": "Live broker publication with both a/b headers"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - request has headers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "request headers and custom response status survive a broker round trip",
+          "evidence": "Live request carries x; response echoes x and status"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - status",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "decodes status %s %s",
+          "evidence": "All upstream cases 0,200 empty/OK,404 and503 plus100"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - equality",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "equality compares all fields and values independently of insertion order",
+          "evidence": "Empty equality, equal repeated values, unequal counts and unequal content"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - canonical",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "canonicalizes %s",
+          "evidence": "All three upstream foo/foo-bar/foo-bar-baz examples"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - append ignore case",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "append matching law %s",
+          "evidence": "Parameter insensitive"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - append exact case",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "append matching law %s",
+          "evidence": "Parameter exact"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - append canonical",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "append matching law %s",
+          "evidence": "Parameter canonical"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - malformed header are ignored",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "HMSG exposes ignored malformed lines, trimmed values and status entries",
+          "evidence": "Parser Message frame replaces upstream private MsgImpl; BAD is ignored"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - handles no space",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "HMSG exposes ignored malformed lines, trimmed values and status entries",
+          "evidence": "A:A decodes as A"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - trims values",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "HMSG exposes ignored malformed lines, trimmed values and status entries",
+          "evidence": "Leading/trailing field whitespace is trimmed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - error headers may have other entries",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "HMSG exposes ignored malformed lines, trimmed values and status entries",
+          "evidence": "Status100 heartbeat retains both consumer/stream1 entries"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - code/description",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "constructing status headers requires both code and description",
+          "evidence": "Both incomplete status combinations reject"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - codec",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "request headers and custom response status survive a broker round trip",
+          "evidence": "Live response status500 and custom description retained"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - malformed headers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "broker-normalized HPUB edge cases decode payload and status without NaN",
+          "evidence": "All four raw upstream HPUB wire cases with broker normalization"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - iterator",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "iteration, last and record conversion preserve repeated values",
+          "evidence": "Insertion-order tuple iteration with multivalues"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - last",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "iteration, last and record conversion preserve repeated values",
+          "evidence": "Absent, singleton, repeated last values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - record",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "iteration, last and record conversion preserve repeated values",
+          "evidence": "Record roundtrip equality and repeated values"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - fromRecord normalizes non-array values",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "record normalization stringifies scalar numbers and preserves string arrays",
+          "evidence": "Exact upstream a:x,d:1 scalar normalization"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - not equals",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "equality compares all fields and values independently of insertion order",
+          "evidence": "Nonempty header object differs from empty"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/headers_test.ts",
+      "upstreamTestName": "headers - empty",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "empty headers have no encoded payload",
+          "evidence": "Empty toString equals empty string"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - username password fns",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates username/password %s on reconnect",
+          "evidence": "Parameter both callbacks"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - username string password fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates username/password %s on reconnect",
+          "evidence": "Parameter password callback"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - username fn password string",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates username/password %s on reconnect",
+          "evidence": "Parameter username callback"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - token fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates token callback on reconnect",
+          "evidence": "Live authenticated flush before and after physical reconnect"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - nkey fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates NKey seed callback on reconnect",
+          "evidence": "Live nonce signing and seed callback on both physical connections"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - jwt bearer fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "re-evaluates bearer JWT callback on reconnect without a signing seed",
+          "evidence": "Native-generated operator/account bearer user; no signing seed required"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - jwt fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSJwtTransport.test.ts",
+          "testName": "rotates %s and signing seed on a physical reconnect",
+          "evidence": "Parameter JWT; live reconnect also changes JWT and seed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - creds fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSJwtTransport.test.ts",
+          "testName": "rotates %s and signing seed on a physical reconnect",
+          "evidence": "Parameter credentials; live reconnect also changes credentials content"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/authenticator_test.ts",
+      "upstreamTestName": "authenticator - bad creds",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAuth.test.ts",
+          "testName": "rejects malformed plain-text credentials through the typed failure channel",
+          "evidence": "Exact hello input; native Effect NATSAuthError replaces upstream synchronous throw"
+        }
+      ]
+    }
+  ]
+}

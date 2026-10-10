@@ -1,0 +1,384 @@
+{
+  "upstreamVersion": "v3.4.0",
+  "total": 29,
+  "verification": "29 native subscription tests and14drain tests pass; pnpm build/lint/check pass.",
+  "cases": [
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - max option",
+      "upstreamLine": 22,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - $name",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - unsubscribe",
+      "upstreamLine": 34,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - $name",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - can unsub from auto-unsubscribed",
+      "upstreamLine": 47,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - $name",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - can break to unsub",
+      "upstreamLine": 60,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - can break to unsub",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - can change auto-unsub to a higher value",
+      "upstreamLine": 78,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - $name",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - request receives expected count with multiple helpers",
+      "upstreamLine": 91,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - request receives expected count with multiple helpers",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - manual request receives expected count with multiple helpers",
+      "upstreamLine": 118,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - manual request receives expected count with multiple helpers",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - check subscription leaks",
+      "upstreamLine": 142,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - check subscription leaks",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - check request leaks",
+      "upstreamLine": 152,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - check request leaks",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - check cancelled request leaks",
+      "upstreamLine": 188,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - cancelled request cleanup silent=%s",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/autounsub_test.ts",
+      "upstreamTestName": "autounsub - timeout cancelled request leaks",
+      "upstreamLine": 215,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "autounsub - cancelled request cleanup silent=%s",
+          "evidence": "Live publication count, lifetime maximum, processing and closed-state assertions; reply-interest checks use broker /connz rather than private subscription maps."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - connection await using calls drain",
+      "upstreamLine": 21,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - connection scope calls drain",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - connection async dispose is idempotent when closed",
+      "upstreamLine": 34,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - connection finalization closed=%s",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - connection async dispose awaits in-flight drain",
+      "upstreamLine": 44,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - connection finalization closed=%s",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - subscription await using drains",
+      "upstreamLine": 54,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - iterator subscription await using drains",
+      "upstreamLine": 81,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - iterator subscription closed promise resolves on dispose",
+      "upstreamLine": 106,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - subscription async dispose is idempotent when closed",
+      "upstreamLine": 124,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - subscription async dispose awaits in-flight drain",
+      "upstreamLine": 136,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - subscription async dispose when connection closed",
+      "upstreamLine": 149,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - subscription scope $0",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/dispose_test.ts",
+      "upstreamTestName": "dispose - script use",
+      "upstreamLine": 159,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "dispose - script use",
+          "evidence": "Effect scopes replace await using and Symbol.asyncDispose. Scope exit, repeated close, in-flight drain, all admitted deliveries, subscription closed completion and repeated script acquisition are asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/queues_test.ts",
+      "upstreamTestName": "queues - deliver to single queue",
+      "upstreamLine": 21,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "queues - $0",
+          "evidence": "Five subscribers per queue: exactly one delivery per queue; independent non-queue observer receives the same publication."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/queues_test.ts",
+      "upstreamTestName": "queues - deliver to multiple queues",
+      "upstreamLine": 37,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "queues - $0",
+          "evidence": "Five subscribers per queue: exactly one delivery per queue; independent non-queue observer receives the same publication."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/queues_test.ts",
+      "upstreamTestName": "queues - queues and subs independent",
+      "upstreamLine": 66,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "queues - $0",
+          "evidence": "Five subscribers per queue: exactly one delivery per queue; independent non-queue observer receives the same publication."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/resub_test.ts",
+      "upstreamTestName": "resub - iter",
+      "upstreamLine": 26,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "resub - preserves counters callback=%s",
+          "evidence": "Native resubscribe replaces upstream private _resub: preserves handle and lifetime counters, changes SID and subject, retains the maximum, and broker /connz verifies old interest removed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/resub_test.ts",
+      "upstreamTestName": "resub - callback",
+      "upstreamLine": 55,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "resub - preserves counters callback=%s",
+          "evidence": "Native resubscribe replaces upstream private _resub: preserves handle and lifetime counters, changes SID and subject, retains the maximum, and broker /connz verifies old interest removed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/resub_test.ts",
+      "upstreamTestName": "resub - removes server interest",
+      "upstreamLine": 112,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "resub - removes server interest",
+          "evidence": "Native resubscribe replaces upstream private _resub: preserves handle and lifetime counters, changes SID and subject, retains the maximum, and broker /connz verifies old interest removed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/timeout_test.ts",
+      "upstreamTestName": "timeout - request noMux stack is useful",
+      "upstreamLine": 23,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "timeout - request diagnostics noMux=%s",
+          "evidence": "Effect.fn captures the caller and its definition in Cause.pretty; typed no_responders failure is asserted for mux and dedicated replies, preserving useful native diagnostics."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/timeout_test.ts",
+      "upstreamTestName": "timeout - request stack is useful",
+      "upstreamLine": 34,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSubscriptionParity.test.ts",
+          "testName": "timeout - request diagnostics noMux=%s",
+          "evidence": "Effect.fn captures the caller and its definition in Cause.pretty; typed no_responders failure is asserted for mux and dedicated replies, preserving useful native diagnostics."
+        }
+      ]
+    }
+  ]
+}

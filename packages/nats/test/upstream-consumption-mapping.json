@@ -1,0 +1,583 @@
+{
+  "upstream_version": "v3.4.0",
+  "native_file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+  "upstream_named_cases": 47,
+  "mapped_named_cases": 47,
+  "uncovered_cases": [],
+  "verification": {
+    "command": "pnpm test packages/nats/test/JetStreamConsumptionParity.test.ts",
+    "result": "47 tests passed",
+    "broker": "localhost:4222, NATS2.15.0",
+    "preconditions": [
+      "pnpm build passed",
+      "pnpm lint passed"
+    ]
+  },
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consumers - consume",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumers - consume",
+          "evidence": "1000 live messages consumed and acknowledged; received/processed=1000, pending=0, pull/push identity. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consumers - consume callback rejects iter",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumers - consume callback rejects iter",
+          "evidence": "Callback mode rejects Stream iteration with the official reason. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - heartbeats",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - heartbeats",
+          "evidence": "Dropped broker input emits heartbeat missed count=2; close terminates stream. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Drop incoming native subscription frames to simulate lost heartbeats; native resource ownership replaces private resubscribe calls."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - deleted consumer",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - deleted consumer",
+          "evidence": "Live deletion emits consumer_deleted and repeated consumer_not_found count>1. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - sub leaks",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - sub leaks",
+          "evidence": "next/fetch/consume and blocked close release all tracked subscriptions and change listeners. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Tracked native subscription closures and connection-change stream listener counts replace private upstream protocol/listener arrays."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - drain",
+          "evidence": "Draining a connection terminates blocked consume within one second. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Completion is asserted through Effect.exit because native transport shutdown is a typed failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - sync",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - sync",
+          "evidence": "Stream pulls exact sequences1/2, scoped take closes resource, subsequent stream returns empty. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Stream pull order, interruption and closure replace the upstream private syncIterator adapter."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - stream not found request abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - stream not found request abort",
+          "evidence": "Deleting active stream with abort_on_missing_resource produces stream-not-found failure. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - consumer deleted request abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - consumer deleted request abort",
+          "evidence": "Deleting active consumer with abort_on_missing_resource produces consumer-deleted failure. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - consumer not found request abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - consumer not found request abort",
+          "evidence": "Already deleted consumer with abort_on_missing_resource produces consumer-not-found failure. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - consumer bind",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - consumer bind",
+          "evidence": "Deleted bound consumer emits repeated heartbeat events without sending consumer-info requests. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - connection close exits",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - connection close exits",
+          "evidence": "Connection close terminates blocked consumption within one second. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Completion is asserted through Effect.exit because native transport shutdown is a typed failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - one pending is none",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - one pending is none",
+          "evidence": "100 messages with batch1 have no pending queue messages while processing. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - stream not found and no responders",
+          "evidence": "Missing stream reports no responders, missing resource and heartbeat count3; recreated resource delivers live publication. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - consumer not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - consumer not found and no responders",
+          "evidence": "Missing consumer reports no responders, missing resource and heartbeat count3; recreated resource delivers live publication. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consumer - internal close listener",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer - internal close listener",
+          "evidence": "Track zero change listeners after next/fetch/take/explicit close, one during blocked consumes, zero after connection close. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Tracked native subscription closures and connection-change stream listener counts replace private upstream protocol/listener arrays."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - max_waiting throttles",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - max_waiting throttles",
+          "evidence": "Server max_waiting1 saturation emits heartbeat then next retry rather than fatal termination. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consume_test.ts",
+      "upstreamTestName": "consume - max_bytes throttles",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consume - max_bytes throttles",
+          "evidence": "Continuous byte budget smaller than message stalls and emits heartbeat then next retry. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - no messages",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - no messages",
+          "evidence": "Empty fetch expires with received/processed=0. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - less messages",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - less messages",
+          "evidence": "10 requested/1 available returns1 with matching received/processed. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - exactly messages",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - exactly messages",
+          "evidence": "200 available/100 requested returns100 with matching received/processed. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - deleted consumer",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - deleted consumer",
+          "evidence": "Delete server-admitted waiting fetch and assert consumer-deleted typed failure. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - listener leaks",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - listener leaks",
+          "evidence": "Empty fetch releases all subscriptions and connection-change listeners. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Tracked native subscription closures and connection-change stream listener counts replace private upstream protocol/listener arrays."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - sync",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - sync",
+          "evidence": "Bounded Stream fetch returns exact sequences1/2. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Stream pull order, interruption and closure replace the upstream private syncIterator adapter."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - consumer bind",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - consumer bind",
+          "evidence": "Repeated bound fetch sends zero consumer-info requests. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - exceeding max_messages will stop",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - exceeding max_messages will stop",
+          "evidence": "Fetch above server max_batch100 fails with maxRequestBatch reason. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - timer is based on idle_hb",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - timer is based on idle_hb",
+          "evidence": "One message then dropped input triggers heartbeat count2 and typed heartbeat failure before expiry. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Drop incoming native subscription frames to simulate lost heartbeats; native resource ownership replaces private resubscribe calls."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - connection close exits",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - connection close exits",
+          "evidence": "Connection close terminates blocked fetch within one second. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Completion is asserted through Effect.exit because native transport shutdown is a typed failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - stream not found and no responders",
+          "evidence": "Missing stream fails no-responders; recreation resumes delivery. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fetch_test.ts",
+      "upstreamTestName": "fetch - consumer not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "fetch - consumer not found and no responders",
+          "evidence": "Missing consumer fails no-responders; recreation resumes delivery. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - basics",
+          "evidence": "Empty returns None; live publications advance sequence1/2 and pending2/1 after confirmed ack. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - sub leaks",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - sub leaks",
+          "evidence": "Empty next releases subscriptions and connection-change listeners. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Tracked native subscription closures and connection-change stream listener counts replace private upstream protocol/listener arrays."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - listener leaks",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - listener leaks",
+          "evidence": "101 next/NAK redeliveries have exact increasing delivery counts and no tracked resource leaks. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Tracked native subscription closures and connection-change stream listener counts replace private upstream protocol/listener arrays."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - deleted consumer",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - deleted consumer",
+          "evidence": "Delete server-admitted waiting next and assert consumer-deleted typed failure. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - consumer bind",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - consumer bind",
+          "evidence": "Bound next/empty/missing calls emit no info requests and missing call fails no-responders. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - delivery count",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - delivery count",
+          "evidence": "Unacked message redelivers with count1/2 then max_deliver2 exhausts to None. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - connection close exits",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - connection close exits",
+          "evidence": "Connection close terminates blocked next within one second. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Completion is asserted through Effect.exit because native transport shutdown is a typed failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - stream not found and no responders",
+          "evidence": "Missing stream fails no-responders; recreation resumes next delivery. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - consumer not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - consumer not found and no responders",
+          "evidence": "Missing consumer fails no-responders; recreation resumes next delivery. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/next_test.ts",
+      "upstreamTestName": "next - max_bytes returns fast",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "next - max_bytes returns fast",
+          "evidence": "Fetch byte budget below actual message size fails maxBytes within one second despite30s expiry. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. The actual upstream case calls fetch despite its next-prefixed name; native assertion follows the actual fetch call."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - basic (no seq)",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - basic (no seq)",
+          "evidence": "Live reset after3 acknowledgements returns consumer identity and zero delivered/redelivered counters. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - with seq",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - with seq",
+          "evidence": "Reset sequence3 reports reset_seq3 and subsequent delivery starts at or above3. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - invalid seq",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - invalid seq",
+          "evidence": "Negative and fractional reset sequence rejected before wire request. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - version gate",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - version gate",
+          "evidence": "Connection info version2.13 rejects reset requiring2.14. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions. Override native advertised server version2.13 instead of disabling the private upstream feature registry."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - by_start_sequence allowed at/above",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - by_start_sequence allowed at/above",
+          "evidence": "ByStartSequence3 reset at3 and4 succeeds. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - by_start_sequence rejects below",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - by_start_sequence rejects below",
+          "evidence": "ByStartSequence5 rejects reset2 at broker. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumer_reset_test.ts",
+      "upstreamTestName": "consumer reset - rejects last policy server-side",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamConsumptionParity.test.ts",
+          "testName": "consumer reset - rejects last policy server-side",
+          "evidence": "Last delivery policy reset rejected by broker. Native Effect/Stream/Option APIs replace Promise/AsyncIterator/null while retaining broker-visible assertions."
+        }
+      ]
+    }
+  ],
+  "total": 47
+}

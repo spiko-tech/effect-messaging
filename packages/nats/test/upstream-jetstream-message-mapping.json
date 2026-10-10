@@ -1,0 +1,84 @@
+{
+  "upstream_version": "v3.4.0",
+  "upstream_file": "jetstream/tests/jsmsg_test.ts",
+  "native_file": "packages/nats/test/JetStreamMessageParity.test.ts",
+  "upstream_named_cases": 11,
+  "mapped_named_cases": 11,
+  "verification": {
+    "command": "pnpm test packages/nats/test/JetStreamMessageParity.test.ts",
+    "result": "11 tests passed",
+    "preconditions": [
+      "pnpm build passed",
+      "pnpm lint passed"
+    ],
+    "broker": "localhost:4222"
+  },
+  "cases": [
+    {
+      "upstream_case": "jsmsg - parse",
+      "native_case": "jsmsg - parse",
+      "coverage": "live broker assertion",
+      "adaptation": "Equivalent assertions through native Effect APIs and isolated local broker resources."
+    },
+    {
+      "upstream_case": "jsmsg - parse long",
+      "native_case": "jsmsg - parse long",
+      "coverage": "live broker assertion",
+      "adaptation": "Equivalent assertions through native Effect APIs and isolated local broker resources."
+    },
+    {
+      "upstream_case": "jsmsg - parse rejects subject is not 9 tokens",
+      "native_case": "jsmsg - parse rejects subject is not 9 tokens",
+      "coverage": "live broker assertion",
+      "adaptation": "Strengthens upstream assertion: upstream fail() is caught and swallowed for negative cases; native test verifies the source implementation accepts 9 legacy tokens or >=11 modern tokens, and rejects every other count."
+    },
+    {
+      "upstream_case": "jsmsg - acks",
+      "native_case": "jsmsg - acks",
+      "coverage": "live broker assertion",
+      "adaptation": "Uses the local broker instead of demo.nats.io and valid synthetic $JS.ACK metadata; verifies all four exact wire acknowledgement payloads through a real subscription."
+    },
+    {
+      "upstream_case": "jsmsg - no ack consumer is ackAck 503",
+      "native_case": "jsmsg - no ack consumer is ackAck 503",
+      "coverage": "live broker assertion",
+      "adaptation": "Native typed JetStreamMessageError preserves NATSConnectionError cause with no_responders code, the Effect equivalent of upstream RequestError.isNoResponders()."
+    },
+    {
+      "upstream_case": "jsmsg - explicit consumer ackAck",
+      "native_case": "jsmsg - explicit consumer ackAck",
+      "coverage": "live broker assertion",
+      "adaptation": "Equivalent assertions through native Effect APIs and isolated local broker resources."
+    },
+    {
+      "upstream_case": "jsmsg - explicit consumer ackAck timeout",
+      "native_case": "jsmsg - explicit consumer ackAck timeout",
+      "coverage": "live broker assertion",
+      "adaptation": "Wraps the native connection request method to redirect only ack requests to an actual subscribed nonresponding broker subject; retains the delivered message and its client-configured inherited deadline. Verifies typed timeout and elapsed timing without mutating private upstream fields."
+    },
+    {
+      "upstream_case": "jsmsg - ackAck js options timeout",
+      "native_case": "jsmsg - ackAck js options timeout",
+      "coverage": "live broker assertion",
+      "adaptation": "Wraps the native connection request method to redirect only ack requests to an actual subscribed nonresponding broker subject; retains the delivered message and its client-configured inherited deadline. Verifies typed timeout and elapsed timing without mutating private upstream fields."
+    },
+    {
+      "upstream_case": "jsmsg - ackAck legacy timeout",
+      "native_case": "jsmsg - ackAck legacy timeout",
+      "coverage": "live broker assertion",
+      "adaptation": "Wraps the native connection request method to redirect only ack requests to an actual subscribed nonresponding broker subject; retains the delivered message and its client-configured inherited deadline. Verifies typed timeout and elapsed timing without mutating private upstream fields."
+    },
+    {
+      "upstream_case": "jsmsg - time and timestamp",
+      "native_case": "jsmsg - time and timestamp",
+      "coverage": "live broker assertion",
+      "adaptation": "Equivalent assertions through native Effect APIs and isolated local broker resources."
+    },
+    {
+      "upstream_case": "jsmsg - reply/sid",
+      "native_case": "jsmsg - reply/sid",
+      "coverage": "live broker assertion",
+      "adaptation": "Exposes reply as Option<string> following the native core message model; verifies Some(nonempty), positive sid and exact hello payload bytes."
+    }
+  ]
+}

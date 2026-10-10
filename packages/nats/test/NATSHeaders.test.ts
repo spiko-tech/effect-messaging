@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@effect/vitest"
-import { headers } from "@nats-io/nats-core"
 import { Effect, Option } from "effect"
+import { headers } from "../src/NATSHeaders.ts"
 import * as NATSHeaders from "../src/NATSHeaders.ts"
 
 describe("NATSHeaders", () => {

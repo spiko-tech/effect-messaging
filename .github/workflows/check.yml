@@ -23,6 +23,8 @@ jobs:
         uses: ./.github/actions/setup
       - run: pnpm check
       - run: pnpm test-types
+      - name: Check NATS compatibility audit
+        run: pnpm --filter @effect-messaging/nats check-parity --require-complete
 
   lint:
     name: Lint

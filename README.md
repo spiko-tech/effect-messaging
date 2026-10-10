@@ -4,9 +4,11 @@ A message broker toolkit for Effect.
 
 ### AMQP protocol features
 
-- 🔌 Effectful wrappers for AMQP Connection and Channel
+- 🔌 Native, Effect-first AMQP 0-9-1 connections and channels
 - 🔄 Auto-reconnect functionality when the connection is lost
 - 🧘 Seamless consumption continuation after reconnection
+- 🗺️ Queue, exchange, and binding recovery, including server-named queues
+- 📬 Opt-in publisher confirms and backpressured publishing
 - 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
 ### NATS / JetStream features
@@ -22,12 +24,15 @@ A message broker toolkit for Effect.
 
 ### AMQP with `@effect-messaging/amqp`
 
+See the [package guide](./packages/amqp/README.md) for migration notes, delivery guarantees and broker test setup.
+
 #### 1. Establish a Connection
 
 First, you need to establish a connection to your AMQP server:
 
 ```typescript
 import { AMQPConnection } from "@effect-messaging/amqp"
+import * as AMQPNodeConnection from "@effect-messaging/amqp/AMQPNodeConnection"
 import { Effect } from "effect"
 
 const program = Effect.gen(function*() {
@@ -35,13 +40,13 @@ const program = Effect.gen(function*() {
   const connection = yield* AMQPConnection.AMQPConnection
   const props = yield* connection.serverProperties
 
-  yield* Effect.logInfo(`connected to ${props.hostname}:${props.port}`)
+  yield* Effect.logInfo(`connected to ${props.product} ${props.version}`)
 })
 
 const runnable = program.pipe(
   // provide the AMQP Connection dependency
   Effect.provide(
-    AMQPConnection.layer({
+    AMQPNodeConnection.layer({
       hostname: "localhost",
       port: 5672,
       username: "guest",
@@ -60,7 +65,9 @@ Effect.runPromise(runnable)
 To send messages, create a publisher:
 
 ```typescript
-import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
+import { AMQPChannel } from "@effect-messaging/amqp"
+import * as AMQPNodeConnection from "@effect-messaging/amqp/AMQPNodeConnection"
+import * as AMQPPublisher from "@effect-messaging/amqp/AMQPPublisher"
 import { Context, Effect } from "effect"
 
 class MyPublisher extends Context.Service<MyPublisher, AMQPPublisher.AMQPPublisher>()("MyPublisher") {}
@@ -71,7 +78,7 @@ const program = Effect.gen(function*() {
   yield* publisher.publish({
     exchange: "my-exchange",
     routingKey: "my-routing-key",
-    content: Buffer.from("{ \"hello\": \"world\" }"),
+    content: new TextEncoder().encode("{ \"hello\": \"world\" }"),
     options: {
       persistent: true,
       contentType: "application/json",
@@ -86,10 +93,10 @@ const program = Effect.gen(function*() {
 const runnable = program.pipe(
   Effect.provideServiceEffect(MyPublisher, AMQPPublisher.make()),
   // provide the AMQP Channel dependency
-  Effect.provide(AMQPChannel.layer),
+  Effect.provide(AMQPChannel.layer({ confirm: true })),
   // provide the AMQP Connection dependency
   Effect.provide(
-    AMQPConnection.layer({
+    AMQPNodeConnection.layer({
       hostname: "localhost",
       port: 5672,
       username: "guest",
@@ -108,20 +115,17 @@ Effect.runPromise(runnable)
 To receive messages, create a subscriber:
 
 ```typescript
-import {
-  AMQPChannel,
-  AMQPConnection,
-  AMQPConsumeMessage,
-  AMQPSubscriber,
-  AMQPSubscriberResponse
-} from "@effect-messaging/amqp"
+import { AMQPChannel, AMQPConsumeMessage } from "@effect-messaging/amqp"
+import * as AMQPNodeConnection from "@effect-messaging/amqp/AMQPNodeConnection"
+import * as AMQPSubscriber from "@effect-messaging/amqp/AMQPSubscriber"
+import * as AMQPSubscriberResponse from "@effect-messaging/amqp/AMQPSubscriberResponse"
 import { Effect } from "effect"
 
 const messageHandler = Effect.gen(function*() {
   const message = yield* AMQPConsumeMessage.AMQPConsumeMessage
 
   // You can add your message processing logic here
-  yield* Effect.logInfo(`Received message: ${message.content.toString()}`)
+  yield* Effect.logInfo(`Received message: ${new TextDecoder().decode(message.content)}`)
 
   // Return a response to control message acknowledgment:
   // - ack(): Acknowledge successful processing
@@ -131,7 +135,9 @@ const messageHandler = Effect.gen(function*() {
 })
 
 const program = Effect.gen(function*() {
-  const subscriber = yield* AMQPSubscriber.make("my-queue")
+  const channel = yield* AMQPChannel.AMQPChannel
+  const queue = yield* channel.assertQueue("my-queue", { durable: true })
+  const subscriber = yield* AMQPSubscriber.make(queue)
 
   // Subscribe to messages - on handler error, messages are nacked automatically
   yield* subscriber.subscribe(messageHandler)
@@ -139,10 +145,10 @@ const program = Effect.gen(function*() {
 
 const runnable = program.pipe(
   // provide the AMQP Channel dependency
-  Effect.provide(AMQPChannel.layer),
+  Effect.provide(AMQPChannel.layer()),
   // provide the AMQP Connection dependency
   Effect.provide(
-    AMQPConnection.layer({
+    AMQPNodeConnection.layer({
       hostname: "localhost",
       port: 5672,
       username: "guest",
@@ -285,7 +291,7 @@ to TypeScript sources; published exports resolve to `dist/`.
 
 ### AMQP implementation
 
-- [x] Effect wrappers for AMQP Connection & AMQP Channel
+- [x] Native Effect AMQP 0-9-1 client with topology and consumer recovery
 - [x] Implement publisher and subscriber
 - [x] Integration tests
 - [x] Add examples & documentation

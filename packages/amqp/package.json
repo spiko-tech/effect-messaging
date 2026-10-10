@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
+    "@effect/platform-node": "4.1.0",
     "@effect/vitest": "4.1.0",
     "@types/node": "^26.6.6",
     "amqplib": "^2.2.0",
@@ -53,8 +54,12 @@
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
-    "amqplib": "^2.2.0",
-    "effect": "^4.0.2"
+    "@effect/platform-node": "^4.1.0",
+    "effect": "^4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@effect-messaging/core": { "optional": true },
+    "@effect/platform-node": { "optional": true }
   },
   "publishConfig": {
     "access": "public",

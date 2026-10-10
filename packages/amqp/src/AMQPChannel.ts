@@ -1,266 +1,140 @@
 /**
+ * Scoped logical channels. Deliveries are settled only on their originating session.
  * @since 0.1.0
  */
-import type { Channel, GetMessage, Replies } from "amqplib"
 import * as Context from "effect/Context"
 import type * as Duration from "effect/Duration"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import type * as Schedule from "effect/Schedule"
+import type * as Option from "effect/Option"
 import type * as Scope from "effect/Scope"
 import type * as Stream from "effect/Stream"
 import * as AMQPConnection from "./AMQPConnection.ts"
 import type * as AMQPConsumeMessage from "./AMQPConsumeMessage.ts"
 import type * as AMQPError from "./AMQPError.ts"
-import * as internal from "./internal/AMQPChannel.ts"
+import type * as AMQPTopology from "./AMQPTopology.ts"
+import type * as AMQPTypes from "./AMQPTypes.ts"
+import { ChannelTypeId } from "./internal/typeIds.ts"
 
 /**
- * @category type ids
  * @since 0.1.0
  */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/amqp/AMQPChannel")
+export const TypeId: typeof ChannelTypeId = ChannelTypeId
 
-/**
- * @category type ids
- * @since 0.1.0
- */
-export type TypeId = typeof TypeId
+/** @since 0.8.0 */
+export interface AMQPChannelOptions {
+  /** Opt in to broker confirmations. Defaults to false. */
+  readonly confirm?: boolean
+  readonly confirmTimeout?: Duration.Input
+  readonly waitChannelTimeout?: Duration.Input
+  readonly maxUnconfirmed?: number
+  readonly prefetch?: number
+}
 
-/**
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface AMQPChannel {
-  readonly [TypeId]: TypeId
+  readonly [TypeId]: typeof TypeId
   readonly connection: AMQPConnection.AMQPConnection
   readonly consume: (
-    queueName: string,
-    options?: { readonly prefetch?: number }
-  ) => Effect.Effect<Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPChannelError>>
-  readonly ack: (...parameters: Parameters<Channel["ack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
-  readonly ackAll: (...parameters: Parameters<Channel["ackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
-  readonly nack: (...parameters: Parameters<Channel["nack"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
-  readonly nackAll: (...parameters: Parameters<Channel["nackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
-  readonly reject: (...parameters: Parameters<Channel["reject"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
-  /**
-   * The boolean is amqplib's write-buffer flag, never a failure signal. It is
-   * stale when `confirm` is `true`.
-   */
+    queue: AMQPTopology.QueueName,
+    options?: AMQPTypes.ConsumeOptions
+  ) => Effect.Effect<Stream.Stream<AMQPConsumeMessage.AMQPConsumeMessage, AMQPError.AMQPError>, AMQPError.AMQPError>
+  readonly ack: (
+    message: AMQPConsumeMessage.AMQPConsumeMessage,
+    allUpTo?: boolean
+  ) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly nack: (
+    message: AMQPConsumeMessage.AMQPConsumeMessage,
+    allUpTo?: boolean,
+    requeue?: boolean
+  ) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly reject: (
+    message: AMQPConsumeMessage.AMQPConsumeMessage,
+    requeue?: boolean
+  ) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly ackAll: () => Effect.Effect<void, AMQPError.AMQPError>
+  readonly nackAll: (requeue?: boolean) => Effect.Effect<void, AMQPError.AMQPError>
+  /** Completes after a backpressured write, or a broker confirm when confirm is enabled. */
   readonly publish: (
-    ...parameters: Parameters<Channel["publish"]>
-  ) => Effect.Effect<boolean, AMQPError.AMQPChannelError>
+    exchange: string,
+    routingKey: string,
+    content: Uint8Array,
+    options?: AMQPTypes.PublishOptions
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly sendToQueue: (
-    ...parameters: Parameters<Channel["sendToQueue"]>
-  ) => Effect.Effect<boolean, AMQPError.AMQPChannelError>
+    queue: AMQPTopology.QueueName,
+    content: Uint8Array,
+    options?: AMQPTypes.PublishOptions
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly assertQueue: (
-    ...parameters: Parameters<Channel["assertQueue"]>
-  ) => Effect.Effect<Replies.AssertQueue, AMQPError.AMQPChannelError>
-  readonly checkQueue: (
-    ...parameters: Parameters<Channel["checkQueue"]>
-  ) => Effect.Effect<Replies.AssertQueue, AMQPError.AMQPChannelError>
+    queue?: string,
+    options?: AMQPTypes.QueueOptions
+  ) => Effect.Effect<AMQPTopology.QueueReference, AMQPError.AMQPError>
+  readonly checkQueue: (queue: AMQPTopology.QueueName) => Effect.Effect<AMQPTypes.QueueReply, AMQPError.AMQPError>
   readonly deleteQueue: (
-    ...parameters: Parameters<Channel["deleteQueue"]>
-  ) => Effect.Effect<Replies.DeleteQueue, AMQPError.AMQPChannelError>
+    queue: AMQPTopology.QueueName,
+    options?: { readonly ifUnused?: boolean; readonly ifEmpty?: boolean }
+  ) => Effect.Effect<{ readonly messageCount: number }, AMQPError.AMQPError>
   readonly purgeQueue: (
-    ...parameters: Parameters<Channel["purgeQueue"]>
-  ) => Effect.Effect<Replies.PurgeQueue, AMQPError.AMQPChannelError>
+    queue: AMQPTopology.QueueName
+  ) => Effect.Effect<{ readonly messageCount: number }, AMQPError.AMQPError>
   readonly bindQueue: (
-    ...parameters: Parameters<Channel["bindQueue"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    queue: AMQPTopology.QueueName,
+    exchange: string,
+    routingKey: string,
+    args?: AMQPTypes.FieldTable
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly unbindQueue: (
-    ...parameters: Parameters<Channel["unbindQueue"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    queue: AMQPTopology.QueueName,
+    exchange: string,
+    routingKey: string,
+    args?: AMQPTypes.FieldTable
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly assertExchange: (
-    ...parameters: Parameters<Channel["assertExchange"]>
-  ) => Effect.Effect<Replies.AssertExchange, AMQPError.AMQPChannelError>
-  readonly checkExchange: (
-    ...parameters: Parameters<Channel["checkExchange"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    exchange: string,
+    type: string,
+    options?: AMQPTypes.ExchangeOptions
+  ) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly checkExchange: (exchange: string) => Effect.Effect<void, AMQPError.AMQPError>
   readonly deleteExchange: (
-    ...parameters: Parameters<Channel["deleteExchange"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    exchange: string,
+    options?: { readonly ifUnused?: boolean }
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly bindExchange: (
-    ...parameters: Parameters<Channel["bindExchange"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    destination: string,
+    source: string,
+    routingKey: string,
+    args?: AMQPTypes.FieldTable
+  ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly unbindExchange: (
-    ...parameters: Parameters<Channel["unbindExchange"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
-  readonly cancel: (
-    ...parameters: Parameters<Channel["cancel"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
+    destination: string,
+    source: string,
+    routingKey: string,
+    args?: AMQPTypes.FieldTable
+  ) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly cancel: (consumerTag: string) => Effect.Effect<void, AMQPError.AMQPError>
   readonly get: (
-    ...parameters: Parameters<Channel["get"]>
-  ) => Effect.Effect<GetMessage | false, AMQPError.AMQPChannelError>
-  readonly prefetch: (
-    ...parameters: Parameters<Channel["prefetch"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
-  readonly recover: (
-    ...parameters: Parameters<Channel["recover"]>
-  ) => Effect.Effect<Replies.Empty, AMQPError.AMQPChannelError>
-
-  /** @internal */
-  readonly close: (config?: internal.CloseChannelOptions) => Effect.Effect<void, never, never>
+    queue: AMQPTopology.QueueName
+  ) => Effect.Effect<Option.Option<AMQPConsumeMessage.AMQPConsumeMessage>, AMQPError.AMQPError>
+  readonly prefetch: (count: number, global?: boolean) => Effect.Effect<void, AMQPError.AMQPError>
+  readonly recover: () => Effect.Effect<void, AMQPError.AMQPError>
+  readonly returns: Stream.Stream<AMQPTypes.ReturnedMessage, AMQPError.AMQPError>
+  readonly close: Effect.Effect<void>
 }
 
-/**
- * @category tags
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const AMQPChannel = Context.Service<AMQPChannel>("@effect-messaging/amqp/AMQPChannel")
 
-/**
- * @category models
- * @since 0.4.0
- */
-export interface AMQPChannelOptions {
-  retryConnectionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPConnectionError>
-  retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPError.AMQPChannelError>
-  waitChannelTimeout?: Duration.Input
-  /**
-   * When `true`, the channel is opened in publisher-confirm mode and
-   * `publish` / `sendToQueue` resolve only once the broker has acknowledged
-   * the message, or fail with an `AMQPChannelError` on a nack, on a channel
-   * close, or after `confirmTimeout`.
-   *
-   * An acknowledgement means the broker took responsibility for the message.
-   * Unroutable messages are acknowledged too, and surviving a broker restart
-   * still needs `persistent: true` and a durable queue. A failure may concern
-   * a message the broker did receive, so retrying can deliver it twice. Each
-   * publish costs a round trip: run publishes concurrently for throughput.
-   *
-   * Defaults to `false`.
-   *
-   * @since 0.7.0
-   */
-  confirm?: boolean
-  /**
-   * How long a publish waits for the broker's confirmation, and how long
-   * closing the channel waits for outstanding confirms. Defaults to 30 seconds.
-   *
-   * @since 0.7.0
-   */
-  confirmTimeout?: Duration.Input
-}
-
-/**
- * @category constructors
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const make = (options: AMQPChannelOptions = {}): Effect.Effect<
   AMQPChannel,
-  AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
+  AMQPError.AMQPError,
   Scope.Scope | AMQPConnection.AMQPConnection
-> =>
-  Effect.gen(
-    function*() {
-      const internalChannel = yield* internal.InternalAMQPChannel
-      const provideInternal = Effect.provideService(internal.InternalAMQPChannel, internalChannel)
+> => Effect.flatMap(AMQPConnection.AMQPConnection, (connection) => connection.createChannel(options))
 
-      const channel = yield* Effect.acquireRelease(
-        Effect.gen(function*() {
-          yield* internal.initiateChannel
-          const connection = yield* AMQPConnection.AMQPConnection
-
-          return {
-            [TypeId]: TypeId as TypeId,
-            connection,
-            consume: (queueName: string, options?: { readonly prefetch?: number }) =>
-              internal.consume(queueName, options).pipe(provideInternal),
-            ack: (...params: Parameters<Channel["ack"]>) =>
-              internal.wrapChannelMethod("ack", async (channel) => channel.ack(...params)).pipe(provideInternal),
-            ackAll: (...params: Parameters<Channel["ackAll"]>) =>
-              internal.wrapChannelMethod("ackAll", async (channel) => channel.ackAll(...params)).pipe(provideInternal),
-            nack: (...params: Parameters<Channel["nack"]>) =>
-              internal.wrapChannelMethod("nack", async (channel) => channel.nack(...params)).pipe(provideInternal),
-            nackAll: (...params: Parameters<Channel["nackAll"]>) =>
-              internal.wrapChannelMethod("nackAll", async (channel) => channel.nackAll(...params)).pipe(
-                provideInternal
-              ),
-            reject: (...params: Parameters<Channel["reject"]>) =>
-              internal.wrapChannelMethod("reject", async (channel) => channel.reject(...params)).pipe(provideInternal),
-            publish: (...params: Parameters<Channel["publish"]>) => internal.publish(...params).pipe(provideInternal),
-            sendToQueue: (...[queue, content, options]: Parameters<Channel["sendToQueue"]>) =>
-              internal.publish("", queue, content, options).pipe(provideInternal),
-            assertQueue: (...params: Parameters<Channel["assertQueue"]>) =>
-              internal.wrapChannelMethod("assertQueue", async (channel) => channel.assertQueue(...params)).pipe(
-                provideInternal
-              ),
-            checkQueue: (...params: Parameters<Channel["checkQueue"]>) =>
-              internal.wrapChannelMethod("checkQueue", async (channel) => channel.checkQueue(...params)).pipe(
-                provideInternal
-              ),
-            deleteQueue: (...params: Parameters<Channel["deleteQueue"]>) =>
-              internal.wrapChannelMethod("deleteQueue", async (channel) => channel.deleteQueue(...params)).pipe(
-                provideInternal
-              ),
-            purgeQueue: (...params: Parameters<Channel["purgeQueue"]>) =>
-              internal.wrapChannelMethod("purgeQueue", async (channel) => channel.purgeQueue(...params)).pipe(
-                provideInternal
-              ),
-            bindQueue: (...params: Parameters<Channel["bindQueue"]>) =>
-              internal.wrapChannelMethod("bindQueue", async (channel) => channel.bindQueue(...params)).pipe(
-                provideInternal
-              ),
-            unbindQueue: (...params: Parameters<Channel["unbindQueue"]>) =>
-              internal.wrapChannelMethod("unbindQueue", async (channel) => channel.unbindQueue(...params)).pipe(
-                provideInternal
-              ),
-            assertExchange: (...params: Parameters<Channel["assertExchange"]>) =>
-              internal.wrapChannelMethod(
-                "assertExchange",
-                async (channel) => channel.assertExchange(...params)
-              ).pipe(provideInternal),
-            checkExchange: (...params: Parameters<Channel["checkExchange"]>) =>
-              internal.wrapChannelMethod(
-                "checkExchange",
-                async (channel) => channel.checkExchange(...params)
-              ).pipe(provideInternal),
-            deleteExchange: (...params: Parameters<Channel["deleteExchange"]>) =>
-              internal.wrapChannelMethod(
-                "deleteExchange",
-                async (channel) => channel.deleteExchange(...params)
-              ).pipe(provideInternal),
-            bindExchange: (...params: Parameters<Channel["bindExchange"]>) =>
-              internal.wrapChannelMethod(
-                "bindExchange",
-                async (channel) => channel.bindExchange(...params)
-              ).pipe(provideInternal),
-            unbindExchange: (...params: Parameters<Channel["unbindExchange"]>) =>
-              internal.wrapChannelMethod(
-                "unbindExchange",
-                async (channel) => channel.unbindExchange(...params)
-              ).pipe(provideInternal),
-            cancel: (...params: Parameters<Channel["cancel"]>) =>
-              internal.wrapChannelMethod("cancel", async (channel) => channel.cancel(...params)).pipe(provideInternal),
-            get: (...params: Parameters<Channel["get"]>) =>
-              internal.wrapChannelMethod("get", async (channel) => channel.get(...params)).pipe(provideInternal),
-            prefetch: (...params: Parameters<Channel["prefetch"]>) =>
-              internal.wrapChannelMethod("prefetch", async (channel) => channel.prefetch(...params)).pipe(
-                provideInternal
-              ),
-            recover: (...params: Parameters<Channel["recover"]>) =>
-              internal.wrapChannelMethod("recover", async (channel) => channel.recover(...params)).pipe(
-                provideInternal
-              ),
-            close: (opts: internal.CloseChannelOptions = {}) => internal.closeChannel(opts).pipe(provideInternal)
-          }
-        }),
-        (channel) => channel.close()
-      )
-      yield* Effect.forkScoped(internal.keepChannelAlive)
-      yield* Effect.forkScoped(internal.monitorChannelErrors)
-      return channel
-    }
-  ).pipe(
-    Effect.provideServiceEffect(internal.InternalAMQPChannel, internal.makeInternalAMQPChannel(options))
-  )
-
-/**
- * @since 0.1.0
- * @category Layers
- */
+/** @since 0.1.0 */
 export const layer = (options: AMQPChannelOptions = {}): Layer.Layer<
   AMQPChannel,
-  AMQPError.AMQPChannelError | AMQPError.AMQPConnectionError,
+  AMQPError.AMQPError,
   AMQPConnection.AMQPConnection
 > => Layer.effect(AMQPChannel, make(options))

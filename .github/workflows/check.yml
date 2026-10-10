@@ -76,6 +76,15 @@ jobs:
       - name: Check package entry points
         run: pnpm check-packages
       - name: Test
-        run: pnpm vitest
+        run: pnpm vitest --exclude '**/AMQPConsumerScenarioParity.test.ts' --exclude '**/AMQPBrokerParity.test.ts'
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+      # These independent stress workloads share one broker and must not compete for runner capacity.
+      - name: Test consumer stress scenarios
+        run: pnpm vitest packages/amqp/test/AMQPConsumerScenarioParity.test.ts
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+      - name: Test publisher stress scenarios
+        run: pnpm vitest packages/amqp/test/AMQPBrokerParity.test.ts
         env:
           NODE_OPTIONS: --max_old_space_size=8192

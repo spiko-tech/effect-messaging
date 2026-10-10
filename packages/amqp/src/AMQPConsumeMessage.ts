@@ -1,15 +1,26 @@
 /**
  * @since 0.3.0
  */
-import type { ConsumeMessage } from "amqplib"
 import * as Context from "effect/Context"
 import * as Layer from "effect/Layer"
+import type * as AMQPTypes from "./AMQPTypes.ts"
 
 /**
  * @category models
  * @since 0.3.0
  */
-export type AMQPConsumeMessage = ConsumeMessage
+export interface AMQPConsumeMessage {
+  readonly content: Uint8Array
+  readonly properties: AMQPTypes.MessageProperties
+  readonly fields: {
+    readonly consumerTag: string
+    readonly deliveryTag: bigint
+    readonly redelivered: boolean
+    readonly exchange: string
+    readonly routingKey: string
+    readonly messageCount?: number
+  }
+}
 
 /**
  * @category tags

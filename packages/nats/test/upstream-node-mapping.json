@@ -1,0 +1,545 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "transport-node/tests: all5 upstream files",
+  "total": 44,
+  "covered": 42,
+  "outsideBaseline": 2,
+  "notes": [
+    "Private transport members map to observable Socket, CONNECT, stream, status, retry timing and scoped ownership laws.",
+    "Remote demo.nats.io dependencies are replaced by isolated local brokers and controlled Socket policy tests.",
+    "Native errors use typed Effect error channels, with retained causes; exact legacy text is not the contract.",
+    "testName is the exact native test declaration; placeholders identify parameterized cases.",
+    "This artifact covers only transport-node tests, not the complete official suite."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - reported version",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "CONNECT reports package version and never serializes TLS material",
+          "evidence": "Native package1.0.0-beta.0 version is reported publicly on CONNECT, replacing private VERSION constant"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - connect default",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "connects with default host and server forms %j",
+          "evidence": "Parameter {}; real localhost broker flush"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - tls connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "default TLS policy negotiates available encryption without explicit TLS options",
+          "evidence": "Scripted public Socket upgrade confirms default policy; verified real TLS handshake covered separately"
+        },
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "upgrades an INFO-first TCP connection to verified TLS",
+          "evidence": "Generated trusted CA and real broker TLS exchange"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - connect host",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "connects with default host and server forms %j",
+          "evidence": "Parameter localhost; real localhost broker flush"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - connect hostport",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "connects with default host and server forms %j",
+          "evidence": "Parameter localhost:4222; real localhost broker flush"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - connect servers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "connects with default host and server forms %j",
+          "evidence": "Parameter [localhost]; real localhost broker flush"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - fail connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "reports refused initial connections as typed socket errors",
+          "evidence": "Real port7 connection refusal"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - pubsub",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "Node publication and stream consumption update the processed count",
+          "evidence": "Real publication delivered once; processed counter1"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - request",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSCoreParity.test.ts",
+          "testName": "request/reply interoperates with official responders, noMux=%s",
+          "evidence": "Live request response payload verified for both mux modes"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - socket error",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "socket failures terminate sessions and suppress retry when reconnect=%s",
+          "evidence": "Parameter false; typed closed error retains original SocketError cause"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - server gone",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "socket failures terminate sessions and suppress retry when reconnect=%s",
+          "evidence": "Parameter true; exhausted reconnect attempts close with typed error"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - server error",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSAdversarial.test.ts",
+          "testName": "protocol corruption after CONNECT closes pending operations rather than reconnecting",
+          "evidence": "Real scripted TCP peer malformed operation produces typed protocol failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - disconnect reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "restores subscriptions after an explicit reconnect",
+          "evidence": "Live physical reconnect and resumed delivery"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/basics_test.js",
+      "upstreamTestName": "basics - ws urls fail",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "rejects websocket URL in TCP adapter %s",
+          "evidence": "Both ws/wss adapters fail before opening TCP; unary and array server forms use same factory"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/jetstream_test.js",
+      "upstreamTestName": "jetstream is a function",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamClient.test.ts",
+          "testName": "Should be able to create a JetStream client",
+          "evidence": "Native Layer acquires client service over Node; public factory shape intentionally Effect-native"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/jetstream_test.js",
+      "upstreamTestName": "jetstreamManager is a function",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamManager.test.ts",
+          "testName": "Should be able to create a JetStream manager",
+          "evidence": "Native Layer acquires manager and invokes accountInfo on real broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/jetstream_test.js",
+      "upstreamTestName": "kvm is a function",
+      "status": "outside-baseline",
+      "nativeTests": [],
+      "reason": "Exercises the separately packaged @nats-io/kv API; excluded from the agreed core/transport-node/jetstream baseline. No native KV/Object API is claimed."
+    },
+    {
+      "upstreamFile": "transport-node/tests/jetstream_test.js",
+      "upstreamTestName": "objm is a function",
+      "status": "outside-baseline",
+      "nativeTests": [],
+      "reason": "Exercises the separately packaged @nats-io/obj API; excluded from the agreed core/transport-node/jetstream baseline. No native KV/Object API is claimed."
+    },
+    {
+      "upstreamFile": "transport-node/tests/noiptls_test.js",
+      "upstreamTestName": "reconnect via tls by ip",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeTransport.test.ts",
+          "testName": "verifies gossiped IP endpoints against their preserved DNS identity and respects explicit overrides",
+          "evidence": "Real DNS-only certificate verifies IP endpoint with preserved DNS hint; explicit wrong hostname rejects"
+        },
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "gossiped IP reconnects retain the original DNS identity in transport metadata",
+          "evidence": "Scripted public INFO discovery and physical reconnect passes original DNS tlsName to socket factory; combines with real DNS-only certificate adapter test"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect websocket - disconnect reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "WebSocket broker restart reacquires transport and restores subscriptions",
+          "evidence": "Real broker stop/start on same websocket port, delivery before/after"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - should receive when some servers are invalid",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "invalid initial servers are discarded and the usable server delivers traffic",
+          "evidence": "Initial port7 fails; live peer delivers publication, pool size1 and didConnect true"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - events",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "socket failures terminate sessions and suppress retry when reconnect=%s",
+          "evidence": "Parameter true; exactly one disconnect and two reconnecting events for max2"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - reconnect not emitted if suppressed",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "socket failures terminate sessions and suppress retry when reconnect=%s",
+          "evidence": "Parameter false; zero reconnecting and one physical open"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - reconnecting after proper delay",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "reconnection delay and custom delay handler govern physical retry attempts",
+          "evidence": "TestClock asserts no retry before499ms, one retry at500ms"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - indefinite reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "unlimited reconnect attempts remain active until the broker returns",
+          "evidence": "Real broker stop/start; six retry events observed before restart, subsequent flush succeeds"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - jitter",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "reconnection delay and custom delay handler govern physical retry attempts",
+          "evidence": "Custom handler invoked once and honored; private default handler function replaced by native Schedule timing law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/reconnect_test.js",
+      "upstreamTestName": "reconnect - internal disconnect forces reconnect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "stale transport retirement emits stale, disconnect and reconnecting statuses",
+          "evidence": "Public heartbeat timeout replaces private disconnect; asserts all three statuses and physical retry"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "fail if server doesn't support TLS",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "rejects explicit TLS when the server has no TLS support",
+          "evidence": "Real non-TLS broker and explicit TLS intent rejects"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "connects to tls without option",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "default TLS policy negotiates available encryption without explicit TLS options",
+          "evidence": "Explicit public Socket upgrade assertion for INFO tls_available default policy"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "custom ca fails without proper ca",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "rejects an untrusted TLS server",
+          "evidence": "Real self-signed broker certificate rejected"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "connects with proper ca",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "upgrades an INFO-first TCP connection to verified TLS",
+          "evidence": "Real certificate validation and binary roundtrip"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "connects with rejectUnauthorized is honored",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "honors rejectUnauthorized=false with handshakeFirst=%s",
+          "evidence": "Parameter false; real untrusted TLS broker accepted by explicit opt-out"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "client auth",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "accepts a trusted client certificate for mutual TLS",
+          "evidence": "Real mTLS verification using certificate/key files"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "client auth direct",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "mutual TLS accepts direct byte PEM credentials",
+          "evidence": "Real mTLS with Buffer/Uint8Array key, certificate and CA"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "bad file paths",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "missing TLS %s fails through the typed channel",
+          "evidence": "Parameter certFile; real broker with missing material fails typed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "shouldn't leak tls config",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "CONNECT reports package version and never serializes TLS material",
+          "evidence": "Public wire CONNECT omits all private TLS keys/paths/material while preserving tls_required intent"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "invalid cert",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "invalid TLS %s fails through the typed channel",
+          "evidence": "Parameter mismatch; different private key versus certificate, typed failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "invalid pem no start",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "invalid TLS %s fails through the typed channel",
+          "evidence": "Parameter pem; certificate supplied as key, typed failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "invalid key file",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "missing TLS %s fails through the typed channel",
+          "evidence": "Parameter keyFile; real broker with missing material fails typed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "invalid cert file",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "missing TLS %s fails through the typed channel",
+          "evidence": "Parameter certFile; real broker with missing material fails typed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "invalid ca file",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "missing TLS %s fails through the typed channel",
+          "evidence": "Parameter caFile; real broker with missing material fails typed"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "available connects with or without",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "TLS availability upgrades automatically and explicit false permits plaintext",
+          "evidence": "Real optional TLS broker: default untrusted upgrade rejects, trusted encrypted path works, disabled false plaintext works"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "tls first",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "supports handshake-first TLS with a trusted certificate",
+          "evidence": "Real handshake-first broker with trusted CA"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "transport-node/tests/tls_test.js",
+      "upstreamTestName": "tls first reject unauthorized",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "honors rejectUnauthorized=false with handshakeFirst=%s",
+          "evidence": "Parameter true; real handshake-first broker accepted with opt-out"
+        }
+      ]
+    }
+  ]
+}

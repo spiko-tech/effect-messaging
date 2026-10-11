@@ -25,9 +25,19 @@ export * as JetStreamConsumer from "./JetStreamConsumer.ts"
 export * as JetStreamConsumerAPI from "./JetStreamConsumerAPI.ts"
 
 /**
+ * @since 1.0.0
+ */
+export * as JetStreamDirectConsumer from "./JetStreamDirectConsumer.ts"
+
+/**
  * @since 0.1.0
  */
 export * as JetStreamDirectStreamAPI from "./JetStreamDirectStreamAPI.ts"
+
+/**
+ * @since 1.0.0
+ */
+export * as JetStreamFastIngest from "./JetStreamFastIngest.ts"
 
 /**
  * @since 0.1.0
@@ -75,6 +85,21 @@ export * as JetStreamSubscriber from "./JetStreamSubscriber.ts"
 export * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.ts"
 
 /**
+ * @since 1.0.0
+ */
+export * as JetStreamTypes from "./JetStreamTypes.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSAuth from "./NATSAuth.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSBench from "./NATSBench.ts"
+
+/**
  * @since 0.1.0
  */
 export * as NATSConnection from "./NATSConnection.ts"
@@ -90,9 +115,29 @@ export * as NATSError from "./NATSError.ts"
 export * as NATSHeaders from "./NATSHeaders.ts"
 
 /**
+ * @since 1.0.0
+ */
+export * as NATSInbox from "./NATSInbox.ts"
+
+/**
  * @since 0.1.0
  */
 export * as NATSMessage from "./NATSMessage.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSMetric from "./NATSMetric.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSNodeConnection from "./NATSNodeConnection.ts"
+
+/**
+ * @since 0.1.0
+ */
+export * as NATSOptions from "./NATSOptions.ts"
 
 /**
  * @since 0.3.0
@@ -113,3 +158,8 @@ export * as NATSSubscriber from "./NATSSubscriber.ts"
  * @since 0.1.0
  */
 export * as NATSSubscription from "./NATSSubscription.ts"
+
+/**
+ * @since 1.0.0
+ */
+export * as NATSWebSocketConnection from "./NATSWebSocketConnection.ts"

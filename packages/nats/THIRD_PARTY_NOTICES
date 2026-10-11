@@ -1,0 +1,9 @@
+This package includes adapted JetStream API type declarations from nats.js
+v3.4.0 (https://github.com/nats-io/nats.js/tree/v3.4.0), maintained by
+The NATS Authors, Copyright 2023-2026. Those declarations retain their
+Apache License, Version 2.0 attribution in src/JetStreamTypes.ts.
+
+A copy of the Apache License, Version 2.0 is included in LICENSE-NATS.
+The declarations were adapted to reference this package's Effect-native
+headers and stored messages. Runtime protocol, transport and JetStream
+implementations are authored in this repository.

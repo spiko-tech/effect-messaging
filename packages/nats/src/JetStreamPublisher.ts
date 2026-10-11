@@ -3,16 +3,16 @@
  */
 import * as Publisher from "@effect-messaging/core/Publisher"
 import * as PublisherError from "@effect-messaging/core/PublisherError"
-import type * as JetStream from "@nats-io/jetstream"
-import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
 import type * as Tracer from "effect/Tracer"
 import * as JetStreamClient from "./JetStreamClient.ts"
+import type * as JetStream from "./JetStreamTypes.ts"
 import * as NATSConnection from "./NATSConnection.ts"
 import * as NATSError from "./NATSError.ts"
 import * as NATSHeaders from "./NATSHeaders.ts"
+import type * as NATSCore from "./NATSOptions.ts"
 
 /**
  * @category type ids

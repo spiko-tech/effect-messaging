@@ -1,8 +1,8 @@
-import { AckPolicy, RetentionPolicy, StorageType } from "@nats-io/jetstream"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
 import * as JetStreamClient from "../src/JetStreamClient.ts"
 import * as JetStreamManager from "../src/JetStreamManager.ts"
+import { AckPolicy, RetentionPolicy, StorageType } from "../src/JetStreamTypes.ts"
 import * as NATSConnection from "../src/NATSConnection.ts"
 
 export const testConnection = NATSConnection.layerNode({

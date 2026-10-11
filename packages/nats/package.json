@@ -33,30 +33,42 @@
     "dist/**/*.d.ts",
     "dist/**/*.d.ts.map",
     "AGENTS.md",
-    "CLAUDE.md"
+    "CLAUDE.md",
+    "README.md",
+    "PARITY.md",
+    "test/upstream-v3.4.0-inventory.json",
+    "test/upstream-*-mapping.json",
+    "LICENSE",
+    "LICENSE-NATS",
+    "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
     "codegen": "node ../../scripts/codegen.mjs . 'src/**/index.ts'",
     "build": "tsc -b tsconfig.json tsconfig.release.json && pnpm babel",
     "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
     "check": "tsc -b tsconfig.json",
+    "check-parity": "node ../../scripts/check-nats-parity.mjs",
     "test": "vitest",
     "coverage": "vitest --coverage"
   },
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
+    "@effect/platform-node": "4.0.2",
     "@effect/vitest": "4.0.2",
-    "@nats-io/jetstream": "^3.4.0",
-    "@nats-io/nats-core": "^3.4.0",
-    "@nats-io/transport-node": "^3.4.0",
+    "@nats-io/jetstream": "3.4.0",
+    "@nats-io/nats-core": "3.4.0",
+    "@nats-io/transport-node": "3.4.0",
     "effect": "4.0.2"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",
-    "@nats-io/jetstream": "^3.4.0",
-    "@nats-io/nats-core": "^3.4.0",
-    "@nats-io/transport-node": "^3.4.0",
+    "@effect/platform-node": "^4.0.2",
     "effect": "^4.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@effect/platform-node": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public",

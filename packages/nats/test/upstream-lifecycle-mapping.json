@@ -1,0 +1,346 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/clobber_test.ts": 1,
+    "core/tests/disconnect_test.ts": 2,
+    "core/tests/doublesubs_test.ts": 2,
+    "core/tests/events_test.ts": 7,
+    "core/tests/idleheartbeats_test.ts": 7,
+    "core/tests/launcher_test.ts": 1,
+    "core/tests/bench_test.ts": 5
+  },
+  "total": 25,
+  "covered": 25,
+  "inapplicable": 0,
+  "notes": [
+    "Complete original clobber workload is retained. Benchmark assertions cover actual public metric formatting and workload counts, with no invented throughput target. Idle monitor scheduling uses TestClock and Scope; lifecycle tests use controlled TCP peers or real brokers."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/clobber_test.ts",
+      "upstreamTestName": "clobber - buffers don't clobber",
+      "upstreamLine": 29,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "clobber - buffers don't clobber",
+          "evidence": "Transfers all 256000 original 1024-byte messages (250 MiB), retains every delivery, and compares every byte with its original source buffer without scaling the workload."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/disconnect_test.ts",
+      "upstreamTestName": "disconnect - close handler is called on close",
+      "upstreamLine": 20,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "disconnect - %s",
+          "evidence": "Stopping the broker with reconnect disabled resolves the existing closed waiter and leaves the connection closed. Both upstream variants have identical observable assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/disconnect_test.ts",
+      "upstreamTestName": "disconnect - close process inbound ignores",
+      "upstreamLine": 34,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "disconnect - %s",
+          "evidence": "Stopping the broker with reconnect disabled resolves the existing closed waiter and leaves the connection closed. Both upstream variants have identical observable assertions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/doublesubs_test.ts",
+      "upstreamTestName": "doublesubs - standard",
+      "upstreamLine": 108,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "doublesubs - tls=%s",
+          "evidence": "TCP and trusted TLS variants create three subscriptions and queue empty, text, and header publications while disconnected. After restart, received counts are zero and broker trace records exactly one SUB for each subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/doublesubs_test.ts",
+      "upstreamTestName": "doublesubs - tls",
+      "upstreamLine": 112,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "doublesubs - tls=%s",
+          "evidence": "TCP and trusted TLS variants create three subscriptions and queue empty, text, and header publications while disconnected. After restart, received counts are zero and broker trace records exactly one SUB for each subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - close on close",
+      "upstreamLine": 23,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - close on close",
+          "evidence": "Explicit connection close resolves the closed awaiter with None."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - disconnect and close",
+      "upstreamLine": 31,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - disconnect and close",
+          "evidence": "Stopping the broker with reconnect disabled emits disconnect, completes the status Stream, and returns None for normal EOF closure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - disreconnect",
+      "upstreamLine": 53,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - disreconnect",
+          "evidence": "Stopping the active broker selects an explicit failover peer and emits disconnect then reconnect. Public getServer confirms the selected endpoint; discovery is tested separately."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - update",
+      "upstreamLine": 84,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - server update ignored=%s",
+          "evidence": "Controlled INFO advertises one new endpoint. Default policy emits an update containing one added address and grows the public server pool to two."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - ldm",
+      "upstreamLine": 111,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - ldm",
+          "evidence": "Sending SIGUSR2 to a real broker emits lame duck INFO; the native status consumer receives ldm."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - ignore server updates",
+      "upstreamLine": 135,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - server update ignored=%s",
+          "evidence": "Controlled INFO advertises one new endpoint, but ignoreClusterUpdates preserves the single configured server after a flush barrier."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/events_test.ts",
+      "upstreamTestName": "events - clean up",
+      "upstreamLine": 153,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "events - clean up",
+          "evidence": "Forced reconnect emits reconnect before explicit close, which terminates the active status Stream and resolves closed with None."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - basic",
+      "upstreamLine": 24,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - basic",
+          "evidence": "Eight 100 ms activity ticks against a 250 ms monitor suppress notifications; explicit cancellation releases the monitor."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - timeout",
+      "upstreamLine": 44,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - timeout maxOut=%s",
+          "evidence": "TestClock advances until one missed interval is reported; callback cancellation leaves the monitor inactive."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - timeout maxOut",
+      "upstreamLine": 53,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - timeout maxOut=%s",
+          "evidence": "TestClock advances until five missed intervals are reported; callback cancellation leaves the monitor inactive."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - timeout recover",
+      "upstreamLine": 62,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - timeout recover",
+          "evidence": "Missed count reaches three, work resets it to zero, and later time remains below the five-miss threshold without notification."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - timeout autocancel",
+      "upstreamLine": 83,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - timeout autocancel",
+          "evidence": "Activity every 100 ms prevents misses; the 2000 ms deadline cancels after at least six ticks, and additional time leaves count unchanged."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - change",
+      "upstreamLine": 112,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - change",
+          "evidence": "Changing interval, cancelAfter and maxOut replaces the scheduling generation. The old tick does not fire; the new 3000 ms cancellation deadline takes effect."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/idleheartbeats_test.ts",
+      "upstreamTestName": "idleheartbeat - restart",
+      "upstreamLine": 132,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeartbeatParity.test.ts",
+          "testName": "idleheartbeat - restart",
+          "evidence": "Restart replaces the scheduling generation and moves the next tick relative to restart while retaining scope ownership."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/launcher_test.ts",
+      "upstreamTestName": "cmdlauncher - test",
+      "upstreamLine": 18,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSLifecycleParity.test.ts",
+          "testName": "cmdlauncher - test",
+          "evidence": "The debug/trace broker fixture starts, accepts a connection and flush, exposes the readiness log, and stops successfully."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/bench_test.ts",
+      "upstreamTestName": "bench - no opts toss",
+      "upstreamLine": 73,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBenchParity.test.ts",
+          "testName": "bench - no opts toss",
+          "evidence": "The Effect constructor rejects an empty benchmark mode selection with a typed BenchmarkError and the exact upstream reason."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/bench_test.ts",
+      "upstreamTestName": "bench - pubsub",
+      "upstreamLine": 86,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBenchParity.test.ts",
+          "testName": "bench - $label",
+          "evidence": "Four callback, stream, and concurrent request workloads deliver five messages and return three named metrics, payload size eight, nonempty language/version/text, and CSV with nine columns and two lines. Upstream sets no numerical throughput threshold; native tests also check message counts and positive wire byte counts."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/bench_test.ts",
+      "upstreamTestName": "bench - pubsub async",
+      "upstreamLine": 98,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBenchParity.test.ts",
+          "testName": "bench - $label",
+          "evidence": "Four callback, stream, and concurrent request workloads deliver five messages and return three named metrics, payload size eight, nonempty language/version/text, and CSV with nine columns and two lines. Upstream sets no numerical throughput threshold; native tests also check message counts and positive wire byte counts."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/bench_test.ts",
+      "upstreamTestName": "bench - req",
+      "upstreamLine": 109,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBenchParity.test.ts",
+          "testName": "bench - $label",
+          "evidence": "Four callback, stream, and concurrent request workloads deliver five messages and return three named metrics, payload size eight, nonempty language/version/text, and CSV with nine columns and two lines. Upstream sets no numerical throughput threshold; native tests also check message counts and positive wire byte counts."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/bench_test.ts",
+      "upstreamTestName": "bench - req async",
+      "upstreamLine": 121,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSBenchParity.test.ts",
+          "testName": "bench - $label",
+          "evidence": "Four callback, stream, and concurrent request workloads deliver five messages and return three named metrics, payload size eight, nonempty language/version/text, and CSV with nine columns and two lines. Upstream sets no numerical throughput threshold; native tests also check message counts and positive wire byte counts."
+        }
+      ]
+    }
+  ]
+}

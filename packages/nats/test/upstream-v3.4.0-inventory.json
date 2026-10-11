@@ -1,0 +1,6501 @@
+{
+  "core": {
+    "tests": [
+      {
+        "file": "core/tests/auth_test.ts",
+        "declaredCases": 35,
+        "cases": [
+          {
+            "name": "auth - none",
+            "line": 61
+          },
+          {
+            "name": "auth - bad",
+            "line": 73
+          },
+          {
+            "name": "auth - weird chars",
+            "line": 84
+          },
+          {
+            "name": "auth - un/pw",
+            "line": 99
+          },
+          {
+            "name": "auth - un/pw authenticator",
+            "line": 109
+          },
+          {
+            "name": "auth - sub no permissions keeps connection",
+            "line": 121
+          },
+          {
+            "name": "auth - sub iterator no permissions keeps connection",
+            "line": 163
+          },
+          {
+            "name": "auth - pub permissions keep connection",
+            "line": 210
+          },
+          {
+            "name": "auth - req permissions keep connection",
+            "line": 239
+          },
+          {
+            "name": "auth - token",
+            "line": 274
+          },
+          {
+            "name": "auth - token authenticator",
+            "line": 282
+          },
+          {
+            "name": "auth - nkey",
+            "line": 292
+          },
+          {
+            "name": "auth - creds",
+            "line": 312
+          },
+          {
+            "name": "auth - custom",
+            "line": 346
+          },
+          {
+            "name": "auth - jwt",
+            "line": 379
+          },
+          {
+            "name": "auth - custom error",
+            "line": 415
+          },
+          {
+            "name": "basics - bad auth",
+            "line": 435
+          },
+          {
+            "name": "auth - nkey authentication",
+            "line": 452
+          },
+          {
+            "name": "auth - creds authenticator validation",
+            "line": 481
+          },
+          {
+            "name": "auth - expiration is notified",
+            "line": 528
+          },
+          {
+            "name": "auth - expiration is notified and recovered",
+            "line": 576
+          },
+          {
+            "name": "auth - bad auth is notified",
+            "line": 645
+          },
+          {
+            "name": "auth - perm request error",
+            "line": 680
+          },
+          {
+            "name": "auth - perm request error no mux",
+            "line": 738
+          },
+          {
+            "name": "auth - perm request error deliver to sub",
+            "line": 799
+          },
+          {
+            "name": "auth - mux request perms",
+            "line": 872
+          },
+          {
+            "name": "auth - perm sub iterator error",
+            "line": 906
+          },
+          {
+            "name": "auth - perm error is not in lastError",
+            "line": 951
+          },
+          {
+            "name": "auth - ignore auth error abort",
+            "line": 987
+          },
+          {
+            "name": "auth - sub with permission error discards",
+            "line": 1031
+          },
+          {
+            "name": "auth - creds and un and pw and token",
+            "line": 1073
+          },
+          {
+            "name": "auth - request context",
+            "line": 1118
+          },
+          {
+            "name": "auth - sub queue permission",
+            "line": 1173
+          },
+          {
+            "name": "auth - account expired",
+            "line": 1217
+          },
+          {
+            "name": "env conn",
+            "line": 1264
+          }
+        ],
+        "nativeSuites": [
+          "NATSSecurityParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 35,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-security-transports-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/authenticator_test.ts",
+        "declaredCases": 9,
+        "cases": [
+          {
+            "name": "authenticator - username password fns",
+            "line": 96
+          },
+          {
+            "name": "authenticator - username string password fn",
+            "line": 115
+          },
+          {
+            "name": "authenticator - username fn password string",
+            "line": 131
+          },
+          {
+            "name": "authenticator - token fn",
+            "line": 147
+          },
+          {
+            "name": "authenticator - nkey fn",
+            "line": 160
+          },
+          {
+            "name": "authenticator - jwt bearer fn",
+            "line": 177
+          },
+          {
+            "name": "authenticator - jwt fn",
+            "line": 203
+          },
+          {
+            "name": "authenticator - creds fn",
+            "line": 231
+          },
+          {
+            "name": "authenticator - bad creds",
+            "line": 258
+          }
+        ],
+        "nativeSuites": [
+          "NATSAuth.test.ts",
+          "NATSJwtTransport.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 9,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-foundation-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/autounsub_test.ts",
+        "declaredCases": 11,
+        "cases": [
+          {
+            "name": "autounsub - max option",
+            "line": 22
+          },
+          {
+            "name": "autounsub - unsubscribe",
+            "line": 34
+          },
+          {
+            "name": "autounsub - can unsub from auto-unsubscribed",
+            "line": 47
+          },
+          {
+            "name": "autounsub - can break to unsub",
+            "line": 60
+          },
+          {
+            "name": "autounsub - can change auto-unsub to a higher value",
+            "line": 78
+          },
+          {
+            "name": "autounsub - request receives expected count with multiple helpers",
+            "line": 91
+          },
+          {
+            "name": "autounsub - manual request receives expected count with multiple helpers",
+            "line": 118
+          },
+          {
+            "name": "autounsub - check subscription leaks",
+            "line": 142
+          },
+          {
+            "name": "autounsub - check request leaks",
+            "line": 152
+          },
+          {
+            "name": "autounsub - check cancelled request leaks",
+            "line": 188
+          },
+          {
+            "name": "autounsub - timeout cancelled request leaks",
+            "line": 215
+          }
+        ],
+        "nativeSuites": [
+          "NATSSubscriptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 11,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-subscription-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/basics_test.ts",
+        "declaredCases": 88,
+        "cases": [
+          {
+            "name": "basics - connect port",
+            "line": 53
+          },
+          {
+            "name": "basics - connect default",
+            "line": 59
+          },
+          {
+            "name": "basics - connect host",
+            "line": 65
+          },
+          {
+            "name": "basics - connect hostport",
+            "line": 70
+          },
+          {
+            "name": "basics - scott",
+            "line": 75
+          },
+          {
+            "name": "basics - connect servers",
+            "line": 80
+          },
+          {
+            "name": "basics - fail connect",
+            "line": 86
+          },
+          {
+            "name": "basics - publish",
+            "line": 96
+          },
+          {
+            "name": "basics - no publish without subject",
+            "line": 103
+          },
+          {
+            "name": "basics - pubsub",
+            "line": 115
+          },
+          {
+            "name": "basics - subscribe and unsubscribe",
+            "line": 131
+          },
+          {
+            "name": "basics - subscriptions iterate",
+            "line": 166
+          },
+          {
+            "name": "basics - subscriptions pass exact subject to cb",
+            "line": 182
+          },
+          {
+            "name": "basics - subscribe returns Subscription",
+            "line": 199
+          },
+          {
+            "name": "basics - wildcard subscriptions",
+            "line": 207
+          },
+          {
+            "name": "basics - correct data in message",
+            "line": 235
+          },
+          {
+            "name": "basics - correct reply in message",
+            "line": 255
+          },
+          {
+            "name": "basics - respond returns false if no reply subject set",
+            "line": 273
+          },
+          {
+            "name": "basics - closed cannot subscribe",
+            "line": 290
+          },
+          {
+            "name": "basics - close cannot request",
+            "line": 304
+          },
+          {
+            "name": "basics - flush returns promise",
+            "line": 318
+          },
+          {
+            "name": "basics - unsubscribe after close",
+            "line": 328
+          },
+          {
+            "name": "basics - unsubscribe stops messages",
+            "line": 336
+          },
+          {
+            "name": "basics - request",
+            "line": 355
+          },
+          {
+            "name": "basics - request no responders",
+            "line": 369
+          },
+          {
+            "name": "basics - request no responders noMux",
+            "line": 382
+          },
+          {
+            "name": "basics - request timeout",
+            "line": 394
+          },
+          {
+            "name": "basics - request timeout noMux",
+            "line": 405
+          },
+          {
+            "name": "basics - request cancel rejects",
+            "line": 416
+          },
+          {
+            "name": "basics - old style requests",
+            "line": 437
+          },
+          {
+            "name": "basics - reply can only be used with noMux",
+            "line": 456
+          },
+          {
+            "name": "basics - request with headers",
+            "line": 475
+          },
+          {
+            "name": "basics - request with headers and custom subject",
+            "line": 495
+          },
+          {
+            "name": "basics - request requires a subject",
+            "line": 517
+          },
+          {
+            "name": "basics - closed returns error",
+            "line": 530
+          },
+          {
+            "name": "basics - subscription with timeout",
+            "line": 540
+          },
+          {
+            "name": "basics - subscription expecting 2 doesn't fire timeout",
+            "line": 555
+          },
+          {
+            "name": "basics - subscription timeout auto cancels",
+            "line": 575
+          },
+          {
+            "name": "basics - no mux requests create normal subs",
+            "line": 595
+          },
+          {
+            "name": "basics - no mux requests timeout",
+            "line": 609
+          },
+          {
+            "name": "basics - no mux requests",
+            "line": 623
+          },
+          {
+            "name": "basics - no mux request timeout doesn't leak subs",
+            "line": 639
+          },
+          {
+            "name": "basics - no mux request no responders doesn't leak subs",
+            "line": 657
+          },
+          {
+            "name": "basics - no mux request no perms doesn't leak subs",
+            "line": 670
+          },
+          {
+            "name": "basics - max_payload errors",
+            "line": 712
+          },
+          {
+            "name": "basics - close cancels requests",
+            "line": 765
+          },
+          {
+            "name": "basics - empty message",
+            "line": 783
+          },
+          {
+            "name": "basics - msg buffers dont overwrite",
+            "line": 802
+          },
+          {
+            "name": "basics - get client ip",
+            "line": 857
+          },
+          {
+            "name": "basics - subs pending count",
+            "line": 867
+          },
+          {
+            "name": "basics - create inbox",
+            "line": 890
+          },
+          {
+            "name": "basics - custom prefix",
+            "line": 914
+          },
+          {
+            "name": "basics - custom prefix noMux",
+            "line": 929
+          },
+          {
+            "name": "basics - debug",
+            "line": 944
+          },
+          {
+            "name": "basics - subscription with timeout cancels on message",
+            "line": 951
+          },
+          {
+            "name": "basics - subscription cb with timeout cancels on message",
+            "line": 966
+          },
+          {
+            "name": "basics - resolve",
+            "line": 984
+          },
+          {
+            "name": "basics - port and server are mutually exclusive",
+            "line": 995
+          },
+          {
+            "name": "basics - rtt",
+            "line": 1006
+          },
+          {
+            "name": "basics - request many count",
+            "line": 1031
+          },
+          {
+            "name": "basics - request many jitter",
+            "line": 1062
+          },
+          {
+            "name": "basics - request many sentinel",
+            "line": 1093
+          },
+          {
+            "name": "basics - request many sentinel - partial response",
+            "line": 1125
+          },
+          {
+            "name": "basics - request many wait for timer - no respone",
+            "line": 1156
+          },
+          {
+            "name": "basics - request many waits for timer late response",
+            "line": 1185
+          },
+          {
+            "name": "basics - server version",
+            "line": 1214
+          },
+          {
+            "name": "basics - info",
+            "line": 1229
+          },
+          {
+            "name": "basics - info api_lvl",
+            "line": 1235
+          },
+          {
+            "name": "basics - initial connect error",
+            "line": 1246
+          },
+          {
+            "name": "basics - close promise resolves",
+            "line": 1275
+          },
+          {
+            "name": "basics - inbox prefixes cannot have wildcards",
+            "line": 1283
+          },
+          {
+            "name": "basics - msg typed payload",
+            "line": 1301
+          },
+          {
+            "name": "basics - ipv4 mapped to ipv6",
+            "line": 1345
+          },
+          {
+            "name": "basics - data types empty",
+            "line": 1352
+          },
+          {
+            "name": "basics - data types string",
+            "line": 1383
+          },
+          {
+            "name": "basics - json reviver",
+            "line": 1417
+          },
+          {
+            "name": "basics - sync subscription",
+            "line": 1446
+          },
+          {
+            "name": "basics - publish message",
+            "line": 1464
+          },
+          {
+            "name": "basics - respond message",
+            "line": 1486
+          },
+          {
+            "name": "basics - resolve false",
+            "line": 1508
+          },
+          {
+            "name": "basics - stats",
+            "line": 1519
+          },
+          {
+            "name": "basics - slow",
+            "line": 1560
+          },
+          {
+            "name": "basics - msg sids",
+            "line": 1634
+          },
+          {
+            "name": "basics - internal close listener",
+            "line": 1702
+          },
+          {
+            "name": "basics - publish tracing",
+            "line": 1746
+          },
+          {
+            "name": "basics - request tracing",
+            "line": 1766
+          },
+          {
+            "name": "basics - close status",
+            "line": 1799
+          },
+          {
+            "name": "basics - pub subject verified",
+            "line": 1815
+          }
+        ],
+        "nativeSuites": [
+          "NATSAdversarial.test.ts",
+          "NATSBasicParity.test.ts",
+          "NATSCoreParity.test.ts",
+          "NATSNodeTransport.test.ts",
+          "NATSOptions.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 88,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-basics-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/bench_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "bench - no opts toss",
+            "line": 73
+          },
+          {
+            "name": "bench - pubsub",
+            "line": 86
+          },
+          {
+            "name": "bench - pubsub async",
+            "line": 98
+          },
+          {
+            "name": "bench - req",
+            "line": 109
+          },
+          {
+            "name": "bench - req async",
+            "line": 121
+          }
+        ],
+        "nativeSuites": [
+          "NATSBenchParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/binary_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "binary - invalid2octet",
+            "line": 48
+          },
+          {
+            "name": "binary - invalidSequenceIdentifier",
+            "line": 49
+          },
+          {
+            "name": "binary - invalid3octet",
+            "line": 53
+          },
+          {
+            "name": "binary - invalid4octet",
+            "line": 54
+          },
+          {
+            "name": "binary - embeddednull",
+            "line": 55
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/buffer_test.ts",
+        "declaredCases": 24,
+        "cases": [
+          {
+            "name": "buffer - new buffer",
+            "line": 96
+          },
+          {
+            "name": "buffer - basic operations",
+            "line": 104
+          },
+          {
+            "name": "buffer - read/write byte",
+            "line": 141
+          },
+          {
+            "name": "buffer - write string",
+            "line": 151
+          },
+          {
+            "name": "buffer - write empty string",
+            "line": 159
+          },
+          {
+            "name": "buffer - read empty at EOF",
+            "line": 166
+          },
+          {
+            "name": "buffer - large byte writes",
+            "line": 175
+          },
+          {
+            "name": "buffer - too large byte writes",
+            "line": 186
+          },
+          {
+            "name": "buffer - grow write max buffer",
+            "line": 203
+          },
+          {
+            "name": "buffer - grow read close max buffer plus 1",
+            "line": 222
+          },
+          {
+            "name": "buffer - grow read close to max buffer",
+            "line": 235
+          },
+          {
+            "name": "buffer - read close to max buffer with initial grow",
+            "line": 246
+          },
+          {
+            "name": "buffer - large byte reads",
+            "line": 257
+          },
+          {
+            "name": "buffer - cap with pre allocated slice",
+            "line": 270
+          },
+          {
+            "name": "buffer - read from sync",
+            "line": 275
+          },
+          {
+            "name": "buffer - test grow",
+            "line": 297
+          },
+          {
+            "name": "buffer - read all",
+            "line": 321
+          },
+          {
+            "name": "buffer - write all",
+            "line": 332
+          },
+          {
+            "name": "buffer - bytes array buffer length",
+            "line": 344
+          },
+          {
+            "name": "buffer - bytes copy false",
+            "line": 363
+          },
+          {
+            "name": "buffer - bytes copy false grow exact bytes",
+            "line": 378
+          },
+          {
+            "name": "buffer - concat",
+            "line": 393
+          },
+          {
+            "name": "buffer - append",
+            "line": 414
+          },
+          {
+            "name": "buffer - assert",
+            "line": 425
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "outside-baseline",
+        "auditCases": {
+          "covered": 0,
+          "outsideBaseline": 24,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/clobber_test.ts",
+        "declaredCases": 1,
+        "cases": [
+          {
+            "name": "clobber - buffers don't clobber",
+            "line": 29
+          }
+        ],
+        "nativeSuites": [
+          "NATSLifecycleParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 1,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/databuffer_test.ts",
+        "declaredCases": 4,
+        "cases": [
+          {
+            "name": "databuffer - empty",
+            "line": 18
+          },
+          {
+            "name": "databuffer - simple",
+            "line": 26
+          },
+          {
+            "name": "databuffer - from empty",
+            "line": 41
+          },
+          {
+            "name": "databuffer - multi-fill",
+            "line": 47
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "outside-baseline",
+        "auditCases": {
+          "covered": 0,
+          "outsideBaseline": 4,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/disconnect_test.ts",
+        "declaredCases": 2,
+        "cases": [
+          {
+            "name": "disconnect - close handler is called on close",
+            "line": 20
+          },
+          {
+            "name": "disconnect - close process inbound ignores",
+            "line": 34
+          }
+        ],
+        "nativeSuites": [
+          "NATSLifecycleParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 2,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/dispose_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "dispose - connection await using calls drain",
+            "line": 21
+          },
+          {
+            "name": "dispose - connection async dispose is idempotent when closed",
+            "line": 34
+          },
+          {
+            "name": "dispose - connection async dispose awaits in-flight drain",
+            "line": 44
+          },
+          {
+            "name": "dispose - subscription await using drains",
+            "line": 54
+          },
+          {
+            "name": "dispose - iterator subscription await using drains",
+            "line": 81
+          },
+          {
+            "name": "dispose - iterator subscription closed promise resolves on dispose",
+            "line": 106
+          },
+          {
+            "name": "dispose - subscription async dispose is idempotent when closed",
+            "line": 124
+          },
+          {
+            "name": "dispose - subscription async dispose awaits in-flight drain",
+            "line": 136
+          },
+          {
+            "name": "dispose - subscription async dispose when connection closed",
+            "line": 149
+          },
+          {
+            "name": "dispose - script use",
+            "line": 159
+          }
+        ],
+        "nativeSuites": [
+          "NATSSubscriptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-subscription-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/doublesubs_test.ts",
+        "declaredCases": 2,
+        "cases": [
+          {
+            "name": "doublesubs - standard",
+            "line": 108
+          },
+          {
+            "name": "doublesubs - tls",
+            "line": 112
+          }
+        ],
+        "nativeSuites": [
+          "NATSLifecycleParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 2,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/drain_test.ts",
+        "declaredCases": 14,
+        "cases": [
+          {
+            "name": "drain - connection drains when no subs",
+            "line": 22
+          },
+          {
+            "name": "drain - connection drain",
+            "line": 28
+          },
+          {
+            "name": "drain - subscription drain",
+            "line": 71
+          },
+          {
+            "name": "drain - publish after drain fails",
+            "line": 111
+          },
+          {
+            "name": "drain - reject reqrep during connection drain",
+            "line": 129
+          },
+          {
+            "name": "drain - reject drain on closed",
+            "line": 139
+          },
+          {
+            "name": "drain - reject drain on draining",
+            "line": 148
+          },
+          {
+            "name": "drain - reject subscribe on draining",
+            "line": 158
+          },
+          {
+            "name": "drain - reject subscription drain on closed sub callback",
+            "line": 169
+          },
+          {
+            "name": "drain - reject subscription drain on closed sub iter",
+            "line": 184
+          },
+          {
+            "name": "drain - connection is closed after drain",
+            "line": 206
+          },
+          {
+            "name": "drain - reject subscription drain on closed",
+            "line": 214
+          },
+          {
+            "name": "drain - multiple sub drain returns same promise",
+            "line": 224
+          },
+          {
+            "name": "drain - publisher drain",
+            "line": 237
+          }
+        ],
+        "nativeSuites": [
+          "NATSDrainParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 14,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-drain-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/encoders_test.ts",
+        "declaredCases": 1,
+        "cases": [
+          {
+            "name": "encoders - basics",
+            "line": 20
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 1,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/events_test.ts",
+        "declaredCases": 7,
+        "cases": [
+          {
+            "name": "events - close on close",
+            "line": 23
+          },
+          {
+            "name": "events - disconnect and close",
+            "line": 31
+          },
+          {
+            "name": "events - disreconnect",
+            "line": 53
+          },
+          {
+            "name": "events - update",
+            "line": 84
+          },
+          {
+            "name": "events - ldm",
+            "line": 111
+          },
+          {
+            "name": "events - ignore server updates",
+            "line": 135
+          },
+          {
+            "name": "events - clean up",
+            "line": 153
+          }
+        ],
+        "nativeSuites": [
+          "NATSLifecycleParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 7,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/headers_test.ts",
+        "declaredCases": 25,
+        "cases": [
+          {
+            "name": "headers - illegal key",
+            "line": 37
+          },
+          {
+            "name": "headers - case sensitive",
+            "line": 60
+          },
+          {
+            "name": "headers - case insensitive",
+            "line": 89
+          },
+          {
+            "name": "headers - mime",
+            "line": 110
+          },
+          {
+            "name": "headers - publish has headers",
+            "line": 131
+          },
+          {
+            "name": "headers - request has headers",
+            "line": 161
+          },
+          {
+            "name": "headers - status",
+            "line": 207
+          },
+          {
+            "name": "headers - equality",
+            "line": 215
+          },
+          {
+            "name": "headers - canonical",
+            "line": 231
+          },
+          {
+            "name": "headers - append ignore case",
+            "line": 237
+          },
+          {
+            "name": "headers - append exact case",
+            "line": 245
+          },
+          {
+            "name": "headers - append canonical",
+            "line": 254
+          },
+          {
+            "name": "headers - malformed header are ignored",
+            "line": 263
+          },
+          {
+            "name": "headers - handles no space",
+            "line": 278
+          },
+          {
+            "name": "headers - trims values",
+            "line": 293
+          },
+          {
+            "name": "headers - error headers may have other entries",
+            "line": 310
+          },
+          {
+            "name": "headers - code/description",
+            "line": 330
+          },
+          {
+            "name": "headers - codec",
+            "line": 348
+          },
+          {
+            "name": "headers - malformed headers",
+            "line": 365
+          },
+          {
+            "name": "headers - iterator",
+            "line": 447
+          },
+          {
+            "name": "headers - last",
+            "line": 464
+          },
+          {
+            "name": "headers - record",
+            "line": 475
+          },
+          {
+            "name": "headers - fromRecord normalizes non-array values",
+            "line": 496
+          },
+          {
+            "name": "headers - not equals",
+            "line": 510
+          },
+          {
+            "name": "headers - empty",
+            "line": 519
+          }
+        ],
+        "nativeSuites": [
+          "NATSHeadersParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 25,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-foundation-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/heartbeats_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "heartbeat - timers fire",
+            "line": 46
+          },
+          {
+            "name": "heartbeat - errors fire on missed maxOut",
+            "line": 66
+          },
+          {
+            "name": "heartbeat - recovers from missed",
+            "line": 83
+          }
+        ],
+        "nativeSuites": [
+          "NATSPoolReconnectParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-pool-reconnect-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/idleheartbeats_test.ts",
+        "declaredCases": 7,
+        "cases": [
+          {
+            "name": "idleheartbeat - basic",
+            "line": 24
+          },
+          {
+            "name": "idleheartbeat - timeout",
+            "line": 44
+          },
+          {
+            "name": "idleheartbeat - timeout maxOut",
+            "line": 53
+          },
+          {
+            "name": "idleheartbeat - timeout recover",
+            "line": 62
+          },
+          {
+            "name": "idleheartbeat - timeout autocancel",
+            "line": 83
+          },
+          {
+            "name": "idleheartbeat - change",
+            "line": 112
+          },
+          {
+            "name": "idleheartbeat - restart",
+            "line": 132
+          }
+        ],
+        "nativeSuites": [
+          "NATSHeartbeatParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 7,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/iterators_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "iterators - unsubscribe breaks and closes",
+            "line": 29
+          },
+          {
+            "name": "iterators - autounsub breaks and closes",
+            "line": 47
+          },
+          {
+            "name": "iterators - permission error breaks and closes",
+            "line": 65
+          },
+          {
+            "name": "iterators - unsubscribing closes",
+            "line": 97
+          },
+          {
+            "name": "iterators - connection close closes",
+            "line": 114
+          },
+          {
+            "name": "iterators - cb subs fail iterator",
+            "line": 132
+          },
+          {
+            "name": "iterators - cb message counts",
+            "line": 152
+          },
+          {
+            "name": "iterators - push on done is noop",
+            "line": 174
+          },
+          {
+            "name": "iterators - break cleans up",
+            "line": 196
+          },
+          {
+            "name": "iterators - sync iterator",
+            "line": 215
+          }
+        ],
+        "nativeSuites": [
+          "NATSIteratorMessageParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-iterator-json-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/json_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "json - string",
+            "line": 46
+          },
+          {
+            "name": "json - empty",
+            "line": 47
+          },
+          {
+            "name": "json - null",
+            "line": 48
+          },
+          {
+            "name": "json - number",
+            "line": 49
+          },
+          {
+            "name": "json - false",
+            "line": 50
+          },
+          {
+            "name": "json - true",
+            "line": 51
+          },
+          {
+            "name": "json - empty array",
+            "line": 52
+          },
+          {
+            "name": "json - any array",
+            "line": 53
+          },
+          {
+            "name": "json - empty object",
+            "line": 54
+          },
+          {
+            "name": "json - object",
+            "line": 55
+          }
+        ],
+        "nativeSuites": [
+          "NATSIteratorMessageParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-iterator-json-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/launcher_test.ts",
+        "declaredCases": 1,
+        "cases": [
+          {
+            "name": "cmdlauncher - test",
+            "line": 18
+          }
+        ],
+        "nativeSuites": [
+          "NATSLifecycleParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 1,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-lifecycle-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/mrequest_test.ts",
+        "declaredCases": 21,
+        "cases": [
+          {
+            "name": "mreq - request many count",
+            "line": 62
+          },
+          {
+            "name": "mreq - request many count noMux",
+            "line": 66
+          },
+          {
+            "name": "mreq - request many jitter",
+            "line": 101
+          },
+          {
+            "name": "mreq - request many jitter noMux",
+            "line": 105
+          },
+          {
+            "name": "mreq - nomux request many sentinel",
+            "line": 147
+          },
+          {
+            "name": "mreq - nomux request many sentinel noMux",
+            "line": 151
+          },
+          {
+            "name": "mreq - nomux request many sentinel partial",
+            "line": 155
+          },
+          {
+            "name": "mreq - nomux request many sentinel partial noMux",
+            "line": 159
+          },
+          {
+            "name": "mreq - request many wait for timer - no response",
+            "line": 193
+          },
+          {
+            "name": "mreq - request many wait for timer noMux - no response",
+            "line": 197
+          },
+          {
+            "name": "mreq - request many waits for timer late response",
+            "line": 233
+          },
+          {
+            "name": "mreq - request many waits for timer late response noMux",
+            "line": 237
+          },
+          {
+            "name": "mreq - request many stops on error",
+            "line": 264
+          },
+          {
+            "name": "mreq - request many stops on error noMux",
+            "line": 268
+          },
+          {
+            "name": "mreq - pub permission error",
+            "line": 272
+          },
+          {
+            "name": "mreq - sub permission error",
+            "line": 315
+          },
+          {
+            "name": "mreq - lost sub permission",
+            "line": 365
+          },
+          {
+            "name": "mreq - timeout doesn't leak subs",
+            "line": 433
+          },
+          {
+            "name": "mreq - no responder doesn't leak subs",
+            "line": 454
+          },
+          {
+            "name": "mreq - no mux request no perms doesn't leak subs",
+            "line": 480
+          },
+          {
+            "name": "basics - request many tracing",
+            "line": 515
+          }
+        ],
+        "nativeSuites": [
+          "NATSMRequestParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 21,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-mrequest-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/parseip_test.ts",
+        "declaredCases": 4,
+        "cases": [
+          {
+            "name": "ipparser",
+            "line": 20
+          },
+          {
+            "name": "ipparser - isIP",
+            "line": 96
+          },
+          {
+            "name": "ipparser - IPv6 edge cases",
+            "line": 107
+          },
+          {
+            "name": "ipparser - IPv4 edge cases",
+            "line": 142
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "outside-baseline",
+        "auditCases": {
+          "covered": 0,
+          "outsideBaseline": 4,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/parser_test.ts",
+        "declaredCases": 14,
+        "cases": [
+          {
+            "name": "parser - ping",
+            "line": 96
+          },
+          {
+            "name": "parser - err",
+            "line": 126
+          },
+          {
+            "name": "parser - ok",
+            "line": 162
+          },
+          {
+            "name": "parser - info",
+            "line": 189
+          },
+          {
+            "name": "parser - errors",
+            "line": 209
+          },
+          {
+            "name": "parser - split msg",
+            "line": 247
+          },
+          {
+            "name": "parser - info arg",
+            "line": 324
+          },
+          {
+            "name": "parser - header",
+            "line": 392
+          },
+          {
+            "name": "parser - subject",
+            "line": 414
+          },
+          {
+            "name": "parser - msg buffers don't clobber",
+            "line": 437
+          },
+          {
+            "name": "parser - hmsg buffers don't clobber",
+            "line": 441
+          },
+          {
+            "name": "parser - protoParseInt",
+            "line": 541
+          },
+          {
+            "name": "parser - oversized msg size rejects",
+            "line": 571
+          },
+          {
+            "name": "parser - describe",
+            "line": 580
+          }
+        ],
+        "nativeSuites": [
+          "NATSParserParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 14,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-parser-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/properties_test.ts",
+        "declaredCases": 9,
+        "cases": [
+          {
+            "name": "properties - VERSION is semver",
+            "line": 41
+          },
+          {
+            "name": "properties - connect is a function",
+            "line": 50
+          },
+          {
+            "name": "properties - default connect properties",
+            "line": 54
+          },
+          {
+            "name": "properties - configured token options",
+            "line": 74
+          },
+          {
+            "name": "properties - configured user/pass options",
+            "line": 99
+          },
+          {
+            "name": "properties - tls doesn't leak options",
+            "line": 118
+          },
+          {
+            "name": "properties - port is only honored if no servers provided",
+            "line": 145
+          },
+          {
+            "name": "properties - multi",
+            "line": 161
+          },
+          {
+            "name": "properties - hasWsProtocol",
+            "line": 199
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 9,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/protocol_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "protocol - mux subscription cancel",
+            "line": 28
+          },
+          {
+            "name": "protocol - bad dispatch is noop",
+            "line": 53
+          },
+          {
+            "name": "protocol - subs all",
+            "line": 59
+          },
+          {
+            "name": "protocol - cancel unknown sub",
+            "line": 76
+          },
+          {
+            "name": "protocol - protolen -1 on empty",
+            "line": 88
+          }
+        ],
+        "nativeSuites": [
+          "NATSCoreParity.test.ts",
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/queues_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "queues - deliver to single queue",
+            "line": 21
+          },
+          {
+            "name": "queues - deliver to multiple queues",
+            "line": 37
+          },
+          {
+            "name": "queues - queues and subs independent",
+            "line": 66
+          }
+        ],
+        "nativeSuites": [
+          "NATSSubscriptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-subscription-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/reconnect_test.ts",
+        "declaredCases": 20,
+        "cases": [
+          {
+            "name": "reconnect - should receive when some servers are invalid",
+            "line": 39
+          },
+          {
+            "name": "reconnect - events",
+            "line": 59
+          },
+          {
+            "name": "reconnect - reconnect not emitted if suppressed",
+            "line": 92
+          },
+          {
+            "name": "reconnect - reconnecting after proper delay",
+            "line": 117
+          },
+          {
+            "name": "reconnect - indefinite reconnects",
+            "line": 144
+          },
+          {
+            "name": "reconnect - jitter",
+            "line": 190
+          },
+          {
+            "name": "reconnect - internal disconnect forces reconnect",
+            "line": 218
+          },
+          {
+            "name": "reconnect - wait on first connect",
+            "line": 255
+          },
+          {
+            "name": "reconnect - close stops reconnects",
+            "line": 286
+          },
+          {
+            "name": "reconnect - stale connections don't close",
+            "line": 319
+          },
+          {
+            "name": "reconnect - protocol errors don't close client",
+            "line": 414
+          },
+          {
+            "name": "reconnect - authentication timeout reconnects",
+            "line": 446
+          },
+          {
+            "name": "reconnectToServer - handler invoked on initial connect",
+            "line": 481
+          },
+          {
+            "name": "reconnectToServer - returning null uses default",
+            "line": 497
+          },
+          {
+            "name": "reconnectToServer - handler throws rejects connect()",
+            "line": 504
+          },
+          {
+            "name": "reconnectToServer - out-of-pool rejects connect()",
+            "line": 518
+          },
+          {
+            "name": "reconnectToServer - throws on reconnect closes connection",
+            "line": 538
+          },
+          {
+            "name": "reconnectToServer - picks chosen server on reconnect",
+            "line": 556
+          },
+          {
+            "name": "reconnectToServer - {server, delay} return waits before dial",
+            "line": 591
+          },
+          {
+            "name": "setServers - replaces pool and reconnect dials new pool",
+            "line": 611
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSPoolReconnectParity.test.ts",
+          "NATSStateMachine.test.ts",
+          "NATSTransportParity.test.ts",
+          "NATSWebSocketTransport.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 20,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-pool-reconnect-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/resub_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "resub - iter",
+            "line": 26
+          },
+          {
+            "name": "resub - callback",
+            "line": 55
+          },
+          {
+            "name": "resub - removes server interest",
+            "line": 112
+          }
+        ],
+        "nativeSuites": [
+          "NATSSubscriptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-subscription-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/semver_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "semver",
+            "line": 19
+          },
+          {
+            "name": "semver - feature basics",
+            "line": 39
+          },
+          {
+            "name": "semver - parse",
+            "line": 68
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 2,
+          "outsideBaseline": 1,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/servers_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "servers - single",
+            "line": 23
+          },
+          {
+            "name": "servers - multiples",
+            "line": 38
+          },
+          {
+            "name": "servers - add/delete",
+            "line": 62
+          },
+          {
+            "name": "servers - url parse fn",
+            "line": 86
+          },
+          {
+            "name": "servers - save tls name",
+            "line": 102
+          },
+          {
+            "name": "servers - port 80",
+            "line": 121
+          },
+          {
+            "name": "servers - hostname only",
+            "line": 138
+          },
+          {
+            "name": "servers - randomize shuffles initial pool",
+            "line": 144
+          },
+          {
+            "name": "servers - randomize=false preserves order",
+            "line": 158
+          },
+          {
+            "name": "servers - gossip update shuffles new servers",
+            "line": 170
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSNodeTransport.test.ts",
+          "NATSPoolReconnectParity.test.ts",
+          "NATSStateMachine.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-pool-reconnect-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/timeout_test.ts",
+        "declaredCases": 2,
+        "cases": [
+          {
+            "name": "timeout - request noMux stack is useful",
+            "line": 23
+          },
+          {
+            "name": "timeout - request stack is useful",
+            "line": 34
+          }
+        ],
+        "nativeSuites": [
+          "NATSSubscriptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 2,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-subscription-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/tls_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "tls - fail if server doesn't support TLS",
+            "line": 21
+          },
+          {
+            "name": "tls - connects to tls without option",
+            "line": 33
+          },
+          {
+            "name": "tls - custom ca fails without root",
+            "line": 40
+          },
+          {
+            "name": "tls - custom ca with root connects",
+            "line": 59
+          },
+          {
+            "name": "tls - available connects with or without",
+            "line": 79
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-security-transports-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/token_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "token - empty",
+            "line": 22
+          },
+          {
+            "name": "token - bad",
+            "line": 31
+          },
+          {
+            "name": "token - ok",
+            "line": 41
+          }
+        ],
+        "nativeSuites": [
+          "NATSSecurityParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-security-transports-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/types_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "types - json types",
+            "line": 33
+          },
+          {
+            "name": "types - string types",
+            "line": 46
+          },
+          {
+            "name": "types - binary types",
+            "line": 58
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/util_test.ts",
+        "declaredCases": 8,
+        "cases": [
+          {
+            "name": "util - simple mutex",
+            "line": 28
+          },
+          {
+            "name": "util - backoff",
+            "line": 45
+          },
+          {
+            "name": "util - deadline",
+            "line": 56
+          },
+          {
+            "name": "util - nanos",
+            "line": 62
+          },
+          {
+            "name": "util - backoff bad arg",
+            "line": 67
+          },
+          {
+            "name": "util - debug deferred",
+            "line": 73
+          },
+          {
+            "name": "util - randomToken shape",
+            "line": 81
+          },
+          {
+            "name": "util - randomToken uniqueness",
+            "line": 92
+          }
+        ],
+        "nativeSuites": [
+          "NATSInternalLawsParity.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 4,
+          "outsideBaseline": 4,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-internal-laws-mapping.json"
+        ]
+      },
+      {
+        "file": "core/tests/ws_test.ts",
+        "declaredCases": 12,
+        "cases": [
+          {
+            "name": "ws - connect",
+            "line": 34
+          },
+          {
+            "name": "ws - wss connection",
+            "line": 43
+          },
+          {
+            "name": "ws - pubsub",
+            "line": 56
+          },
+          {
+            "name": "ws - disconnect reconnects",
+            "line": 77
+          },
+          {
+            "name": "ws - tls options are not supported",
+            "line": 101
+          },
+          {
+            "name": "ws - indefinite reconnects",
+            "line": 111
+          },
+          {
+            "name": "ws - basics",
+            "line": 159
+          },
+          {
+            "name": "ws - url parse",
+            "line": 172
+          },
+          {
+            "name": "ws - wsURLParseFn",
+            "line": 201
+          },
+          {
+            "name": "ws - reconnectToServer invoked on initial connect",
+            "line": 208
+          },
+          {
+            "name": "ws - getServers returns ws listens",
+            "line": 225
+          },
+          {
+            "name": "ws - setServers replaces pool and reconnect dials new",
+            "line": 240
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSTransportParity.test.ts",
+          "NATSWebSocketTransport.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 12,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-security-transports-mapping.json"
+        ]
+      }
+    ],
+    "exports": [
+      {
+        "file": "core/src/authenticator.ts",
+        "declarations": [
+          {
+            "name": "multiAuthenticator",
+            "line": 27
+          },
+          {
+            "name": "noAuthFn",
+            "line": 38
+          },
+          {
+            "name": "usernamePasswordAuthenticator",
+            "line": 50
+          },
+          {
+            "name": "tokenAuthenticator",
+            "line": 66
+          },
+          {
+            "name": "nkeyAuthenticator",
+            "line": 81
+          },
+          {
+            "name": "jwtAuthenticator",
+            "line": 104
+          },
+          {
+            "name": "credsAuthenticator",
+            "line": 125
+          }
+        ]
+      },
+      {
+        "file": "core/src/bench.ts",
+        "declarations": [
+          {
+            "name": "Metric",
+            "line": 22
+          },
+          {
+            "name": "BenchOpts",
+            "line": 73
+          },
+          {
+            "name": "Bench",
+            "line": 85
+          },
+          {
+            "name": "throughput",
+            "line": 401
+          },
+          {
+            "name": "msgThroughput",
+            "line": 405
+          },
+          {
+            "name": "humanizeBytes",
+            "line": 409
+          }
+        ]
+      },
+      {
+        "file": "core/src/codec.ts",
+        "declarations": [
+          {
+            "name": "Codec",
+            "line": 16
+          }
+        ]
+      },
+      {
+        "file": "core/src/core.ts",
+        "declarations": [
+          {
+            "name": "DisconnectStatus",
+            "line": 19
+          },
+          {
+            "name": "ReconnectStatus",
+            "line": 24
+          },
+          {
+            "name": "ReconnectingStatus",
+            "line": 29
+          },
+          {
+            "name": "ClusterUpdateStatus",
+            "line": 33
+          },
+          {
+            "name": "LDMStatus",
+            "line": 39
+          },
+          {
+            "name": "ServerErrorStatus",
+            "line": 44
+          },
+          {
+            "name": "ClientPingStatus",
+            "line": 49
+          },
+          {
+            "name": "StaleConnectionStatus",
+            "line": 54
+          },
+          {
+            "name": "ForceReconnectStatus",
+            "line": 58
+          },
+          {
+            "name": "SlowConsumerStatus",
+            "line": 62
+          },
+          {
+            "name": "CloseStatus",
+            "line": 68
+          },
+          {
+            "name": "Status",
+            "line": 72
+          },
+          {
+            "name": "MsgCallback",
+            "line": 85
+          },
+          {
+            "name": "SubOpts",
+            "line": 93
+          },
+          {
+            "name": "DnsResolveFn",
+            "line": 129
+          },
+          {
+            "name": "SubscriptionOptions",
+            "line": 136
+          },
+          {
+            "name": "ServerInfo",
+            "line": 141
+          },
+          {
+            "name": "Server",
+            "line": 235
+          },
+          {
+            "name": "ReconnectToServerHandler",
+            "line": 275
+          },
+          {
+            "name": "ServersChanged",
+            "line": 283
+          },
+          {
+            "name": "Match",
+            "line": 290
+          },
+          {
+            "name": "Match",
+            "line": 299
+          },
+          {
+            "name": "MsgHdrs",
+            "line": 301
+          },
+          {
+            "name": "RequestOptions",
+            "line": 324
+          },
+          {
+            "name": "RequestStrategy",
+            "line": 345
+          },
+          {
+            "name": "RequestManyOptions",
+            "line": 347
+          },
+          {
+            "name": "Stats",
+            "line": 356
+          },
+          {
+            "name": "Payload",
+            "line": 375
+          },
+          {
+            "name": "NatsConnection",
+            "line": 377
+          },
+          {
+            "name": "ReviverFn",
+            "line": 570
+          },
+          {
+            "name": "Msg",
+            "line": 576
+          },
+          {
+            "name": "SyncIterator",
+            "line": 621
+          },
+          {
+            "name": "syncIterator",
+            "line": 631
+          },
+          {
+            "name": "Subscription",
+            "line": 647
+          },
+          {
+            "name": "TraceOptions",
+            "line": 727
+          },
+          {
+            "name": "PublishOptions",
+            "line": 742
+          },
+          {
+            "name": "Nanos",
+            "line": 761
+          },
+          {
+            "name": "CallbackFn",
+            "line": 763
+          },
+          {
+            "name": "Dispatcher",
+            "line": 765
+          },
+          {
+            "name": "QueuedIterator",
+            "line": 769
+          },
+          {
+            "name": "Publisher",
+            "line": 781
+          },
+          {
+            "name": "createInbox",
+            "line": 789
+          },
+          {
+            "name": "Request",
+            "line": 806
+          },
+          {
+            "name": "NoAuth",
+            "line": 819
+          },
+          {
+            "name": "TokenAuth",
+            "line": 824
+          },
+          {
+            "name": "UserPass",
+            "line": 832
+          },
+          {
+            "name": "NKeyAuth",
+            "line": 842
+          },
+          {
+            "name": "JwtAuth",
+            "line": 853
+          },
+          {
+            "name": "Auth",
+            "line": 862
+          },
+          {
+            "name": "Authenticator",
+            "line": 868
+          },
+          {
+            "name": "ConnectionOptions",
+            "line": 872
+          },
+          {
+            "name": "TlsOptions",
+            "line": 1060
+          },
+          {
+            "name": "DEFAULT_PORT",
+            "line": 1073
+          },
+          {
+            "name": "DEFAULT_HOST",
+            "line": 1074
+          },
+          {
+            "name": "ConnectFn",
+            "line": 1076
+          },
+          {
+            "name": "URLParseFn",
+            "line": 1078
+          },
+          {
+            "name": "Context",
+            "line": 1082
+          },
+          {
+            "name": "ContextServer",
+            "line": 1087
+          },
+          {
+            "name": "ContextUser",
+            "line": 1099
+          },
+          {
+            "name": "ContextPermission",
+            "line": 1109
+          },
+          {
+            "name": "ContextResponsePermission",
+            "line": 1114
+          },
+          {
+            "name": "RequestInfo",
+            "line": 1119
+          },
+          {
+            "name": "CallbackOptionalErrorFn",
+            "line": 1143
+          },
+          {
+            "name": "ConnectionClosedListener",
+            "line": 1145
+          }
+        ]
+      },
+      {
+        "file": "core/src/databuffer.ts",
+        "declarations": [
+          {
+            "name": "DataBuffer",
+            "line": 18
+          }
+        ]
+      },
+      {
+        "file": "core/src/denobuffer.ts",
+        "declarations": [
+          {
+            "name": "AssertionError",
+            "line": 13
+          },
+          {
+            "name": "Reader",
+            "line": 20
+          },
+          {
+            "name": "Writer",
+            "line": 24
+          },
+          {
+            "name": "assert",
+            "line": 29
+          },
+          {
+            "name": "MAX_SIZE",
+            "line": 41
+          },
+          {
+            "name": "concat",
+            "line": 55
+          },
+          {
+            "name": "append",
+            "line": 71
+          },
+          {
+            "name": "DenoBuffer",
+            "line": 75
+          },
+          {
+            "name": "readAll",
+            "line": 237
+          },
+          {
+            "name": "writeAll",
+            "line": 243
+          }
+        ]
+      },
+      {
+        "file": "core/src/encoders.ts",
+        "declarations": [
+          {
+            "name": "Empty",
+            "line": 15
+          },
+          {
+            "name": "TE",
+            "line": 17
+          },
+          {
+            "name": "TD",
+            "line": 18
+          },
+          {
+            "name": "encode",
+            "line": 34
+          },
+          {
+            "name": "decode",
+            "line": 48
+          }
+        ]
+      },
+      {
+        "file": "core/src/errors.ts",
+        "declarations": [
+          {
+            "name": "InvalidSubjectError",
+            "line": 23
+          },
+          {
+            "name": "InvalidArgumentError",
+            "line": 30
+          },
+          {
+            "name": "InvalidOperationError",
+            "line": 66
+          },
+          {
+            "name": "UserAuthenticationExpiredError",
+            "line": 78
+          },
+          {
+            "name": "AuthorizationError",
+            "line": 99
+          },
+          {
+            "name": "ClosedConnectionError",
+            "line": 133
+          },
+          {
+            "name": "DrainingConnectionError",
+            "line": 150
+          },
+          {
+            "name": "ConnectionError",
+            "line": 164
+          },
+          {
+            "name": "ProtocolError",
+            "line": 179
+          },
+          {
+            "name": "RequestError",
+            "line": 192
+          },
+          {
+            "name": "TimeoutError",
+            "line": 211
+          },
+          {
+            "name": "NoRespondersError",
+            "line": 228
+          },
+          {
+            "name": "PermissionViolationError",
+            "line": 244
+          },
+          {
+            "name": "errors",
+            "line": 286
+          }
+        ]
+      },
+      {
+        "file": "core/src/headers.ts",
+        "declarations": [
+          {
+            "name": "canonicalMIMEHeaderKey",
+            "line": 35
+          },
+          {
+            "name": "headers",
+            "line": 67
+          },
+          {
+            "name": "MsgHdrsImpl",
+            "line": 78
+          }
+        ]
+      },
+      {
+        "file": "core/src/heartbeats.ts",
+        "declarations": [
+          {
+            "name": "PH",
+            "line": 20
+          },
+          {
+            "name": "Heartbeat",
+            "line": 26
+          }
+        ]
+      },
+      {
+        "file": "core/src/idleheartbeat_monitor.ts",
+        "declarations": [
+          {
+            "name": "IdleHeartbeatFn",
+            "line": 20
+          },
+          {
+            "name": "IdleHeartbeatOptions",
+            "line": 25
+          },
+          {
+            "name": "IdleHeartbeatMonitor",
+            "line": 36
+          }
+        ]
+      },
+      {
+        "file": "core/src/internal_mod.ts",
+        "declarations": []
+      },
+      {
+        "file": "core/src/ipparser.ts",
+        "declarations": [
+          {
+            "name": "ipV4",
+            "line": 32
+          },
+          {
+            "name": "isIP",
+            "line": 46
+          },
+          {
+            "name": "parseIP",
+            "line": 50
+          }
+        ]
+      },
+      {
+        "file": "core/src/mod.ts",
+        "declarations": []
+      },
+      {
+        "file": "core/src/msg.ts",
+        "declarations": [
+          {
+            "name": "MsgImpl",
+            "line": 27
+          }
+        ]
+      },
+      {
+        "file": "core/src/muxsubscription.ts",
+        "declarations": [
+          {
+            "name": "MuxSubscription",
+            "line": 21
+          }
+        ]
+      },
+      {
+        "file": "core/src/nats.ts",
+        "declarations": [
+          {
+            "name": "NatsConnectionImpl",
+            "line": 52
+          }
+        ]
+      },
+      {
+        "file": "core/src/nkeys.ts",
+        "declarations": []
+      },
+      {
+        "file": "core/src/nuid.ts",
+        "declarations": []
+      },
+      {
+        "file": "core/src/options.ts",
+        "declarations": [
+          {
+            "name": "DEFAULT_MAX_RECONNECT_ATTEMPTS",
+            "line": 28
+          },
+          {
+            "name": "DEFAULT_JITTER",
+            "line": 29
+          },
+          {
+            "name": "DEFAULT_JITTER_TLS",
+            "line": 30
+          },
+          {
+            "name": "DEFAULT_PING_INTERVAL",
+            "line": 32
+          },
+          {
+            "name": "DEFAULT_MAX_PING_OUT",
+            "line": 33
+          },
+          {
+            "name": "DEFAULT_RECONNECT_TIME_WAIT",
+            "line": 36
+          },
+          {
+            "name": "defaultOptions",
+            "line": 38
+          },
+          {
+            "name": "hasWsProtocol",
+            "line": 56
+          },
+          {
+            "name": "buildAuthenticator",
+            "line": 74
+          },
+          {
+            "name": "parseOptions",
+            "line": 96
+          },
+          {
+            "name": "checkOptions",
+            "line": 162
+          },
+          {
+            "name": "checkUnsupportedOption",
+            "line": 174
+          }
+        ]
+      },
+      {
+        "file": "core/src/parser.ts",
+        "declarations": [
+          {
+            "name": "Kind",
+            "line": 20
+          },
+          {
+            "name": "Kind",
+            "line": 29
+          },
+          {
+            "name": "ParserEvent",
+            "line": 31
+          },
+          {
+            "name": "describe",
+            "line": 37
+          },
+          {
+            "name": "MsgArg",
+            "line": 65
+          },
+          {
+            "name": "Parser",
+            "line": 88
+          },
+          {
+            "name": "State",
+            "line": 687
+          },
+          {
+            "name": "State",
+            "line": 721
+          },
+          {
+            "name": "cc",
+            "line": 723
+          },
+          {
+            "name": "cc",
+            "line": 756
+          }
+        ]
+      },
+      {
+        "file": "core/src/protocol.ts",
+        "declarations": [
+          {
+            "name": "INFO",
+            "line": 62
+          },
+          {
+            "name": "Connect",
+            "line": 80
+          },
+          {
+            "name": "SubscriptionImpl",
+            "line": 145
+          },
+          {
+            "name": "Subscriptions",
+            "line": 308
+          },
+          {
+            "name": "ProtocolHandler",
+            "line": 392
+          }
+        ]
+      },
+      {
+        "file": "core/src/queued_iterator.ts",
+        "declarations": [
+          {
+            "name": "QueuedIteratorImpl",
+            "line": 21
+          }
+        ]
+      },
+      {
+        "file": "core/src/request.ts",
+        "declarations": [
+          {
+            "name": "BaseRequest",
+            "line": 26
+          },
+          {
+            "name": "RequestManyOptionsInternal",
+            "line": 48
+          },
+          {
+            "name": "RequestMany",
+            "line": 58
+          },
+          {
+            "name": "RequestOne",
+            "line": 130
+          }
+        ]
+      },
+      {
+        "file": "core/src/semver.ts",
+        "declarations": [
+          {
+            "name": "SemVer",
+            "line": 16
+          },
+          {
+            "name": "parseSemVer",
+            "line": 17
+          },
+          {
+            "name": "compare",
+            "line": 30
+          },
+          {
+            "name": "Feature",
+            "line": 40
+          },
+          {
+            "name": "Feature",
+            "line": 60
+          },
+          {
+            "name": "Features",
+            "line": 67
+          }
+        ]
+      },
+      {
+        "file": "core/src/servers.ts",
+        "declarations": [
+          {
+            "name": "isIPV4OrHostname",
+            "line": 27
+          },
+          {
+            "name": "hostPort",
+            "line": 61
+          },
+          {
+            "name": "ServerImpl",
+            "line": 109
+          },
+          {
+            "name": "Servers",
+            "line": 190
+          }
+        ]
+      },
+      {
+        "file": "core/src/transport.ts",
+        "declarations": [
+          {
+            "name": "setTransportFactory",
+            "line": 28
+          },
+          {
+            "name": "defaultPort",
+            "line": 32
+          },
+          {
+            "name": "getUrlParseFn",
+            "line": 39
+          },
+          {
+            "name": "newTransport",
+            "line": 45
+          },
+          {
+            "name": "getResolveFn",
+            "line": 52
+          },
+          {
+            "name": "TransportFactory",
+            "line": 58
+          },
+          {
+            "name": "Transport",
+            "line": 65
+          },
+          {
+            "name": "CR_LF",
+            "line": 93
+          },
+          {
+            "name": "CR_LF_LEN",
+            "line": 94
+          },
+          {
+            "name": "CRLF",
+            "line": 95
+          },
+          {
+            "name": "CR",
+            "line": 96
+          },
+          {
+            "name": "LF",
+            "line": 97
+          },
+          {
+            "name": "protoLen",
+            "line": 98
+          },
+          {
+            "name": "extractProtocolMessage",
+            "line": 108
+          }
+        ]
+      },
+      {
+        "file": "core/src/types.ts",
+        "declarations": []
+      },
+      {
+        "file": "core/src/util.ts",
+        "declarations": [
+          {
+            "name": "Prettify",
+            "line": 23
+          },
+          {
+            "name": "WithRequired",
+            "line": 30
+          },
+          {
+            "name": "ValueResult",
+            "line": 32
+          },
+          {
+            "name": "ErrorResult",
+            "line": 37
+          },
+          {
+            "name": "Result",
+            "line": 45
+          },
+          {
+            "name": "extend",
+            "line": 47
+          },
+          {
+            "name": "Pending",
+            "line": 57
+          },
+          {
+            "name": "render",
+            "line": 68
+          },
+          {
+            "name": "Timeout",
+            "line": 76
+          },
+          {
+            "name": "timeout",
+            "line": 80
+          },
+          {
+            "name": "Delay",
+            "line": 105
+          },
+          {
+            "name": "delay",
+            "line": 109
+          },
+          {
+            "name": "deadline",
+            "line": 126
+          },
+          {
+            "name": "Deferred",
+            "line": 141
+          },
+          {
+            "name": "deferred",
+            "line": 159
+          },
+          {
+            "name": "debugDeferred",
+            "line": 167
+          },
+          {
+            "name": "shuffle",
+            "line": 184
+          },
+          {
+            "name": "collect",
+            "line": 192
+          },
+          {
+            "name": "Perf",
+            "line": 200
+          },
+          {
+            "name": "SimpleMutex",
+            "line": 234
+          },
+          {
+            "name": "jitter",
+            "line": 281
+          },
+          {
+            "name": "Backoff",
+            "line": 288
+          },
+          {
+            "name": "backoff",
+            "line": 296
+          },
+          {
+            "name": "nanos",
+            "line": 312
+          },
+          {
+            "name": "millis",
+            "line": 320
+          },
+          {
+            "name": "randomToken",
+            "line": 342
+          }
+        ]
+      },
+      {
+        "file": "core/src/version.ts",
+        "declarations": [
+          {
+            "name": "version",
+            "line": 2
+          }
+        ]
+      },
+      {
+        "file": "core/src/ws_transport.ts",
+        "declarations": [
+          {
+            "name": "WsSocketFactory",
+            "line": 46
+          },
+          {
+            "name": "WsConnectionOptions",
+            "line": 55
+          },
+          {
+            "name": "WsTransport",
+            "line": 59
+          },
+          {
+            "name": "wsUrlParseFn",
+            "line": 300
+          },
+          {
+            "name": "wsconnect",
+            "line": 351
+          }
+        ]
+      }
+    ]
+  },
+  "jetstream": {
+    "tests": [
+      {
+        "file": "jetstream/tests/batch_publisher_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "batch publisher - basics",
+            "line": 20
+          },
+          {
+            "name": "batch publisher - out of sequence",
+            "line": 47
+          },
+          {
+            "name": "batch publisher - two streams",
+            "line": 76
+          },
+          {
+            "name": "batch publisher - expect last seq",
+            "line": 120
+          },
+          {
+            "name": "batch publisher - no atomics",
+            "line": 152
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamPublisherParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-publisher-schedules-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/consume_test.ts",
+        "declaredCases": 18,
+        "cases": [
+          {
+            "name": "consumers - consume",
+            "line": 46
+          },
+          {
+            "name": "consumers - consume callback rejects iter",
+            "line": 77
+          },
+          {
+            "name": "consume - heartbeats",
+            "line": 104
+          },
+          {
+            "name": "consume - deleted consumer",
+            "line": 147
+          },
+          {
+            "name": "consume - sub leaks",
+            "line": 197
+          },
+          {
+            "name": "consume - drain",
+            "line": 226
+          },
+          {
+            "name": "consume - sync",
+            "line": 253
+          },
+          {
+            "name": "consume - stream not found request abort",
+            "line": 280
+          },
+          {
+            "name": "consume - consumer deleted request abort",
+            "line": 313
+          },
+          {
+            "name": "consume - consumer not found request abort",
+            "line": 349
+          },
+          {
+            "name": "consume - consumer bind",
+            "line": 383
+          },
+          {
+            "name": "consume - connection close exits",
+            "line": 441
+          },
+          {
+            "name": "consume - one pending is none",
+            "line": 471
+          },
+          {
+            "name": "consume - stream not found and no responders",
+            "line": 504
+          },
+          {
+            "name": "consume - consumer not found and no responders",
+            "line": 559
+          },
+          {
+            "name": "consumer - internal close listener",
+            "line": 615
+          },
+          {
+            "name": "consume - max_waiting throttles",
+            "line": 686
+          },
+          {
+            "name": "consume - max_bytes throttles",
+            "line": 738
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamConsumptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 18,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-consumption-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/consumer_reset_test.ts",
+        "declaredCases": 7,
+        "cases": [
+          {
+            "name": "consumer reset - basic (no seq)",
+            "line": 26
+          },
+          {
+            "name": "consumer reset - with seq",
+            "line": 61
+          },
+          {
+            "name": "consumer reset - invalid seq",
+            "line": 94
+          },
+          {
+            "name": "consumer reset - version gate",
+            "line": 126
+          },
+          {
+            "name": "consumer reset - by_start_sequence allowed at/above",
+            "line": 151
+          },
+          {
+            "name": "consumer reset - by_start_sequence rejects below",
+            "line": 182
+          },
+          {
+            "name": "consumer reset - rejects last policy server-side",
+            "line": 211
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamConsumptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 7,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-consumption-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/consumers_ordered_test.ts",
+        "declaredCases": 40,
+        "cases": [
+          {
+            "name": "ordered consumers - get",
+            "line": 40
+          },
+          {
+            "name": "ordered consumers - fetch",
+            "line": 66
+          },
+          {
+            "name": "ordered consumers - consume reset",
+            "line": 94
+          },
+          {
+            "name": "ordered consumers - consume",
+            "line": 138
+          },
+          {
+            "name": "ordered consumers - filters consume",
+            "line": 161
+          },
+          {
+            "name": "ordered consumers - filters fetch",
+            "line": 191
+          },
+          {
+            "name": "ordered consumers - fetch reject consumer type change or concurrency",
+            "line": 217
+          },
+          {
+            "name": "ordered consumers - consume reject consumer type change or concurrency",
+            "line": 252
+          },
+          {
+            "name": "ordered consumers - last per subject",
+            "line": 287
+          },
+          {
+            "name": "ordered consumers - start sequence",
+            "line": 322
+          },
+          {
+            "name": "ordered consumers - last",
+            "line": 359
+          },
+          {
+            "name": "ordered consumers - new",
+            "line": 397
+          },
+          {
+            "name": "ordered consumers - start time",
+            "line": 437
+          },
+          {
+            "name": "ordered consumers - start time reset",
+            "line": 482
+          },
+          {
+            "name": "ordered consumers - next",
+            "line": 519
+          },
+          {
+            "name": "ordered consumers - sub leaks next()",
+            "line": 544
+          },
+          {
+            "name": "ordered consumers - sub leaks fetch()",
+            "line": 558
+          },
+          {
+            "name": "ordered consumers - sub leaks consume()",
+            "line": 578
+          },
+          {
+            "name": "ordered consumers - consume drain",
+            "line": 602
+          },
+          {
+            "name": "ordered consumers - headers only",
+            "line": 623
+          },
+          {
+            "name": "ordered consumers - max deliver",
+            "line": 638
+          },
+          {
+            "name": "ordered consumers - mem",
+            "line": 653
+          },
+          {
+            "name": "ordered consumers - inboxPrefix is respected",
+            "line": 668
+          },
+          {
+            "name": "ordered consumers - fetch deleted consumer",
+            "line": 690
+          },
+          {
+            "name": "ordered consumers - next deleted consumer",
+            "line": 719
+          },
+          {
+            "name": "ordered consumers - consume stream not found request abort",
+            "line": 743
+          },
+          {
+            "name": "ordered consumers - consume consumer deleted request abort",
+            "line": 771
+          },
+          {
+            "name": "ordered consumers - bind is rejected",
+            "line": 801
+          },
+          {
+            "name": "ordered consumers - name prefix",
+            "line": 837
+          },
+          {
+            "name": "ordered consumers - fetch reset",
+            "line": 867
+          },
+          {
+            "name": "ordered consumers - consume reset",
+            "line": 918
+          },
+          {
+            "name": "ordered consumers - next reset",
+            "line": 966
+          },
+          {
+            "name": "ordered consumers - no reset on next",
+            "line": 993
+          },
+          {
+            "name": "ordered consumers - initial creation fails, consumer fails",
+            "line": 1016
+          },
+          {
+            "name": "ordered consumers - stale reference recovers",
+            "line": 1044
+          },
+          {
+            "name": "ordered consumers - consume stale reference recovers",
+            "line": 1084
+          },
+          {
+            "name": "ordered consumer - deliver all policy",
+            "line": 1128
+          },
+          {
+            "name": "ordered - consume stream not found and no responders",
+            "line": 1139
+          },
+          {
+            "name": "ordered - fetch stream not found and no responders",
+            "line": 1185
+          },
+          {
+            "name": "ordered - next stream not found and no responders",
+            "line": 1224
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamOrderedPushParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 40,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-ordered-push-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/consumers_push_test.ts",
+        "declaredCases": 5,
+        "cases": [
+          {
+            "name": "push consumers - basics",
+            "line": 16
+          },
+          {
+            "name": "push consumers - basics cb",
+            "line": 66
+          },
+          {
+            "name": "push consumers - queue",
+            "line": 113
+          },
+          {
+            "name": "push consumers - connection status iterator closes",
+            "line": 183
+          },
+          {
+            "name": "push consumers - connection close closes",
+            "line": 215
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamOrderedPushParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 5,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-ordered-push-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/consumers_test.ts",
+        "declaredCases": 15,
+        "cases": [
+          {
+            "name": "consumers - min supported server",
+            "line": 41
+          },
+          {
+            "name": "consumers - get",
+            "line": 71
+          },
+          {
+            "name": "consumers - delete",
+            "line": 100
+          },
+          {
+            "name": "consumers - info",
+            "line": 123
+          },
+          {
+            "name": "consumers - push consumer on get",
+            "line": 161
+          },
+          {
+            "name": "consumers - fetch heartbeats",
+            "line": 182
+          },
+          {
+            "name": "consumers - bad options",
+            "line": 230
+          },
+          {
+            "name": "consumers - should be able to consume and pull",
+            "line": 260
+          },
+          {
+            "name": "consumers - discard notifications",
+            "line": 298
+          },
+          {
+            "name": "consumers - threshold_messages",
+            "line": 325
+          },
+          {
+            "name": "consumers - threshold_messages bytes",
+            "line": 378
+          },
+          {
+            "name": "consumers - sub leaks fetch()",
+            "line": 447
+          },
+          {
+            "name": "consumers - inboxPrefix is respected",
+            "line": 472
+          },
+          {
+            "name": "consumers - processed",
+            "line": 502
+          },
+          {
+            "name": "consumers - getConsumerFromInfo doesn't do info",
+            "line": 538
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamFacadeParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 15,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-facade-direct-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/direct_consumer_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "direct consumer - next",
+            "line": 25
+          },
+          {
+            "name": "direct consumer - batch",
+            "line": 55
+          },
+          {
+            "name": "direct consumer - consume",
+            "line": 105
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamFacadeParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-facade-direct-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/fast_ingest_publisher_test.ts",
+        "declaredCases": 13,
+        "cases": [
+          {
+            "name": "fast ingest - basics",
+            "line": 20
+          },
+          {
+            "name": "fast ingest - rejects non_supported",
+            "line": 52
+          },
+          {
+            "name": "fast ingest - end (EOB)",
+            "line": 73
+          },
+          {
+            "name": "fast ingest - ping",
+            "line": 102
+          },
+          {
+            "name": "fast ingest - backpressure",
+            "line": 128
+          },
+          {
+            "name": "fast ingest - add after closed rejects",
+            "line": 157
+          },
+          {
+            "name": "fast ingest - custom inboxPrefix",
+            "line": 181
+          },
+          {
+            "name": "fast ingest - invalid inboxPrefix rejected",
+            "line": 203
+          },
+          {
+            "name": "fast ingest - multi-token inboxPrefix",
+            "line": 227
+          },
+          {
+            "name": "fast ingest - concurrent pings coalesce",
+            "line": 250
+          },
+          {
+            "name": "fast ingest - expect.lastSequence on first msg",
+            "line": 276
+          },
+          {
+            "name": "fast ingest - expect.lastSequence mismatch closes batch",
+            "line": 307
+          },
+          {
+            "name": "fast ingest - done() resolves with terminal ack",
+            "line": 334
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamPublisherParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 13,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-publisher-schedules-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/fetch_test.ts",
+        "declaredCases": 12,
+        "cases": [
+          {
+            "name": "fetch - no messages",
+            "line": 36
+          },
+          {
+            "name": "fetch - less messages",
+            "line": 61
+          },
+          {
+            "name": "fetch - exactly messages",
+            "line": 86
+          },
+          {
+            "name": "fetch - deleted consumer",
+            "line": 117
+          },
+          {
+            "name": "fetch - listener leaks",
+            "line": 152
+          },
+          {
+            "name": "fetch - sync",
+            "line": 178
+          },
+          {
+            "name": "fetch - consumer bind",
+            "line": 204
+          },
+          {
+            "name": "fetch - exceeding max_messages will stop",
+            "line": 247
+          },
+          {
+            "name": "fetch - timer is based on idle_hb",
+            "line": 272
+          },
+          {
+            "name": "fetch - connection close exits",
+            "line": 324
+          },
+          {
+            "name": "fetch - stream not found and no responders",
+            "line": 357
+          },
+          {
+            "name": "fetch - consumer not found and no responders",
+            "line": 401
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamConsumptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 12,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-consumption-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jetstream409_test.ts",
+        "declaredCases": 4,
+        "cases": [
+          {
+            "name": "409 - max expires",
+            "line": 23
+          },
+          {
+            "name": "409 - max message size",
+            "line": 79
+          },
+          {
+            "name": "409 - max batch",
+            "line": 129
+          },
+          {
+            "name": "409 - max waiting",
+            "line": 180
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamLegacyConsumerParity.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 1,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-legacy-consumers-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jetstream_pullconsumer_test.ts",
+        "declaredCases": 7,
+        "cases": [
+          {
+            "name": "jetstream - pull consumer options",
+            "line": 49
+          },
+          {
+            "name": "jetstream - cross account pull",
+            "line": 66
+          },
+          {
+            "name": "jetstream - last of",
+            "line": 109
+          },
+          {
+            "name": "jetstream - priority group overflow",
+            "line": 144
+          },
+          {
+            "name": "jetstream - priority group prioritized",
+            "line": 312
+          },
+          {
+            "name": "jetstream - pinned client",
+            "line": 471
+          },
+          {
+            "name": "jetstream - unpin client",
+            "line": 561
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamLegacyConsumerParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 7,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-legacy-consumers-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jetstream_pushconsumer_test.ts",
+        "declaredCases": 23,
+        "cases": [
+          {
+            "name": "jetstream - durable",
+            "line": 55
+          },
+          {
+            "name": "jetstream - queue error checks",
+            "line": 93
+          },
+          {
+            "name": "jetstream - max ack pending",
+            "line": 131
+          },
+          {
+            "name": "jetstream - deliver new",
+            "line": 175
+          },
+          {
+            "name": "jetstream - deliver last",
+            "line": 207
+          },
+          {
+            "name": "jetstream - deliver seq",
+            "line": 238
+          },
+          {
+            "name": "jetstream - deliver start time",
+            "line": 269
+          },
+          {
+            "name": "jetstream - deliver last per subject",
+            "line": 301
+          },
+          {
+            "name": "jetstream - cross account subscribe",
+            "line": 349
+          },
+          {
+            "name": "jetstream - ack lease extends with working",
+            "line": 406
+          },
+          {
+            "name": "jetstream - idle heartbeats",
+            "line": 453
+          },
+          {
+            "name": "jetstream - flow control",
+            "line": 488
+          },
+          {
+            "name": "jetstream - durable resumes",
+            "line": 534
+          },
+          {
+            "name": "jetstream - nak delay",
+            "line": 585
+          },
+          {
+            "name": "jetstream - bind",
+            "line": 623
+          },
+          {
+            "name": "jetstream - bind example",
+            "line": 712
+          },
+          {
+            "name": "jetstream - push consumer is bound",
+            "line": 767
+          },
+          {
+            "name": "jetstream - idleheartbeats notifications don't cancel",
+            "line": 818
+          },
+          {
+            "name": "jetstream - push on stopped server doesn't close client",
+            "line": 842
+          },
+          {
+            "name": "jetstream - push sync",
+            "line": 898
+          },
+          {
+            "name": "jetstream - ordered push consumer honors inbox prefix",
+            "line": 926
+          },
+          {
+            "name": "jetstream - push consumer doesn't support priority groups",
+            "line": 989
+          },
+          {
+            "name": "jetstream - push stalled",
+            "line": 1012
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamLegacyConsumerParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 23,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-legacy-consumers-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jetstream_test.ts",
+        "declaredCases": 46,
+        "cases": [
+          {
+            "name": "jetstream - default options",
+            "line": 70
+          },
+          {
+            "name": "jetstream - default override timeout",
+            "line": 75
+          },
+          {
+            "name": "jetstream - default override prefix",
+            "line": 80
+          },
+          {
+            "name": "jetstream - options rejects empty prefix",
+            "line": 85
+          },
+          {
+            "name": "jetstream - options removes trailing dot",
+            "line": 93
+          },
+          {
+            "name": "jetstream - find stream throws when not found",
+            "line": 100
+          },
+          {
+            "name": "jetstream - publish basic",
+            "line": 115
+          },
+          {
+            "name": "jetstream - ackAck",
+            "line": 133
+          },
+          {
+            "name": "jetstream - publish id",
+            "line": 153
+          },
+          {
+            "name": "jetstream - publish require stream",
+            "line": 170
+          },
+          {
+            "name": "jetstream - publish require last message id",
+            "line": 192
+          },
+          {
+            "name": "jetstream - get message last by subject",
+            "line": 222
+          },
+          {
+            "name": "jetstream - publish first sequence",
+            "line": 243
+          },
+          {
+            "name": "jetstream - publish require last sequence",
+            "line": 260
+          },
+          {
+            "name": "jetstream - publish require last sequence by subject",
+            "line": 290
+          },
+          {
+            "name": "jetstream - last subject sequence subject",
+            "line": 314
+          },
+          {
+            "name": "jetstream - ephemeral options",
+            "line": 435
+          },
+          {
+            "name": "jetstream - publish headers",
+            "line": 447
+          },
+          {
+            "name": "jetstream - JSON",
+            "line": 465
+          },
+          {
+            "name": "jetstream - domain",
+            "line": 495
+          },
+          {
+            "name": "jetstream - account domain",
+            "line": 512
+          },
+          {
+            "name": "jetstream - puback domain",
+            "line": 537
+          },
+          {
+            "name": "jetstream - source",
+            "line": 557
+          },
+          {
+            "name": "jetstream - seal",
+            "line": 606
+          },
+          {
+            "name": "jetstream - deny delete",
+            "line": 640
+          },
+          {
+            "name": "jetstream - deny purge",
+            "line": 673
+          },
+          {
+            "name": "jetstream - rollup all",
+            "line": 706
+          },
+          {
+            "name": "jetstream - rollup subject",
+            "line": 739
+          },
+          {
+            "name": "jetstream - no rollup",
+            "line": 794
+          },
+          {
+            "name": "jetstream - backoff",
+            "line": 832
+          },
+          {
+            "name": "jetstream - redelivery",
+            "line": 883
+          },
+          {
+            "name": "jetstream - detailed errors",
+            "line": 926
+          },
+          {
+            "name": "jetstream - repub on 503",
+            "line": 945
+          },
+          {
+            "name": "jetstream - duplicate message pub",
+            "line": 981
+          },
+          {
+            "name": "jetstream - republish",
+            "line": 995
+          },
+          {
+            "name": "jetstream - num_replicas consumer option",
+            "line": 1030
+          },
+          {
+            "name": "jetstream - filter_subject consumer update",
+            "line": 1072
+          },
+          {
+            "name": "jetstream - jsmsg decode",
+            "line": 1093
+          },
+          {
+            "name": "jetstream - input transform",
+            "line": 1118
+          },
+          {
+            "name": "jetstream - source transforms",
+            "line": 1151
+          },
+          {
+            "name": "jetstream - term reason",
+            "line": 1206
+          },
+          {
+            "name": "jetstream - publish no responder",
+            "line": 1266
+          },
+          {
+            "name": "jetstream - base client timeout",
+            "line": 1302
+          },
+          {
+            "name": "jetstream - jsm base timeout",
+            "line": 1348
+          },
+          {
+            "name": "jetstream - watcherPrefix",
+            "line": 1379
+          },
+          {
+            "name": "jetstream - watcher deliver_subject",
+            "line": 1425
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamGeneralParity.test.ts",
+          "JetStreamMessageParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 46,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-general-jetstream-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jscluster_test.ts",
+        "declaredCases": 3,
+        "cases": [
+          {
+            "name": "jetstream - mirror alternates",
+            "line": 26
+          },
+          {
+            "name": "jsm - stream update properties",
+            "line": 56
+          },
+          {
+            "name": "streams - mirrors",
+            "line": 130
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamClusterConfigurationParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 3,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-legacy-consumers-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jsm_direct_test.ts",
+        "declaredCases": 9,
+        "cases": [
+          {
+            "name": "direct - version checks",
+            "line": 51
+          },
+          {
+            "name": "direct - decoder",
+            "line": 92
+          },
+          {
+            "name": "direct - get",
+            "line": 124
+          },
+          {
+            "name": "direct - callback",
+            "line": 226
+          },
+          {
+            "name": "direct - batch",
+            "line": 315
+          },
+          {
+            "name": "direct - last message for",
+            "line": 439
+          },
+          {
+            "name": "direct - batch next_by_subj",
+            "line": 525
+          },
+          {
+            "name": "direct - batch no messages",
+            "line": 578
+          },
+          {
+            "name": "direct - get no messages",
+            "line": 604
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamFacadeParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 9,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-facade-direct-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jsm_test.ts",
+        "declaredCases": 100,
+        "cases": [
+          {
+            "name": "jsm - jetstream not enabled",
+            "line": 88
+          },
+          {
+            "name": "jsm - account info",
+            "line": 100
+          },
+          {
+            "name": "jsm - account not enabled",
+            "line": 108
+          },
+          {
+            "name": "jsm - empty stream config fails",
+            "line": 137
+          },
+          {
+            "name": "jsm - empty stream config update fails",
+            "line": 151
+          },
+          {
+            "name": "jsm - update stream name is internally added",
+            "line": 172
+          },
+          {
+            "name": "jsm - delete empty stream name fails",
+            "line": 187
+          },
+          {
+            "name": "jsm - info empty stream name fails",
+            "line": 201
+          },
+          {
+            "name": "jsm - info msg not found stream name fails",
+            "line": 215
+          },
+          {
+            "name": "jsm - delete msg empty stream name fails",
+            "line": 228
+          },
+          {
+            "name": "jsm - delete msg not found stream name fails",
+            "line": 242
+          },
+          {
+            "name": "jsm - no stream lister is empty",
+            "line": 255
+          },
+          {
+            "name": "jsm - stream names is empty",
+            "line": 263
+          },
+          {
+            "name": "jsm - lister after empty, empty",
+            "line": 271
+          },
+          {
+            "name": "jsm - add stream",
+            "line": 282
+          },
+          {
+            "name": "jsm - purge not found stream name fails",
+            "line": 313
+          },
+          {
+            "name": "jsm - purge empty stream name fails",
+            "line": 326
+          },
+          {
+            "name": "jsm - stream purge",
+            "line": 340
+          },
+          {
+            "name": "jsm - purge by sequence",
+            "line": 357
+          },
+          {
+            "name": "jsm - purge by filtered sequence",
+            "line": 386
+          },
+          {
+            "name": "jsm - purge by subject",
+            "line": 416
+          },
+          {
+            "name": "jsm - purge by subject",
+            "line": 446
+          },
+          {
+            "name": "jsm - purge keep",
+            "line": 476
+          },
+          {
+            "name": "jsm - purge filtered keep",
+            "line": 507
+          },
+          {
+            "name": "jsm - purge seq and keep fails",
+            "line": 542
+          },
+          {
+            "name": "jsm - stream delete",
+            "line": 555
+          },
+          {
+            "name": "jsm - stream delete message",
+            "line": 571
+          },
+          {
+            "name": "jsm - stream delete info",
+            "line": 592
+          },
+          {
+            "name": "jsm - consumer info on empty stream name fails",
+            "line": 611
+          },
+          {
+            "name": "jsm - consumer info on empty consumer name fails",
+            "line": 625
+          },
+          {
+            "name": "jsm - consumer info on not found stream fails",
+            "line": 639
+          },
+          {
+            "name": "jsm - consumer info on not found consumer",
+            "line": 651
+          },
+          {
+            "name": "jsm - consumer info",
+            "line": 664
+          },
+          {
+            "name": "jsm - no consumer lister with empty stream fails",
+            "line": 679
+          },
+          {
+            "name": "jsm - no consumer lister with no consumers empty",
+            "line": 692
+          },
+          {
+            "name": "jsm - lister",
+            "line": 701
+          },
+          {
+            "name": "jsm - update stream",
+            "line": 720
+          },
+          {
+            "name": "jsm - get message",
+            "line": 734
+          },
+          {
+            "name": "jsm - get message (not found)",
+            "line": 763
+          },
+          {
+            "name": "jsm - get message payload",
+            "line": 771
+          },
+          {
+            "name": "jsm - advisories",
+            "line": 795
+          },
+          {
+            "name": "jsm - validate name",
+            "line": 812
+          },
+          {
+            "name": "jsm - minValidation",
+            "line": 842
+          },
+          {
+            "name": "jsm - cross account streams",
+            "line": 876
+          },
+          {
+            "name": "jsm - cross account consumers",
+            "line": 954
+          },
+          {
+            "name": "jsm - jetstream error info",
+            "line": 1021
+          },
+          {
+            "name": "jsm - update consumer",
+            "line": 1040
+          },
+          {
+            "name": "jsm - stream info subjects",
+            "line": 1075
+          },
+          {
+            "name": "jsm - account limits",
+            "line": 1110
+          },
+          {
+            "name": "jsm - stream update preserves other value",
+            "line": 1166
+          },
+          {
+            "name": "jsm - consumer name",
+            "line": 1184
+          },
+          {
+            "name": "jsm - consumer name apis are not used on old servers",
+            "line": 1320
+          },
+          {
+            "name": "jsm - consumer name apis are not used when disabled",
+            "line": 1334
+          },
+          {
+            "name": "jsm - mirror_direct options",
+            "line": 1347
+          },
+          {
+            "name": "jsm - consumers with name and durable_name",
+            "line": 1378
+          },
+          {
+            "name": "jsm - consumer name is validated",
+            "line": 1411
+          },
+          {
+            "name": "jsm - discard_new_per_subject option",
+            "line": 1461
+          },
+          {
+            "name": "jsm - paginated subjects",
+            "line": 1507
+          },
+          {
+            "name": "jsm - paged stream list",
+            "line": 1543
+          },
+          {
+            "name": "jsm - paged consumer infos",
+            "line": 1580
+          },
+          {
+            "name": "jsm - list filter",
+            "line": 1621
+          },
+          {
+            "name": "jsm - stream names list filtering subject",
+            "line": 1666
+          },
+          {
+            "name": "jsm - remap domain",
+            "line": 1718
+          },
+          {
+            "name": "jsm - filter_subjects",
+            "line": 1745
+          },
+          {
+            "name": "jsm - filter_subjects rejects filter_subject",
+            "line": 1768
+          },
+          {
+            "name": "jsm - update filter_subject",
+            "line": 1795
+          },
+          {
+            "name": "jsm - update filter_subjects",
+            "line": 1819
+          },
+          {
+            "name": "jsm - update from filter_subject to filter_subjects",
+            "line": 1843
+          },
+          {
+            "name": "jsm - stored msg decode",
+            "line": 1899
+          },
+          {
+            "name": "jsm - stream/consumer metadata",
+            "line": 1921
+          },
+          {
+            "name": "jsm - consumer api action",
+            "line": 2024
+          },
+          {
+            "name": "jsm - validate stream name in operations",
+            "line": 2066
+          },
+          {
+            "name": "jsm - validate consumer name",
+            "line": 2139
+          },
+          {
+            "name": "jsm - validate consumer name in operations",
+            "line": 2187
+          },
+          {
+            "name": "jsm - source transforms",
+            "line": 2236
+          },
+          {
+            "name": "jsm - source transforms rejected on old servers",
+            "line": 2291
+          },
+          {
+            "name": "jsm - stream compression not supported",
+            "line": 2366
+          },
+          {
+            "name": "jsm - stream compression",
+            "line": 2390
+          },
+          {
+            "name": "jsm - stream consumer limits",
+            "line": 2411
+          },
+          {
+            "name": "jsm - stream consumer limits override",
+            "line": 2446
+          },
+          {
+            "name": "jsm - stream consumer limits rejected on old servers",
+            "line": 2487
+          },
+          {
+            "name": "jsm - api check not ok",
+            "line": 2512
+          },
+          {
+            "name": "jsm - api check ok",
+            "line": 2532
+          },
+          {
+            "name": "jsm - consumer create paused",
+            "line": 2551
+          },
+          {
+            "name": "jsm - pause/unpause",
+            "line": 2574
+          },
+          {
+            "name": "jsm - consumer pedantic",
+            "line": 2605
+          },
+          {
+            "name": "jsm - storage",
+            "line": 2639
+          },
+          {
+            "name": "jsm - pull consumer priority groups",
+            "line": 2666
+          },
+          {
+            "name": "jsm - stream message ttls",
+            "line": 2751
+          },
+          {
+            "name": "jsm - message ttls",
+            "line": 2791
+          },
+          {
+            "name": "jsm - mirrors can be removed",
+            "line": 2831
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel sets header on stream create",
+            "line": 2859
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel default omits header",
+            "line": 2884
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel header on consumer create",
+            "line": 2909
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel header on stream update",
+            "line": 2935
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel stream update no header when delta plain",
+            "line": 2958
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel header on consumer update",
+            "line": 2987
+          },
+          {
+            "name": "jsm - sendRequiredApiLevel consumer update unrelated edit no header",
+            "line": 3024
+          },
+          {
+            "name": "jsm - mirror/source consumer (ADR-60)",
+            "line": 3062
+          },
+          {
+            "name": "jsm - mirror/source consumer requires name and deliver_subject (ADR-60)",
+            "line": 3137
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamManagementParity.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 99,
+          "outsideBaseline": 1,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-management-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/jsmsg_test.ts",
+        "declaredCases": 11,
+        "cases": [
+          {
+            "name": "jsmsg - parse",
+            "line": 45
+          },
+          {
+            "name": "jsmsg - parse long",
+            "line": 56
+          },
+          {
+            "name": "jsmsg - parse rejects subject is not 9 tokens",
+            "line": 71
+          },
+          {
+            "name": "jsmsg - acks",
+            "line": 91
+          },
+          {
+            "name": "jsmsg - no ack consumer is ackAck 503",
+            "line": 152
+          },
+          {
+            "name": "jsmsg - explicit consumer ackAck",
+            "line": 181
+          },
+          {
+            "name": "jsmsg - explicit consumer ackAck timeout",
+            "line": 206
+          },
+          {
+            "name": "jsmsg - ackAck js options timeout",
+            "line": 237
+          },
+          {
+            "name": "jsmsg - ackAck legacy timeout",
+            "line": 269
+          },
+          {
+            "name": "jsmsg - time and timestamp",
+            "line": 301
+          },
+          {
+            "name": "jsmsg - reply/sid",
+            "line": 325
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamMessageParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 11,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-jetstream-message-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/next_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "next - basics",
+            "line": 31
+          },
+          {
+            "name": "next - sub leaks",
+            "line": 67
+          },
+          {
+            "name": "next - listener leaks",
+            "line": 86
+          },
+          {
+            "name": "next - deleted consumer",
+            "line": 121
+          },
+          {
+            "name": "next - consumer bind",
+            "line": 151
+          },
+          {
+            "name": "next - delivery count",
+            "line": 208
+          },
+          {
+            "name": "next - connection close exits",
+            "line": 238
+          },
+          {
+            "name": "next - stream not found and no responders",
+            "line": 267
+          },
+          {
+            "name": "next - consumer not found and no responders",
+            "line": 303
+          },
+          {
+            "name": "next - max_bytes returns fast",
+            "line": 338
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamConsumptionParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-consumption-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/pushconsumers_ordered_test.ts",
+        "declaredCases": 8,
+        "cases": [
+          {
+            "name": "ordered push consumers - get",
+            "line": 39
+          },
+          {
+            "name": "ordered push consumers - consume reset",
+            "line": 67
+          },
+          {
+            "name": "ordered push consumers - consume",
+            "line": 109
+          },
+          {
+            "name": "ordered push consumers - filters consume",
+            "line": 134
+          },
+          {
+            "name": "ordered push consumers - last per subject",
+            "line": 167
+          },
+          {
+            "name": "ordered push consumers - start sequence",
+            "line": 193
+          },
+          {
+            "name": "ordered push consumers - sub leak",
+            "line": 220
+          },
+          {
+            "name": "push consumers - flow control",
+            "line": 250
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamLegacyOrderedPushParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 8,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-legacy-consumers-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/schedules_test.ts",
+        "declaredCases": 10,
+        "cases": [
+          {
+            "name": "schedules - basics",
+            "line": 20
+          },
+          {
+            "name": "schedules - spec to header",
+            "line": 79
+          },
+          {
+            "name": "schedules - @every",
+            "line": 126
+          },
+          {
+            "name": "schedules - cron every second",
+            "line": 181
+          },
+          {
+            "name": "schedules - predefined and timezone accepted",
+            "line": 226
+          },
+          {
+            "name": "schedules - cancel schedule",
+            "line": 258
+          },
+          {
+            "name": "schedules - cancel rejects same subject",
+            "line": 311
+          },
+          {
+            "name": "schedules - schedule and cancelSchedule mutually exclusive",
+            "line": 339
+          },
+          {
+            "name": "schedules - rollup header",
+            "line": 371
+          },
+          {
+            "name": "schedules - subject sourcing (ADR-51)",
+            "line": 401
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamPublisherParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 10,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-publisher-schedules-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/status_test.ts",
+        "declaredCases": 2,
+        "cases": [
+          {
+            "name": "js status - basics",
+            "line": 28
+          },
+          {
+            "name": "api error - basics",
+            "line": 130
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamPublisherParity.test.ts",
+          "NATSHeadersParity.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 1,
+          "outsideBaseline": 1,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-publisher-schedules-mapping.json"
+        ]
+      },
+      {
+        "file": "jetstream/tests/streams_test.ts",
+        "declaredCases": 6,
+        "cases": [
+          {
+            "name": "streams - get",
+            "line": 28
+          },
+          {
+            "name": "streams - consumers",
+            "line": 62
+          },
+          {
+            "name": "streams - delete message",
+            "line": 104
+          },
+          {
+            "name": "streams - first_seq",
+            "line": 130
+          },
+          {
+            "name": "streams - first_seq fails if wrong server",
+            "line": 150
+          },
+          {
+            "name": "streams - persist mode",
+            "line": 171
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamFacadeParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 6,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-facade-direct-mapping.json"
+        ]
+      }
+    ],
+    "exports": [
+      {
+        "file": "jetstream/src/consumer.ts",
+        "declarations": [
+          {
+            "name": "PullConsumerType",
+            "line": 73
+          },
+          {
+            "name": "PullConsumerType",
+            "line": 79
+          },
+          {
+            "name": "OrderedConsumerState",
+            "line": 82
+          },
+          {
+            "name": "PullConsumerInternalOptions",
+            "line": 93
+          },
+          {
+            "name": "isOverflowOptions",
+            "line": 113
+          },
+          {
+            "name": "isPrioritizedOptions",
+            "line": 122
+          },
+          {
+            "name": "PullConsumerMessagesImpl",
+            "line": 129
+          },
+          {
+            "name": "PullConsumerImpl",
+            "line": 854
+          },
+          {
+            "name": "validateOverflowPullOptions",
+            "line": 1051
+          },
+          {
+            "name": "validatePrioritizedPullOptions",
+            "line": 1078
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/internal_mod.ts",
+        "declarations": []
+      },
+      {
+        "file": "jetstream/src/jsapi_types.ts",
+        "declarations": [
+          {
+            "name": "ApiPaged",
+            "line": 20
+          },
+          {
+            "name": "ApiPagedRequest",
+            "line": 26
+          },
+          {
+            "name": "ApiResponse",
+            "line": 30
+          },
+          {
+            "name": "ApiError",
+            "line": 35
+          },
+          {
+            "name": "StreamAlternate",
+            "line": 53
+          },
+          {
+            "name": "StreamInfo",
+            "line": 72
+          },
+          {
+            "name": "SubjectTransformConfig",
+            "line": 110
+          },
+          {
+            "name": "StreamConsumerLimits",
+            "line": 126
+          },
+          {
+            "name": "StreamConfig",
+            "line": 140
+          },
+          {
+            "name": "StreamUpdateConfig",
+            "line": 187
+          },
+          {
+            "name": "Republish",
+            "line": 329
+          },
+          {
+            "name": "ExternalStream",
+            "line": 344
+          },
+          {
+            "name": "StreamSource",
+            "line": 356
+          },
+          {
+            "name": "StreamConsumerSource",
+            "line": 405
+          },
+          {
+            "name": "Placement",
+            "line": 417
+          },
+          {
+            "name": "RetentionPolicy",
+            "line": 428
+          },
+          {
+            "name": "RetentionPolicy",
+            "line": 443
+          },
+          {
+            "name": "DiscardPolicy",
+            "line": 446
+          },
+          {
+            "name": "DiscardPolicy",
+            "line": 457
+          },
+          {
+            "name": "StorageType",
+            "line": 459
+          },
+          {
+            "name": "StorageType",
+            "line": 469
+          },
+          {
+            "name": "DeliverPolicy",
+            "line": 471
+          },
+          {
+            "name": "DeliverPolicy",
+            "line": 497
+          },
+          {
+            "name": "AckPolicy",
+            "line": 499
+          },
+          {
+            "name": "AckPolicy",
+            "line": 522
+          },
+          {
+            "name": "ReplayPolicy",
+            "line": 524
+          },
+          {
+            "name": "ReplayPolicy",
+            "line": 534
+          },
+          {
+            "name": "StoreCompression",
+            "line": 536
+          },
+          {
+            "name": "StoreCompression",
+            "line": 546
+          },
+          {
+            "name": "PersistMode",
+            "line": 549
+          },
+          {
+            "name": "PersistMode",
+            "line": 567
+          },
+          {
+            "name": "StreamInfoRequestOptions",
+            "line": 572
+          },
+          {
+            "name": "MsgRequest",
+            "line": 583
+          },
+          {
+            "name": "NextMsgRequest",
+            "line": 588
+          },
+          {
+            "name": "LastForMsgRequest",
+            "line": 593
+          },
+          {
+            "name": "SeqMsgRequest",
+            "line": 598
+          },
+          {
+            "name": "StartTimeMsgRequest",
+            "line": 604
+          },
+          {
+            "name": "DirectMsgRequest",
+            "line": 606
+          },
+          {
+            "name": "CompletionResult",
+            "line": 612
+          },
+          {
+            "name": "BatchCallback",
+            "line": 613
+          },
+          {
+            "name": "DirectBatch",
+            "line": 615
+          },
+          {
+            "name": "DirectMaxBytes",
+            "line": 618
+          },
+          {
+            "name": "DirectBatchLimits",
+            "line": 620
+          },
+          {
+            "name": "DirectBatchStartSeq",
+            "line": 626
+          },
+          {
+            "name": "DirectBatchStartTime",
+            "line": 630
+          },
+          {
+            "name": "DirectBatchOptions",
+            "line": 634
+          },
+          {
+            "name": "DirectLastFor",
+            "line": 636
+          },
+          {
+            "name": "StreamState",
+            "line": 642
+          },
+          {
+            "name": "LostStreamData",
+            "line": 698
+          },
+          {
+            "name": "ClusterInfo",
+            "line": 709
+          },
+          {
+            "name": "PeerInfo",
+            "line": 744
+          },
+          {
+            "name": "StreamSourceInfo",
+            "line": 770
+          },
+          {
+            "name": "PurgeOpts",
+            "line": 794
+          },
+          {
+            "name": "PurgeBySeq",
+            "line": 795
+          },
+          {
+            "name": "PurgeTrimOpts",
+            "line": 805
+          },
+          {
+            "name": "PurgeBySubject",
+            "line": 815
+          },
+          {
+            "name": "PurgeResponse",
+            "line": 822
+          },
+          {
+            "name": "ConsumerCreateOptions",
+            "line": 829
+          },
+          {
+            "name": "ConsumerApiOptions",
+            "line": 840
+          },
+          {
+            "name": "ConsumerApiAction",
+            "line": 845
+          },
+          {
+            "name": "ConsumerApiAction",
+            "line": 850
+          },
+          {
+            "name": "CreateConsumerRequest",
+            "line": 853
+          },
+          {
+            "name": "StreamMsgResponse",
+            "line": 860
+          },
+          {
+            "name": "SequenceInfo",
+            "line": 870
+          },
+          {
+            "name": "ConsumerInfo",
+            "line": 876
+          },
+          {
+            "name": "ConsumerListResponse",
+            "line": 946
+          },
+          {
+            "name": "ConsumerResetResponse",
+            "line": 956
+          },
+          {
+            "name": "StreamListResponse",
+            "line": 964
+          },
+          {
+            "name": "Success",
+            "line": 968
+          },
+          {
+            "name": "SuccessResponse",
+            "line": 975
+          },
+          {
+            "name": "MsgDeleteRequest",
+            "line": 977
+          },
+          {
+            "name": "AccountLimits",
+            "line": 985
+          },
+          {
+            "name": "JetStreamUsage",
+            "line": 1020
+          },
+          {
+            "name": "JetStreamUsageAccountLimits",
+            "line": 1047
+          },
+          {
+            "name": "JetStreamAccountStats",
+            "line": 1051
+          },
+          {
+            "name": "JetStreamApiStats",
+            "line": 1057
+          },
+          {
+            "name": "AccountInfoResponse",
+            "line": 1076
+          },
+          {
+            "name": "PriorityGroups",
+            "line": 1078
+          },
+          {
+            "name": "ConsumerConfig",
+            "line": 1084
+          },
+          {
+            "name": "ConsumerUpdateConfig",
+            "line": 1142
+          },
+          {
+            "name": "PriorityPolicy",
+            "line": 1228
+          },
+          {
+            "name": "PriorityPolicy",
+            "line": 1234
+          },
+          {
+            "name": "defaultConsumer",
+            "line": 1236
+          },
+          {
+            "name": "OverflowMinPending",
+            "line": 1249
+          },
+          {
+            "name": "OverflowMinAckPending",
+            "line": 1260
+          },
+          {
+            "name": "OverflowMinPendingAndMinAck",
+            "line": 1271
+          },
+          {
+            "name": "OverflowOptions",
+            "line": 1286
+          },
+          {
+            "name": "PinnedOptions",
+            "line": 1291
+          },
+          {
+            "name": "PrioritizedOptions",
+            "line": 1306
+          },
+          {
+            "name": "PullOptions",
+            "line": 1316
+          },
+          {
+            "name": "DeliveryInfo",
+            "line": 1345
+          },
+          {
+            "name": "PubHeaders",
+            "line": 1389
+          },
+          {
+            "name": "PubHeaders",
+            "line": 1421
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsbaseclient_api.ts",
+        "declarations": [
+          {
+            "name": "parseJsResponse",
+            "line": 46
+          },
+          {
+            "name": "defaultJsOptions",
+            "line": 66
+          },
+          {
+            "name": "StreamNames",
+            "line": 75
+          },
+          {
+            "name": "StreamNameBySubject",
+            "line": 79
+          },
+          {
+            "name": "JetStreamApiRequestOptions",
+            "line": 83
+          },
+          {
+            "name": "BaseApiClientImpl",
+            "line": 88
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsclient.ts",
+        "declarations": [
+          {
+            "name": "startFastIngest",
+            "line": 82
+          },
+          {
+            "name": "toJetStreamClient",
+            "line": 180
+          },
+          {
+            "name": "jetstream",
+            "line": 195
+          },
+          {
+            "name": "jetstreamManager",
+            "line": 207
+          },
+          {
+            "name": "JetStreamManagerImpl",
+            "line": 222
+          },
+          {
+            "name": "scheduleSpecToHeader",
+            "line": 274
+          },
+          {
+            "name": "JetStreamClientImpl",
+            "line": 331
+          },
+          {
+            "name": "BatchPublisherImpl",
+            "line": 459
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jserrors.ts",
+        "declarations": [
+          {
+            "name": "JetStreamNotEnabled",
+            "line": 20
+          },
+          {
+            "name": "JetStreamError",
+            "line": 27
+          },
+          {
+            "name": "JetStreamStatusError",
+            "line": 34
+          },
+          {
+            "name": "JetStreamStatus",
+            "line": 43
+          },
+          {
+            "name": "JetStreamApiCodes",
+            "line": 193
+          },
+          {
+            "name": "JetStreamApiCodes",
+            "line": 202
+          },
+          {
+            "name": "isMessageNotFound",
+            "line": 205
+          },
+          {
+            "name": "InvalidNameError",
+            "line": 210
+          },
+          {
+            "name": "JetStreamApiError",
+            "line": 217
+          },
+          {
+            "name": "ConsumerNotFoundError",
+            "line": 239
+          },
+          {
+            "name": "StreamNotFoundError",
+            "line": 246
+          },
+          {
+            "name": "jserrors",
+            "line": 261
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jslister.ts",
+        "declarations": [
+          {
+            "name": "ListerImpl",
+            "line": 26
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsm_direct.ts",
+        "declarations": [
+          {
+            "name": "DirectStreamAPIImpl",
+            "line": 60
+          },
+          {
+            "name": "DirectMsgImpl",
+            "line": 236
+          },
+          {
+            "name": "DirectStartOptions",
+            "line": 296
+          },
+          {
+            "name": "DirectBatchLimits",
+            "line": 305
+          },
+          {
+            "name": "DirectConsumer",
+            "line": 317
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsmconsumer_api.ts",
+        "declarations": [
+          {
+            "name": "ConsumerAPIImpl",
+            "line": 55
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsmsg.ts",
+        "declarations": [
+          {
+            "name": "ACK",
+            "line": 32
+          },
+          {
+            "name": "JsMsg",
+            "line": 42
+          },
+          {
+            "name": "toJsMsg",
+            "line": 153
+          },
+          {
+            "name": "parseInfo",
+            "line": 157
+          },
+          {
+            "name": "JsMsgImpl",
+            "line": 202
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsmstream_api.ts",
+        "declarations": [
+          {
+            "name": "convertStreamSourceDomain",
+            "line": 92
+          },
+          {
+            "name": "ConsumersImpl",
+            "line": 116
+          },
+          {
+            "name": "StreamImpl",
+            "line": 338
+          },
+          {
+            "name": "StreamAPIImpl",
+            "line": 415
+          },
+          {
+            "name": "StoredMsgImpl",
+            "line": 726
+          },
+          {
+            "name": "StreamsImpl",
+            "line": 793
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/jsutil.ts",
+        "declarations": [
+          {
+            "name": "validateDurableName",
+            "line": 18
+          },
+          {
+            "name": "validateStreamName",
+            "line": 22
+          },
+          {
+            "name": "minValidation",
+            "line": 26
+          },
+          {
+            "name": "validateName",
+            "line": 56
+          },
+          {
+            "name": "validName",
+            "line": 66
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/mod.ts",
+        "declarations": []
+      },
+      {
+        "file": "jetstream/src/pushconsumer.ts",
+        "declarations": [
+          {
+            "name": "PushConsumerMessagesImpl",
+            "line": 53
+          },
+          {
+            "name": "PushConsumerInternalOptions",
+            "line": 387
+          },
+          {
+            "name": "PushConsumerImpl",
+            "line": 394
+          }
+        ]
+      },
+      {
+        "file": "jetstream/src/types.ts",
+        "declarations": [
+          {
+            "name": "JetStreamOptions",
+            "line": 55
+          },
+          {
+            "name": "JetStreamManagerOptions",
+            "line": 80
+          },
+          {
+            "name": "PubAck",
+            "line": 99
+          },
+          {
+            "name": "PredefinedSchedule",
+            "line": 122
+          },
+          {
+            "name": "ScheduleSpec",
+            "line": 140
+          },
+          {
+            "name": "ScheduleOptions",
+            "line": 146
+          },
+          {
+            "name": "StreamExpectations",
+            "line": 190
+          },
+          {
+            "name": "JetStreamPublishOptions",
+            "line": 247
+          },
+          {
+            "name": "ScheduleCancellation",
+            "line": 311
+          },
+          {
+            "name": "Closed",
+            "line": 322
+          },
+          {
+            "name": "Destroyable",
+            "line": 329
+          },
+          {
+            "name": "Lister",
+            "line": 340
+          },
+          {
+            "name": "ListerFieldFilter",
+            "line": 346
+          },
+          {
+            "name": "StreamAPI",
+            "line": 348
+          },
+          {
+            "name": "ConsumerAPI",
+            "line": 427
+          },
+          {
+            "name": "JetStreamManager",
+            "line": 528
+          },
+          {
+            "name": "Ordered",
+            "line": 569
+          },
+          {
+            "name": "PushConsumerOptions",
+            "line": 572
+          },
+          {
+            "name": "NextOptions",
+            "line": 576
+          },
+          {
+            "name": "ConsumeBytes",
+            "line": 578
+          },
+          {
+            "name": "ConsumeMessages",
+            "line": 590
+          },
+          {
+            "name": "ConsumeOptions",
+            "line": 601
+          },
+          {
+            "name": "FetchBytes",
+            "line": 607
+          },
+          {
+            "name": "FetchMessages",
+            "line": 618
+          },
+          {
+            "name": "FetchOptions",
+            "line": 626
+          },
+          {
+            "name": "PullConsumerOptions",
+            "line": 627
+          },
+          {
+            "name": "MaxMessages",
+            "line": 628
+          },
+          {
+            "name": "MaxBytes",
+            "line": 635
+          },
+          {
+            "name": "ThresholdMessages",
+            "line": 643
+          },
+          {
+            "name": "ThresholdBytes",
+            "line": 651
+          },
+          {
+            "name": "Expires",
+            "line": 659
+          },
+          {
+            "name": "Bind",
+            "line": 671
+          },
+          {
+            "name": "AbortOnMissingResource",
+            "line": 681
+          },
+          {
+            "name": "IdleHeartbeat",
+            "line": 688
+          },
+          {
+            "name": "ConsumerCallbackFn",
+            "line": 698
+          },
+          {
+            "name": "ConsumeCallback",
+            "line": 699
+          },
+          {
+            "name": "ConsumerNotification",
+            "line": 712
+          },
+          {
+            "name": "HeartbeatsMissed",
+            "line": 735
+          },
+          {
+            "name": "ConsumerNotFound",
+            "line": 747
+          },
+          {
+            "name": "StreamNotFound",
+            "line": 761
+          },
+          {
+            "name": "ConsumerDeleted",
+            "line": 771
+          },
+          {
+            "name": "NoResponders",
+            "line": 780
+          },
+          {
+            "name": "OrderedConsumerRecreated",
+            "line": 789
+          },
+          {
+            "name": "ExceededLimits",
+            "line": 798
+          },
+          {
+            "name": "Debug",
+            "line": 807
+          },
+          {
+            "name": "Discard",
+            "line": 817
+          },
+          {
+            "name": "Reset",
+            "line": 825
+          },
+          {
+            "name": "Next",
+            "line": 834
+          },
+          {
+            "name": "Heartbeat",
+            "line": 842
+          },
+          {
+            "name": "FlowControl",
+            "line": 851
+          },
+          {
+            "name": "ConsumerPinned",
+            "line": 855
+          },
+          {
+            "name": "ConsumerUnpinned",
+            "line": 860
+          },
+          {
+            "name": "PushConsumer",
+            "line": 864
+          },
+          {
+            "name": "ConsumerKind",
+            "line": 872
+          },
+          {
+            "name": "ExportedConsumer",
+            "line": 877
+          },
+          {
+            "name": "InfoableConsumer",
+            "line": 891
+          },
+          {
+            "name": "DeleteableConsumer",
+            "line": 895
+          },
+          {
+            "name": "Consumer",
+            "line": 899
+          },
+          {
+            "name": "Close",
+            "line": 901
+          },
+          {
+            "name": "ConsumerMessages",
+            "line": 907
+          },
+          {
+            "name": "OrderedConsumerOptions",
+            "line": 915
+          },
+          {
+            "name": "OrderedPushConsumerOptions",
+            "line": 926
+          },
+          {
+            "name": "isOrderedPushConsumerOptions",
+            "line": 930
+          },
+          {
+            "name": "isPullConsumer",
+            "line": 950
+          },
+          {
+            "name": "isPushConsumer",
+            "line": 954
+          },
+          {
+            "name": "FastIngestOptions",
+            "line": 964
+          },
+          {
+            "name": "FastIngestProgress",
+            "line": 1005
+          },
+          {
+            "name": "FastIngest",
+            "line": 1026
+          },
+          {
+            "name": "BatchMessageOptions",
+            "line": 1091
+          },
+          {
+            "name": "BatchMessageOptionsWithReply",
+            "line": 1097
+          },
+          {
+            "name": "Batch",
+            "line": 1116
+          },
+          {
+            "name": "BatchAck",
+            "line": 1163
+          },
+          {
+            "name": "JetStreamClient",
+            "line": 1171
+          },
+          {
+            "name": "Streams",
+            "line": 1226
+          },
+          {
+            "name": "isBoundPushConsumerOptions",
+            "line": 1230
+          },
+          {
+            "name": "BoundPushConsumerOptions",
+            "line": 1246
+          },
+          {
+            "name": "Consumers",
+            "line": 1264
+          },
+          {
+            "name": "DirectStreamAPI",
+            "line": 1325
+          },
+          {
+            "name": "StoredMsg",
+            "line": 1367
+          },
+          {
+            "name": "DirectMsg",
+            "line": 1421
+          },
+          {
+            "name": "Advisory",
+            "line": 1436
+          },
+          {
+            "name": "AdvisoryKind",
+            "line": 1450
+          },
+          {
+            "name": "AdvisoryKind",
+            "line": 1467
+          },
+          {
+            "name": "Stream",
+            "line": 1469
+          },
+          {
+            "name": "JsHeaders",
+            "line": 1557
+          },
+          {
+            "name": "JsHeaders",
+            "line": 1600
+          },
+          {
+            "name": "DirectMsgHeaders",
+            "line": 1602
+          },
+          {
+            "name": "DirectMsgHeaders",
+            "line": 1610
+          },
+          {
+            "name": "RepublishHeaders",
+            "line": 1613
+          },
+          {
+            "name": "RepublishHeaders",
+            "line": 1635
+          }
+        ]
+      }
+    ]
+  },
+  "transport-node": {
+    "tests": [
+      {
+        "file": "transport-node/tests/basics_test.js",
+        "declaredCases": 14,
+        "cases": [
+          {
+            "name": "basics - reported version",
+            "line": 39
+          },
+          {
+            "name": "basics - connect default",
+            "line": 43
+          },
+          {
+            "name": "basics - tls connect",
+            "line": 51
+          },
+          {
+            "name": "basics - connect host",
+            "line": 58
+          },
+          {
+            "name": "basics - connect hostport",
+            "line": 64
+          },
+          {
+            "name": "basics - connect servers",
+            "line": 70
+          },
+          {
+            "name": "basics - fail connect",
+            "line": 76
+          },
+          {
+            "name": "basics - pubsub",
+            "line": 86
+          },
+          {
+            "name": "basics - request",
+            "line": 102
+          },
+          {
+            "name": "basics - socket error",
+            "line": 116
+          },
+          {
+            "name": "basics - server gone",
+            "line": 130
+          },
+          {
+            "name": "basics - server error",
+            "line": 144
+          },
+          {
+            "name": "basics - disconnect reconnects",
+            "line": 155
+          },
+          {
+            "name": "basics - ws urls fail",
+            "line": 177
+          }
+        ],
+        "nativeSuites": [
+          "NATSAdversarial.test.ts",
+          "NATSCoreParity.test.ts",
+          "NATSNodeParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 14,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-node-mapping.json"
+        ]
+      },
+      {
+        "file": "transport-node/tests/jetstream_test.js",
+        "declaredCases": 4,
+        "cases": [
+          {
+            "name": "jetstream is a function",
+            "line": 32
+          },
+          {
+            "name": "jetstreamManager is a function",
+            "line": 40
+          },
+          {
+            "name": "kvm is a function",
+            "line": 48
+          },
+          {
+            "name": "objm is a function",
+            "line": 60
+          }
+        ],
+        "nativeSuites": [
+          "JetStreamClient.test.ts",
+          "JetStreamManager.test.ts"
+        ],
+        "coverageStatus": "covered-with-exclusions",
+        "auditCases": {
+          "covered": 2,
+          "outsideBaseline": 2,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-node-mapping.json"
+        ]
+      },
+      {
+        "file": "transport-node/tests/noiptls_test.js",
+        "declaredCases": 1,
+        "cases": [
+          {
+            "name": "reconnect via tls by ip",
+            "line": 38
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSNodeTransport.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 1,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-node-mapping.json"
+        ]
+      },
+      {
+        "file": "transport-node/tests/reconnect_test.js",
+        "declaredCases": 8,
+        "cases": [
+          {
+            "name": "reconnect websocket - disconnect reconnects",
+            "line": 30
+          },
+          {
+            "name": "reconnect - should receive when some servers are invalid",
+            "line": 73
+          },
+          {
+            "name": "reconnect - events",
+            "line": 91
+          },
+          {
+            "name": "reconnect - reconnect not emitted if suppressed",
+            "line": 129
+          },
+          {
+            "name": "reconnect - reconnecting after proper delay",
+            "line": 154
+          },
+          {
+            "name": "reconnect - indefinite reconnects",
+            "line": 181
+          },
+          {
+            "name": "reconnect - jitter",
+            "line": 227
+          },
+          {
+            "name": "reconnect - internal disconnect forces reconnect",
+            "line": 256
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 8,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-node-mapping.json"
+        ]
+      },
+      {
+        "file": "transport-node/tests/tls_test.js",
+        "declaredCases": 17,
+        "cases": [
+          {
+            "name": "fail if server doesn't support TLS",
+            "line": 41
+          },
+          {
+            "name": "connects to tls without option",
+            "line": 56
+          },
+          {
+            "name": "custom ca fails without proper ca",
+            "line": 62
+          },
+          {
+            "name": "connects with proper ca",
+            "line": 79
+          },
+          {
+            "name": "connects with rejectUnauthorized is honored",
+            "line": 93
+          },
+          {
+            "name": "client auth",
+            "line": 107
+          },
+          {
+            "name": "client auth direct",
+            "line": 125
+          },
+          {
+            "name": "bad file paths",
+            "line": 143
+          },
+          {
+            "name": "shouldn't leak tls config",
+            "line": 165
+          },
+          {
+            "name": "invalid cert",
+            "line": 197
+          },
+          {
+            "name": "invalid pem no start",
+            "line": 212
+          },
+          {
+            "name": "invalid key file",
+            "line": 239
+          },
+          {
+            "name": "invalid cert file",
+            "line": 245
+          },
+          {
+            "name": "invalid ca file",
+            "line": 251
+          },
+          {
+            "name": "available connects with or without",
+            "line": 257
+          },
+          {
+            "name": "tls first",
+            "line": 296
+          },
+          {
+            "name": "tls first reject unauthorized",
+            "line": 319
+          }
+        ],
+        "nativeSuites": [
+          "NATSNodeParity.test.ts",
+          "NATSTransportParity.test.ts"
+        ],
+        "coverageStatus": "covered",
+        "auditCases": {
+          "covered": 17,
+          "outsideBaseline": 0,
+          "uncovered": 0
+        },
+        "auditArtifacts": [
+          "upstream-node-mapping.json"
+        ]
+      }
+    ],
+    "exports": [
+      {
+        "file": "transport-node/src/connect.ts",
+        "declarations": [
+          {
+            "name": "NodeTlsOptions",
+            "line": 28
+          },
+          {
+            "name": "NodeConnectionOptions",
+            "line": 32
+          },
+          {
+            "name": "connect",
+            "line": 36
+          }
+        ]
+      },
+      {
+        "file": "transport-node/src/mod.ts",
+        "declarations": []
+      },
+      {
+        "file": "transport-node/src/nats-base-client.ts",
+        "declarations": []
+      },
+      {
+        "file": "transport-node/src/node_transport.ts",
+        "declarations": [
+          {
+            "name": "VERSION",
+            "line": 38
+          },
+          {
+            "name": "NodeTransport",
+            "line": 41
+          },
+          {
+            "name": "nodeResolveHost",
+            "line": 491
+          }
+        ]
+      },
+      {
+        "file": "transport-node/src/version.ts",
+        "declarations": [
+          {
+            "name": "version",
+            "line": 2
+          }
+        ]
+      }
+    ]
+  },
+  "reference": {
+    "repository": "nats-io/nats.js",
+    "tag": "v3.4.0",
+    "commit": "95e76e79d9feaa0a0bf3b0e8da526ec5a3460979",
+    "inventoryCases": 800,
+    "coveredCases": 758,
+    "outsideBaselineCases": 42
+  }
+}

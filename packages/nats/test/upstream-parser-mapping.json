@@ -1,0 +1,185 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/parser_test.ts": 14
+  },
+  "total": 14,
+  "covered": 14,
+  "inapplicable": 0,
+  "notes": [
+    "Native parser has a private buffered framing state rather than the official byte FSM enum. Incremental frame laws replace internal state snapshots.",
+    "Both clobber tests retain all100 one-MiB messages, verify every payload byte and subject/reply/header character, and mutate input buffers after feed.",
+    "Original permissive control endings, +OK suffix and fifteen-digit integer constraints are tested; binary payload delimiters retain strict CRLF."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - ping",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - ping",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - err",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - err",
+          "evidence": "Frame.Error exposes the unquoted body that the downstream official error parser eventually exposes, replacing its private raw-byte dispatcher."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - ok",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - ok",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - info",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - info",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - errors",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - errors",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - split msg",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - split msg",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - info arg",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - info arg",
+          "evidence": "Native Schema decodes INFO at framing; exact fields and whitespace round trip. Fresh incomplete INFO remains pending. The upstream incomplete-input throw reused a previously failed parser; physical failed parsers are discarded by the native connection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - header",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - header",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - subject",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - msg buffers don't clobber",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - msg buffers don't clobber",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - hmsg buffers don't clobber",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - hmsg buffers don't clobber",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - protoParseInt",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - protoParseInt",
+          "evidence": "Private integer helper is exercised through real MSG sid and maxPayload constraints: all original integer inputs and limits. Rejection uses tagged protocol failure instead of -1 sentinel."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - oversized msg size rejects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - oversized msg size rejects",
+          "evidence": "All upstream inputs through frame emission, delayed completion and retained byte ownership instead of private FSM state."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/parser_test.ts",
+      "upstreamTestName": "parser - describe",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSParserParity.test.ts",
+          "testName": "parser - describe",
+          "evidence": "Private diagnostic formatting is replaced by tagged native frame descriptions; all six kinds and INFO/error bodies are distinguished without copying the private logger function."
+        }
+      ]
+    }
+  ]
+}

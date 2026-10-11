@@ -18,9 +18,9 @@ describe("NATSConnection", () => {
         const context = yield* Layer.buildWithScope(testConnection, scope)
         const connection = Context.get(context, NATSConnection.NATSConnection)
 
-        expect(connection.nc.isClosed()).toBe(false)
+        expect(yield* connection.isClosed).toBe(false)
         yield* Scope.close(scope, Exit.void)
-        expect(connection.nc.isClosed()).toBe(true)
+        expect(yield* connection.isClosed).toBe(true)
       }))
 
     it.live("Should be able to publish and subscribe to a subject", () =>
@@ -35,7 +35,6 @@ describe("NATSConnection", () => {
         // Publish message after subscribing
         yield* Effect.forkChild(
           Effect.gen(function*() {
-            yield* Effect.sleep("50 millis")
             yield* connection.publish(subject, message)
           })
         )
@@ -61,7 +60,6 @@ describe("NATSConnection", () => {
         // Publish messages after subscribing
         yield* Effect.forkChild(
           Effect.gen(function*() {
-            yield* Effect.sleep("50 millis")
             yield* connection.publish(subject, "Message 1")
             yield* connection.publish(subject, "Message 2")
             yield* connection.publish(subject, "Message 3")
@@ -87,7 +85,6 @@ describe("NATSConnection", () => {
         // Publish messages after subscribing
         yield* Effect.forkChild(
           Effect.gen(function*() {
-            yield* Effect.sleep("50 millis")
             yield* connection.publish("test.wildcard.foo", "Message 1")
             yield* connection.publish("test.wildcard.bar", "Message 2")
             yield* connection.publish("other.baz", "Message 3") // Should not be received
@@ -124,8 +121,6 @@ describe("NATSConnection", () => {
             )
           )
         )
-
-        yield* Effect.sleep("50 millis")
 
         // Send request
         const response = yield* connection.request(subject, "Hello")

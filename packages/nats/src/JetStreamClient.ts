@@ -1,94 +1,64 @@
 /**
  * @since 0.1.0
  */
-import * as JetStream from "@nats-io/jetstream"
 import * as Context from "effect/Context"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
-import * as utils from "./internal/utils.ts"
-import * as JetStreamBatch from "./JetStreamBatch.ts"
-import * as JetStreamConsumers from "./JetStreamConsumer.ts"
-import * as JetStreamStream from "./JetStreamStream.ts"
+import type * as Scope from "effect/Scope"
+import * as internal from "./internal/jetstreamServices.ts"
+import type * as JetStreamBatch from "./JetStreamBatch.ts"
+import type * as JetStreamConsumer from "./JetStreamConsumer.ts"
+import type * as JetStreamFastIngest from "./JetStreamFastIngest.ts"
+import type * as JetStreamManager from "./JetStreamManager.ts"
+import type * as JetStreamStream from "./JetStreamStream.ts"
+import type * as T from "./JetStreamTypes.ts"
 import * as NATSConnection from "./NATSConnection.ts"
-import * as NATSError from "./NATSError.ts"
+import type * as NATSError from "./NATSError.ts"
+import type * as NATSOptions from "./NATSOptions.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
-export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/JetStreamClient")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
+export const TypeId: typeof internal.ClientTypeId = internal.ClientTypeId
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
-
-/**
- * Represents a NATS JetStream Client
- *
- * @category models
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export interface JetStreamClient {
   readonly [TypeId]: TypeId
   readonly apiPrefix: string
   readonly publish: (
-    ...params: Parameters<JetStream.JetStreamClient["publish"]>
-  ) => Effect.Effect<JetStream.PubAck, NATSError.JetStreamClientError>
+    subject: string,
+    payload?: NATSOptions.Payload,
+    options?: Partial<T.JetStreamPublishOptions>
+  ) => Effect.Effect<T.PubAck, NATSError.JetStreamClientError>
   readonly startBatch: (
-    ...params: Parameters<JetStream.JetStreamClient["startBatch"]>
+    subject: string,
+    payload?: NATSOptions.Payload,
+    options?: Partial<T.JetStreamPublishOptions>
   ) => Effect.Effect<JetStreamBatch.JetStreamBatch, NATSError.JetStreamClientError>
-  readonly options: Effect.Effect<JetStream.JetStreamOptions, NATSError.JetStreamClientError, never>
-  readonly consumers: JetStreamConsumers.Consumers
+  readonly startFastIngest: (
+    subject: string,
+    payload: NATSOptions.Payload | undefined,
+    options: JetStreamFastIngest.FastIngestOptions & Partial<T.JetStreamPublishOptions>
+  ) => Effect.Effect<
+    JetStreamFastIngest.FastIngest,
+    NATSError.JetStreamClientError,
+    Scope.Scope
+  >
+  readonly jetstreamManager: (checkAPI?: boolean) => Effect.Effect<
+    JetStreamManager.JetStreamManager,
+    NATSError.JetStreamClientError
+  >
+  readonly options: Effect.Effect<T.JetStreamOptions, NATSError.JetStreamClientError>
+  readonly consumers: JetStreamConsumer.Consumers
   readonly streams: JetStreamStream.JetStreamStreams
-
-  /** @internal */
-  readonly js: JetStream.JetStreamClient
 }
-
-/**
- * @category tags
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const JetStreamClient = Context.Service<JetStreamClient>("@effect-messaging/nats/JetStreamClient")
 
-const wrapAsync = utils.wrapAsync(NATSError.JetStreamClientError)
-const wrap = utils.wrap(NATSError.JetStreamClientError)
-
-/** @internal */
-export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
-  [TypeId]: TypeId,
-  apiPrefix: js.apiPrefix,
-  publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
-    wrapAsync(() => js.publish(...params), `Failed to publish message`),
-  startBatch: (...params: Parameters<JetStream.JetStreamClient["startBatch"]>) =>
-    wrapAsync(() => js.startBatch(...params), `Failed to start batch`).pipe(
-      Effect.map(JetStreamBatch.make)
-    ),
-  options: wrap(() => js.getOptions(), "Failed to get JetStream options"),
-  consumers: JetStreamConsumers.makeConsumers(js.consumers),
-  streams: JetStreamStream.makeJetStreamStreams(js.streams),
-  js
-})
-
-/** @internal */
-const makeJetStreamClient = (options: JetStream.JetStreamOptions = {}): Effect.Effect<
+/** @since 1.0.0 */
+export const make = internal.makeClient
+/** @since 0.1.0 */
+export const layer = (options: T.JetStreamOptions = {}): Layer.Layer<
   JetStreamClient,
-  NATSError.JetStreamClientError,
+  never,
   NATSConnection.NATSConnection
-> =>
-  NATSConnection.NATSConnection.pipe(
-    Effect.flatMap(({ nc }) => wrap(() => JetStream.jetstream(nc, options), "Failed to create JetStream client")),
-    Effect.map(make)
-  )
-
-/**
- * @since 0.1.0
- * @category Layers
- */
-export const layer = (options: JetStream.JetStreamOptions = {}): Layer.Layer<
-  JetStreamClient,
-  NATSError.JetStreamClientError,
-  NATSConnection.NATSConnection
-> => Layer.effect(JetStreamClient, makeJetStreamClient(options))
+> => Layer.effect(JetStreamClient, Effect.map(NATSConnection.NATSConnection, (connection) => make(connection, options)))

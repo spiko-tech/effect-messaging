@@ -1,0 +1,436 @@
+{
+  "upstreamVersion": "v3.4.0",
+  "total": 33,
+  "verification": "33native testsPASS; buildPASS; root source lint passed; complete repo lint rerun after sibling edits required.",
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - min supported server",
+      "upstreamLine": 41,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - min supported server",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - get",
+      "upstreamLine": 71,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - get",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - delete",
+      "upstreamLine": 100,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - delete",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - info",
+      "upstreamLine": 123,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - info",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - push consumer on get",
+      "upstreamLine": 161,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - push consumer on get",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - fetch heartbeats",
+      "upstreamLine": 182,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - fetch heartbeats",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - bad options",
+      "upstreamLine": 230,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - bad options",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - should be able to consume and pull",
+      "upstreamLine": 260,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - should be able to consume and pull",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - discard notifications",
+      "upstreamLine": 298,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - discard notifications",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - threshold_messages",
+      "upstreamLine": 325,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - threshold_messages",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - threshold_messages bytes",
+      "upstreamLine": 378,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - threshold_messages bytes",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs. The upstream996 paired-discard sum is itself markedFIXME; native asserts all1000contiguous broker sequences and actual bounded byte requests instead of reproducing its known incorrect sum."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - sub leaks fetch()",
+      "upstreamLine": 447,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - sub leaks fetch()",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - inboxPrefix is respected",
+      "upstreamLine": 472,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - inboxPrefix is respected",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - processed",
+      "upstreamLine": 502,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - callback processed cachedInfo=%s",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_test.ts",
+      "upstreamTestName": "consumers - getConsumerFromInfo doesn't do info",
+      "upstreamLine": 538,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "consumers - callback processed cachedInfo=%s",
+          "evidence": "Live consumer CRUD/cache, minimum version rejection, kind checks, callback counts, heartbeat loss via resubscribe, concurrent finite/continuous pulls, discard counts, exact 1000-message refill sequence and subscription cleanup. Native Scope/Option/Stream replace Promise/iterator APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - get",
+      "upstreamLine": 28,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - get",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - consumers",
+      "upstreamLine": 62,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - consumers",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - delete message",
+      "upstreamLine": 104,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - delete message",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - first_seq",
+      "upstreamLine": 130,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - first_seq",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - first_seq fails if wrong server",
+      "upstreamLine": 150,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - first_seq fails if wrong server",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection. Native typed capability reason reports required2.10.0 for stream configuration; it does not reproduce field-specific official error wording."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/streams_test.ts",
+      "upstreamTestName": "streams - persist mode",
+      "upstreamLine": 171,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "streams - persist mode",
+          "evidence": "Live stream facade retrieval, stored JSON and consumer access, deletion detail[2], first_seq50 and unsupported server gate, default/async persistence metadata and immutable update rejection."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/direct_consumer_test.ts",
+      "upstreamTestName": "direct consumer - next",
+      "upstreamLine": 25,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct consumer - next",
+          "evidence": "Live cursor next1/2/3/None; fetch5/pending95, next6, remaining94/pending0; continuous7 pulls deliver all100sequences, processed100 and requested batches greater than100."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/direct_consumer_test.ts",
+      "upstreamTestName": "direct consumer - batch",
+      "upstreamLine": 55,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct consumer - batch",
+          "evidence": "Live cursor next1/2/3/None; fetch5/pending95, next6, remaining94/pending0; continuous7 pulls deliver all100sequences, processed100 and requested batches greater than100."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/direct_consumer_test.ts",
+      "upstreamTestName": "direct consumer - consume",
+      "upstreamLine": 105,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct consumer - consume",
+          "evidence": "Live cursor next1/2/3/None; fetch5/pending95, next6, remaining94/pending0; continuous7 pulls deliver all100sequences, processed100 and requested batches greater than100."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - version checks",
+      "upstreamLine": 51,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - version checks",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - decoder",
+      "upstreamLine": 92,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - decoder",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - get",
+      "upstreamLine": 124,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - get",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - callback",
+      "upstreamLine": 226,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - callback",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - batch",
+      "upstreamLine": 315,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - batch",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - last message for",
+      "upstreamLine": 439,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - last message for",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - batch next_by_subj",
+      "upstreamLine": 525,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - batch next_by_subj",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - batch no messages",
+      "upstreamLine": 578,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - batch no messages",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jsm_direct_test.ts",
+      "upstreamTestName": "direct - get no messages",
+      "upstreamLine": 604,
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamFacadeParity.test.ts",
+          "testName": "direct - get no messages",
+          "evidence": "Every inner direct-read step is asserted: version gates, string/JSON decoding, sequence/subject/time queries, Option callbacks including missing stream/empty stream terminal failures, batch/start/time/byte limits, multi-last filters/time/sequence caps, filtered50/26 delivery and empty completion."
+        }
+      ]
+    }
+  ]
+}

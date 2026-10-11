@@ -6,11 +6,12 @@ import type * as SubscriberApp from "@effect-messaging/core/SubscriberApp"
 import * as SubscriberError from "@effect-messaging/core/SubscriberError"
 import * as SubscriberOTel from "@effect-messaging/core/SubscriberOTel"
 import * as SubscriberRunner from "@effect-messaging/core/SubscriberRunner"
-import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
+import type * as NATSCore from "./NATSOptions.ts"
 
 import * as Match from "effect/Match"
 import * as Option from "effect/Option"
+import type * as Scope from "effect/Scope"
 import type * as JetStreamConsumer from "./JetStreamConsumer.ts"
 import * as JetStreamMessage from "./JetStreamMessage.ts"
 import type * as JetStreamSubscriberResponse from "./JetStreamSubscriberResponse.ts"
@@ -175,7 +176,7 @@ export const fromConsumer = (
 ): Effect.Effect<
   JetStreamSubscriber,
   NATSError.JetStreamConsumerError | NATSError.NATSConnectionError,
-  NATSConnection.NATSConnection
+  NATSConnection.NATSConnection | Scope.Scope
 > =>
   Effect.gen(function*() {
     const consumerMessages = yield* consumer.consume(consumeOptions)

@@ -46,7 +46,7 @@ const JetStreamClientLive = JetStreamClient.layer()
 
 const MainLive = JetStreamClientLive.pipe(Layer.provideMerge(NATSConnectionLive))
 
-const runnable = program.pipe(Effect.provide(MainLive))
+const runnable = program.pipe(Effect.scoped, Effect.provide(MainLive))
 
 // Run the program
 Effect.runPromise(runnable)

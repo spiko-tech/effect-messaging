@@ -1,0 +1,682 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "core auth_test/token_test/tls_test/ws_test: all 55 named cases",
+  "total": 55,
+  "covered": 55,
+  "uncovered": 0,
+  "notes": [
+    "Private context and lastError observations map to public request Schema decoding and typed closed results.",
+    "Real local isolated brokers replace external demo servers; default TLS upgrade intent is separately observed through scripted Socket policy and trusted real TLS exchanges.",
+    "Native callback Option/Effect and typed error channels replace upstream nullable callbacks and exception classes.",
+    "Parameterized native declaration names are exact; evidence states relevant parameter or composed laws.",
+    "Only these four upstream files are mapped; this does not assert whole-library parity."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - none",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects %s authentication",
+          "evidence": "Parameters distinguish missing and wrong user/password or token; typed authorization failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - bad",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects %s authentication",
+          "evidence": "Parameters distinguish missing and wrong user/password or token; typed authorization failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - weird chars",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "preserves non-ASCII passwords through CONNECT JSON",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - un/pw",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates with user/password and exchanges binary messages",
+          "evidence": "Real user/password CONNECT authentication"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - un/pw authenticator",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "authenticates with a dynamic %s helper",
+          "evidence": "Parameter username password uses callback helper against real broker"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - sub no permissions keeps connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "subscription denial closes only the subscription and reports callback=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - sub iterator no permissions keeps connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "subscription denial closes only the subscription and reports callback=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - pub permissions keep connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "publication denial emits an error status and leaves the connection usable",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - req permissions keep connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "request publication denial fails promptly and reports subject, noMux=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - token",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates with a token and exchanges binary messages",
+          "evidence": "Real token CONNECT authentication"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - token authenticator",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "authenticates with a dynamic %s helper",
+          "evidence": "Parameter token callback used during real broker handshake"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - nkey",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates by signing the server nonce with a native NKey authenticator",
+          "evidence": "Ed25519 nonce challenge verified by real server"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - creds",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates with native %s and trusted account claims",
+          "evidence": "Parameter credentials uses official static operator/account/user fixtures"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - custom",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "custom and composite authenticators retain all credentials through a broker handshake",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - jwt",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates with native %s and trusted account claims",
+          "evidence": "Parameter JWT uses operator/account/user fixtures"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - custom error",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "maps a thrown custom authenticator to a typed connection failure",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "basics - bad auth",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects %s authentication",
+          "evidence": "Parameters distinguish missing and wrong user/password or token; typed authorization failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - nkey authentication",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates by signing the server nonce with a native NKey authenticator",
+          "evidence": "Native seed helper signs actual server nonce"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - creds authenticator validation",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects incomplete credential fields %j",
+          "evidence": "Empty JWT and empty seed are separately rejected, alongside malformed standalone authentication unit cases"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - expiration is notified",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "notifies %s authentication expiration and closes without reconnect",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - expiration is notified and recovered",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "renews JWTs across four authentication-expiry reconnects",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - bad auth is notified",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "repeated authorization failures obey ignoreAuthErrorAbort=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - perm request error",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "request publication denial fails promptly and reports subject, noMux=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - perm request error no mux",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "request publication denial fails promptly and reports subject, noMux=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - perm request error deliver to sub",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "request publication denial fails promptly and reports subject, noMux=%s",
+          "evidence": "Existing subscription on same reply subject stays open while only request rejects"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - mux request perms",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "a permitted inbox prefix distinguishes mux subscription denial from no responders",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - perm sub iterator error",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "subscription denial closes only the subscription and reports callback=%s",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - perm error is not in lastError",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "subscription denial closes only the subscription and reports callback=%s",
+          "evidence": "Permission error closes subscription; subsequent graceful connection.closed is None, equivalent to nonfatal lastError law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - ignore auth error abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "repeated authorization failures obey ignoreAuthErrorAbort=%s",
+          "evidence": "False aborts after two consecutive errors; true continues to configured retry budget four"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - sub with permission error discards",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "denied subscriptions are discarded and can be independently recreated",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - creds and un and pw and token",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "custom and composite authenticators retain all credentials through a broker handshake",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - request context",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "cross-account service requests expose caller metadata and account permissions",
+          "evidence": "Public request/decode of $SYS.REQ.USER.INFO replaces private context method; RequestInfo identifies importing account A"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - sub queue permission",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "queue permission errors preserve an authorized subscription on the same subject",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "auth - account expired",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "notifies %s authentication expiration and closes without reconnect",
+          "evidence": "Real isolated broker and typed public connection/status/subscription law"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/auth_test.ts",
+      "upstreamTestName": "env conn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "cross-account service requests expose caller metadata and account permissions",
+          "evidence": "Debug option true used in real connection and flush; dynamic helpers separately verify authentication options"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/token_test.ts",
+      "upstreamTestName": "token - empty",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects %s authentication",
+          "evidence": "Parameters distinguish missing and wrong user/password or token; typed authorization failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/token_test.ts",
+      "upstreamTestName": "token - bad",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSSecurityParity.test.ts",
+          "testName": "rejects %s authentication",
+          "evidence": "Parameters distinguish missing and wrong user/password or token; typed authorization failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/token_test.ts",
+      "upstreamTestName": "token - ok",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "authenticates with a token and exchanges binary messages",
+          "evidence": "Real token CONNECT authentication"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/tls_test.ts",
+      "upstreamTestName": "tls - fail if server doesn't support TLS",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "rejects explicit TLS when the server has no TLS support",
+          "evidence": "Typed unsupported TLS failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/tls_test.ts",
+      "upstreamTestName": "tls - connects to tls without option",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "default TLS policy negotiates available encryption without explicit TLS options",
+          "evidence": "Scripted Socket confirms default INFO-first upgrade without tls options"
+        },
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "upgrades an INFO-first TCP connection to verified TLS",
+          "evidence": "Actual trust and TLS data exchange"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/tls_test.ts",
+      "upstreamTestName": "tls - custom ca fails without root",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "rejects an untrusted TLS server",
+          "evidence": "Generated custom CA omitted from trust causes typed failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/tls_test.ts",
+      "upstreamTestName": "tls - custom ca with root connects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "upgrades an INFO-first TCP connection to verified TLS",
+          "evidence": "Generated trusted CA supplied to Node transport"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/tls_test.ts",
+      "upstreamTestName": "tls - available connects with or without",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "TLS availability upgrades automatically and explicit false permits plaintext",
+          "evidence": "Same real server supports both negotiated TLS and explicit plaintext"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "exchanges binary payloads over native WebSocket transport",
+          "evidence": "Real websocket broker connection"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - wss connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "establishes a trusted secure WebSocket connection",
+          "evidence": "Real encrypted WebSocket broker and CA verification"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - pubsub",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "exchanges binary payloads over native WebSocket transport",
+          "evidence": "Binary publish/subscribe data verified"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - disconnect reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "WebSocket broker restart reacquires transport and restores subscriptions",
+          "evidence": "Physical broker stop/start; original subscription receives before and after messages"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - tls options are not supported",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "rejects TLS configuration for a standard W3C WebSocket",
+          "evidence": "Standard constructor cannot configure Node TLS; custom native factory remains explicit extension"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - indefinite reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "WebSocket broker restart reacquires transport and restores subscriptions",
+          "evidence": "maxReconnectAttempts -1 permits six observed attempts before broker returns"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "isClosed false then true after close"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - url parse",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "normalizes official WebSocket endpoint %s",
+          "evidence": "Fifteen host/path/query/scheme/IPv6 cases including default ports"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - wsURLParseFn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "normalizes bare endpoints with an explicit encrypted hint",
+          "evidence": "Boolean hint selects ws/wss default transport"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - reconnectToServer invoked on initial connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "Selection callback called initially with info None and expected pool"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - getServers returns ws listens",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "Public pool metadata preserves normalized WS listen URL"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/ws_test.ts",
+      "upstreamTestName": "ws - setServers replaces pool and reconnect dials new",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "setServers replaces endpoint and forced reconnect dials second real broker"
+        }
+      ]
+    }
+  ]
+}

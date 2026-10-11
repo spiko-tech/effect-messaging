@@ -1,86 +1,36 @@
 /**
  * @since 0.1.0
  */
-import type * as NATSCore from "@nats-io/nats-core"
 import type * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
-import * as Stream from "effect/Stream"
-import * as utils from "./internal/utils.ts"
-import * as NATSError from "./NATSError.ts"
-import * as NATSMessage from "./NATSMessage.ts"
+import type * as Option from "effect/Option"
+import type * as Stream from "effect/Stream"
+import type * as NATSError from "./NATSError.ts"
+import type * as NATSMessage from "./NATSMessage.ts"
 
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export const TypeId: unique symbol = Symbol.for("@effect-messaging/nats/NATSSubscription")
-
-/**
- * @category type ids
- * @since 0.1.0
- */
+/** @since 0.1.0 */
 export type TypeId = typeof TypeId
 
 /**
- * Represents a NATS Message
- *
- * @category models
+ * Consuming the stream owns subscription cleanup. Stopping or interrupting the
+ * stream unsubscribes; drain waits for admitted messages to be processed.
  * @since 0.1.0
  */
 export interface NATSSubscription {
   readonly [TypeId]: TypeId
   readonly stream: Stream.Stream<NATSMessage.NATSMessage, NATSError.NATSSubscriptionError>
-
-  readonly unsubscribe: (
-    ...params: Parameters<NATSCore.Subscription["unsubscribe"]>
-  ) => Effect.Effect<void, NATSError.NATSSubscriptionError>
+  readonly unsubscribe: (max?: number) => Effect.Effect<void, NATSError.NATSSubscriptionError>
+  /** Moves server interest while retaining this subscription's lifetime counters. @since 1.0.0 */
+  readonly resubscribe: (subject: string) => Effect.Effect<void, NATSError.NATSSubscriptionError>
   readonly drain: Effect.Effect<void, NATSError.NATSSubscriptionError>
-  readonly isDraining: Effect.Effect<boolean, NATSError.NATSSubscriptionError>
-  readonly isClosed: Effect.Effect<boolean, NATSError.NATSSubscriptionError>
-  readonly getSubject: Effect.Effect<string, NATSError.NATSSubscriptionError>
-  readonly getReceived: Effect.Effect<number, NATSError.NATSSubscriptionError>
-  readonly getProcessed: Effect.Effect<number, NATSError.NATSSubscriptionError>
-  readonly getPending: Effect.Effect<number, NATSError.NATSSubscriptionError>
-  readonly getMax: Effect.Effect<Option.Option<number>, NATSError.NATSSubscriptionError>
-
-  /** @internal */
-  readonly sub: NATSCore.Subscription
+  readonly closed: Effect.Effect<Option.Option<NATSError.NATSSubscriptionError>>
+  readonly isDraining: Effect.Effect<boolean>
+  readonly isClosed: Effect.Effect<boolean>
+  readonly getSubject: Effect.Effect<string>
+  readonly getID: Effect.Effect<number>
+  readonly getReceived: Effect.Effect<number>
+  readonly getProcessed: Effect.Effect<number>
+  readonly getPending: Effect.Effect<number>
+  readonly getMax: Effect.Effect<Option.Option<number>>
 }
-
-const wrapAsync = utils.wrapAsync(NATSError.NATSSubscriptionError)
-const wrap = utils.wrap(NATSError.NATSSubscriptionError)
-
-/** @internal */
-export const make = (sub: NATSCore.Subscription): NATSSubscription => ({
-  [TypeId]: TypeId,
-  stream: Stream.fromAsyncIterable(
-    sub,
-    (error) => new NATSError.NATSSubscriptionError({ reason: "Failed to read from NATS subscription", cause: error })
-  ).pipe(Stream.map(NATSMessage.make)),
-  unsubscribe: (...params: Parameters<NATSCore.Subscription["unsubscribe"]>) =>
-    wrap(() => sub.unsubscribe(...params), "Failed to unsubscribe NATS subscription"),
-  drain: wrapAsync(() => sub.drain(), "Failed to drain NATS subscription"),
-  isDraining: wrap(
-    () => sub.isDraining(),
-    "Failed to get draining state of NATS subscription"
-  ),
-  isClosed: wrap(() => sub.isClosed(), "Failed to get closed state of NATS subscription"),
-  getSubject: wrap(() => sub.getSubject(), "Failed to get subject of NATS subscription"),
-  getReceived: wrap(
-    () => sub.getReceived(),
-    "Failed to get received count of NATS subscription"
-  ),
-  getProcessed: wrap(
-    () => sub.getProcessed(),
-    "Failed to get processed count of NATS subscription"
-  ),
-  getPending: wrap(
-    () => sub.getPending(),
-    "Failed to get pending count of NATS subscription"
-  ),
-  getMax: wrap(
-    () => Option.fromNullishOr(sub.getMax()),
-    "Failed to get max of NATS subscription"
-  ),
-  sub
-})

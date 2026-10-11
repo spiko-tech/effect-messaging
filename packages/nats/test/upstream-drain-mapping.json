@@ -1,0 +1,184 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "core/tests/drain_test.ts": 14
+  },
+  "total": 14,
+  "covered": 14,
+  "inapplicable": 0,
+  "notes": [
+    "All cases execute against a real NATS broker. Effect callbacks support awaiting self-drain.",
+    "Repeated connection drain rejects without canceling the first drain; regression found by this port."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - connection drains when no subs",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - connection drains when no subs",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - connection drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - connection drain",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - subscription drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - subscription drain",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - publish after drain fails",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - publish after drain fails",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject reqrep during connection drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject reqrep during connection drain",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject drain on closed",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject drain on closed",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject drain on draining",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject drain on draining",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject subscribe on draining",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject subscribe on draining",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject subscription drain on closed sub callback",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject subscription drain on closed sub callback=%s",
+          "evidence": "Parameterized callback=true"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject subscription drain on closed sub iter",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject subscription drain on closed sub callback=%s",
+          "evidence": "Parameterized callback=false"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - connection is closed after drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - connection is closed after drain",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - reject subscription drain on closed",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - reject subscription drain on closed",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - multiple sub drain returns same promise",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - multiple sub drain shares completion",
+          "evidence": "Effect has no Promise identity contract; concurrent executions wait for the same subscription closure and preserve admitted messages"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/drain_test.ts",
+      "upstreamTestName": "drain - publisher drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSDrainParity.test.ts",
+          "testName": "drain - publisher drain",
+          "evidence": "Equivalent broker-backed lifecycle assertion"
+        }
+      ]
+    }
+  ]
+}

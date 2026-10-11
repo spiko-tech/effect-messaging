@@ -1,0 +1,378 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "JetStream batch_publisher/fast_ingest_publisher/schedules/status all30 named cases",
+  "total": 30,
+  "covered": 29,
+  "outsideBaseline": 1,
+  "uncovered": 0,
+  "notes": [
+    "Every publisher and scheduling observable case is backed by real broker integration assertions; no version skips are used.",
+    "Native Effects and scoped ownership replace Promise methods; typed API error fields retain code, err_code and description.",
+    "Private JetStreamStatus helper case remains inventoried but is excluded from covered totals with precise reason.",
+    "Batch sequence fault injection occurs at the public connection boundary, without exposing mutable private publisher state."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/batch_publisher_test.ts",
+      "upstreamTestName": "batch publisher - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "batch publisher - basics",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/batch_publisher_test.ts",
+      "upstreamTestName": "batch publisher - out of sequence",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "batch publisher - out of sequence",
+          "evidence": "Private mutable count++ fault replaced by explicit connection request wrapper corrupting commit sequence on real wire; terminal rejection and closed batch law preserved"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/batch_publisher_test.ts",
+      "upstreamTestName": "batch publisher - two streams",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "batch publisher - two streams",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/batch_publisher_test.ts",
+      "upstreamTestName": "batch publisher - expect last seq",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "batch publisher - expect last seq",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/batch_publisher_test.ts",
+      "upstreamTestName": "batch publisher - no atomics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "batch publisher - no atomics",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - basics",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - rejects non_supported",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - rejects non_supported",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - end (EOB)",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - end (EOB)",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - ping",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - ping",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - backpressure",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - backpressure",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - add after closed rejects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - add after closed rejects",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - custom inboxPrefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest custom and multi-token inbox prefix %s",
+          "evidence": "Parameters FI and _inbox.foo.bar.baz; committed count and real stored messages"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - invalid inboxPrefix rejected",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - invalid inboxPrefix rejected",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - multi-token inboxPrefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest custom and multi-token inbox prefix %s",
+          "evidence": "Parameters FI and _inbox.foo.bar.baz; committed count and real stored messages"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - concurrent pings coalesce",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - concurrent pings coalesce",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - expect.lastSequence on first msg",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - expect.lastSequence on first msg",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - expect.lastSequence mismatch closes batch",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - expect.lastSequence mismatch closes batch",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/fast_ingest_publisher_test.ts",
+      "upstreamTestName": "fast ingest - done() resolves with terminal ack",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "fast ingest - done() resolves with terminal ack",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - basics",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - spec to header",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - spec to header",
+          "evidence": "Actual publishHeaders conversion preserves all eight exact specification forms and rejects all four invalid durations; private converter function replaced by real outgoing headers"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - @every",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules recurring %s publishes real target messages",
+          "evidence": "Every parameter verifies two fires800..2500ms apart; cron parameter verifies actual target delivery"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - cron every second",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules recurring %s publishes real target messages",
+          "evidence": "Every parameter verifies two fires800..2500ms apart; cron parameter verifies actual target delivery"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - predefined and timezone accepted",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - predefined and timezone accepted",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - cancel schedule",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - cancel schedule",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - cancel rejects same subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules reject %s cancellation",
+          "evidence": "Parameters same subject/mutually exclusive return typed publish failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - schedule and cancelSchedule mutually exclusive",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules reject %s cancellation",
+          "evidence": "Parameters same subject/mutually exclusive return typed publish failure"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - rollup header",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - rollup header",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/schedules_test.ts",
+      "upstreamTestName": "schedules - subject sourcing (ADR-51)",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "schedules - subject sourcing (ADR-51)",
+          "evidence": "Exact upstream assertions ported to isolated real NATS2.15.0 broker and native Effect API"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/status_test.ts",
+      "upstreamTestName": "js status - basics",
+      "status": "outside-baseline",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSHeadersParity.test.ts",
+          "testName": "status header blocks retain ordinary entries",
+          "evidence": "Supplementary native header100 Idle Heartbeat and Nats-Last-Consumer/Stream retention; typed heartbeat notifications separately covered in Consumer parity"
+        }
+      ],
+      "reason": "Private JetStreamStatus constructor/debug/predicate/parseHeartbeat facade is not exported by upstream jetstream/src/mod.ts and is removed in native architecture. Native typed Consumer notifications and header status retain application data; this evidence does not claim the absent private method assertions."
+    },
+    {
+      "upstreamFile": "jetstream/tests/status_test.ts",
+      "upstreamTestName": "api error - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamPublisherParity.test.ts",
+          "testName": "api error - basics",
+          "evidence": "Real missing-message API response decoded into native ApiError retains code404/err_code10037/description no message found. Public manager lookup additionally returns Option.none; private _request and predicate represented by typed structured error"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,604 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": {
+    "jetstream/tests/jetstream409_test.ts": 4,
+    "jetstream/tests/jetstream_pullconsumer_test.ts": 7,
+    "jetstream/tests/jetstream_pushconsumer_test.ts": 23,
+    "jetstream/tests/jscluster_test.ts": 3,
+    "jetstream/tests/pushconsumers_ordered_test.ts": 8
+  },
+  "total": 45,
+  "covered": 44,
+  "inapplicable": 1,
+  "notes": [
+    "Audit retains all45 named inventory entries:44 active laws and one entirely commented upstream case. Effect streams/scopes replace Promise async iterators; typed native consumer APIs retain modern wire features. Runtime rename property and private rewound cursor exact representation are explicitly described as adaptations rather than untested facade claims."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/jetstream409_test.ts",
+      "upstreamLine": 23,
+      "upstreamTestName": "409 - max expires",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "409 - max %s retries continuously",
+          "evidence": "Finite next rejects MaxRequestExpires; continuous consumption emits two exceeded_limits notifications and remains alive."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream409_test.ts",
+      "upstreamLine": 79,
+      "upstreamTestName": "409 - max message size",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "409 - max message size",
+          "evidence": "Finite too-small byte budget fails with discard10bytes; continuous too-small byte budget survives until heartbeat recovery."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream409_test.ts",
+      "upstreamLine": 129,
+      "upstreamTestName": "409 - max batch",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "409 - max %s retries continuously",
+          "evidence": "Finite fetch rejects MaxRequestBatch; continuous consumption emits two exceeded_limits notifications."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream409_test.ts",
+      "upstreamLine": 180,
+      "upstreamTestName": "409 - max waiting",
+      "status": "outside-baseline",
+      "reason": "Entire upstream Deno.test is commented out atlines180-238: expiry no longer yields MaxWaiting sincebroker2.11.6. Inventory scanner detects inactive source text; no executable baseline case exists.",
+      "nativeTests": []
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 49,
+      "upstreamTestName": "jetstream - pull consumer options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - pull consumer options",
+          "evidence": "Consumer info preserves max_batch10 and max_expires20seconds."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 66,
+      "upstreamTestName": "jetstream - cross account pull",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - cross account push=%s",
+          "evidence": "Real service imports remap $JS.API to IPA; account-scoped inboxes receive seq1/2 through next(), then expiry returnsNone."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 109,
+      "upstreamTestName": "jetstream - last of",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - last of",
+          "evidence": "Filtered Last delivery selects finalB at sequence3 from A/B/B/A."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 144,
+      "upstreamTestName": "jetstream - priority group overflow",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - priority group %s",
+          "evidence": "Nine consume/fetch/next combinations inspect actual broker MSG.NEXT JSON group and min_pending/min_ack_pending fields."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 312,
+      "upstreamTestName": "jetstream - priority group prioritized",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - priority group %s",
+          "evidence": "Nine consume/fetch/next combinations inspect actual broker MSG.NEXT JSON group and priority fields."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 471,
+      "upstreamTestName": "jetstream - pinned client",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - pinned client explicit unpin=%s",
+          "evidence": "Slow pinned client receives one message; lease expiration transfers the remaining99 deliveries to another client and emits unpinned/pinned notifications."
+        },
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - pinned client slow iterator preserves application demand",
+          "evidence": "Exact upstream slow async-iterator law uses native Stream.runForEach with first downstream handler gated: A receives1, B receives sequences2..100/count99 after5second expiry; exactlyone unpinnedA/pinnedB status. Original250MiB core stress is separatelyretained; this100message fixture preserves upstreamcount."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pullconsumer_test.ts",
+      "upstreamLine": 561,
+      "upstreamTestName": "jetstream - unpin client",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - pinned client explicit unpin=%s",
+          "evidence": "Explicit broker unpin transfers one-message demand to another client; each receives exactlyone and status notifications identify the transfer."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 55,
+      "upstreamTestName": "jetstream - durable",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - durable",
+          "evidence": "Named push consumer delivers and confirmed-acks one message, preserves durable name, supports deletion, then info fails notfound."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 93,
+      "upstreamTestName": "jetstream - queue error checks",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - queue error checks",
+          "evidence": "Idle heartbeat and flowcontrol are each rejected when combined with deliver_group."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 131,
+      "upstreamTestName": "jetstream - max ack pending",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - max ack pending",
+          "evidence": "Initiallyempty consumer list, broker max_ack_pending2, and ten acknowledged deliveries constrain buffered messages below3."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 175,
+      "upstreamTestName": "jetstream - deliver new",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - deliver $label",
+          "evidence": "New-only policy ignores initialfive publications and begins at sequence6."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 207,
+      "upstreamTestName": "jetstream - deliver last",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - deliver $label",
+          "evidence": "Last policy returns initial sequence5."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 238,
+      "upstreamTestName": "jetstream - deliver seq",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - deliver $label",
+          "evidence": "StartSequence policy returns sequence2."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 269,
+      "upstreamTestName": "jetstream - deliver start time",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - deliver start time",
+          "evidence": "Exact stored sequence3 timestamp avoids precisionloss; ByStartTime begins at sequence3."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 301,
+      "upstreamTestName": "jetstream - deliver last per subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - deliver last per subject",
+          "evidence": "LastPerSubject emits latestA/B sequences5/6 and broker ackpending2."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 349,
+      "upstreamTestName": "jetstream - cross account subscribe",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - cross account push=%s",
+          "evidence": "Account stream+service imports carry push deliveries and confirmed acknowledgements; broker ackfloor2 and pending0 prove completion."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 406,
+      "upstreamTestName": "jetstream - ack lease extends with working",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - ack lease extends with working",
+          "evidence": "Working acknowledgement preserves pending1; confirmed final ack leaves streamdelivery1, redeliveries0, ackpending0."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 453,
+      "upstreamTestName": "jetstream - idle heartbeats",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - idle heartbeats",
+          "evidence": "Idle heartbeat status after delivery reports lastconsumer1 and laststream1."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 488,
+      "upstreamTestName": "jetstream - flow control",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - flow control",
+          "evidence": "Original4000\u00d7100KiB mixedJS/core publication workload triggers actual broker flow_control status without application consumption."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 534,
+      "upstreamTestName": "jetstream - durable resumes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push restart durable=%s",
+          "evidence": "File-backed durable survives actual broker stop/start; accepted seq1..3 are acknowledged, then resumed seq4..6 finish with pending0 and streamcount6."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 585,
+      "upstreamTestName": "jetstream - nak delay",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - nak delay",
+          "evidence": "DelayedNAK redelivers same seq1 after2seconds within1800..2200ms and marks redelivery."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 623,
+      "upstreamTestName": "jetstream - bind",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - bound delivery example=%s",
+          "evidence": "Bound push with heartbeat and flowcontrol consumes100\u00d7100KiB messages, exposes notifications and processed100, and rejects info/delete without metadata."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 712,
+      "upstreamTestName": "jetstream - bind example",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - bound delivery example=%s",
+          "evidence": "Bound push consumes and acknowledges all100 publications without creating an API-managed consumer; processing count reaches100."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 767,
+      "upstreamTestName": "jetstream - push consumer is bound",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push consumer is bound",
+          "evidence": "Same-object concurrent consume rejects, close permitsrestart, and independent handle rejects broker push_bound."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 818,
+      "upstreamTestName": "jetstream - idleheartbeats notifications don't cancel",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - idleheartbeats notifications don't cancel",
+          "evidence": "Four successive missed-heartbeat statuses do not prematurely close push consumption."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 842,
+      "upstreamTestName": "jetstream - push on stopped server doesn't close client",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push restart durable=%s",
+          "evidence": "Actual broker shutdown/restart leaves push iterator open and restores delivery after Connected status."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 898,
+      "upstreamTestName": "jetstream - push sync",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push sync",
+          "evidence": "Effect Stream.toPull chunk delivery preserves both sequential messages1/2; chunk boundaries replace upstream singleton synchronous iterator calls."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 926,
+      "upstreamTestName": "jetstream - ordered push consumer honors inbox prefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - ordered push consumer honors inbox prefix",
+          "evidence": "Real subscription authorization permits custom inbox prefix and explicit ordered deliver_prefix; both receivehello."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 989,
+      "upstreamTestName": "jetstream - push consumer doesn't support priority groups",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push consumer doesn't support priority groups",
+          "evidence": "Push consumer priority group config is rejected with typed reason."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_pushconsumer_test.ts",
+      "upstreamLine": 1012,
+      "upstreamTestName": "jetstream - push stalled",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyConsumerParity.test.ts",
+          "testName": "jetstream - push stalled",
+          "evidence": "Injected status100 heartbeat with Nats-Consumer-Stalled publishes a response to the supplied stalled reply subject."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jscluster_test.ts",
+      "upstreamLine": 26,
+      "upstreamTestName": "jetstream - mirror alternates",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamClusterConfigurationParity.test.ts",
+          "testName": "cluster mirrors with explicit placement=%s",
+          "evidence": "Three-node clustered source/mirror resolves source byA and returns exactlytwo alternates."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jscluster_test.ts",
+      "upstreamLine": 56,
+      "upstreamTestName": "jsm - stream update properties",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamClusterConfigurationParity.test.ts",
+          "testName": "jsm - stream update properties",
+          "evidence": "Runtime invalidname/storage/max_consumers/retention inputs are tested; NATS2.15 now permits retentionchanges, so native success/failure is compared with official3.4.0 dev-only client againstsamebroker for allthree historical immutable inputs.18mutableconfig patches includingreplicas3\u21921 echo values, seal cannotundo, and addingmirror later rejects. Runtime rename is alsoexplicitlyrejected."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jscluster_test.ts",
+      "upstreamLine": 130,
+      "upstreamTestName": "streams - mirrors",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamClusterConfigurationParity.test.ts",
+          "testName": "cluster mirrors with explicit placement=%s",
+          "evidence": "Explicit server-tag placement selects separate leaders; alternates contain source/mirror, missing stream errors, and best matches first refreshed alternate."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 39,
+      "upstreamTestName": "ordered push consumers - get",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - get",
+          "evidence": "Missing stream rejects; created consumer pending1, configured name prefix, AckNone and maxdeliver1. Native UUID names replace private serial counter."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 67,
+      "upstreamTestName": "ordered push consumers - consume reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push recreates twice after malformed delivery sequence without dropping accepted cursor",
+          "evidence": "Two injected ACK deliverysequence gaps recreate consumers twice, preserve accepted seq1/2/3 and configured name/deliveryprefixes. Private upstream cursor rewinding is replaced with equivalent real wire-gap stimulus; deliberately rewound acknowledged cursor replay counts[2,2,1] are not a native public contract."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 109,
+      "upstreamTestName": "ordered push consumers - consume",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - consume",
+          "evidence": "Consumesseq1/2/3, terminal pending0, processed3 and closed status."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 134,
+      "upstreamTestName": "ordered push consumers - filters consume",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - filters consume",
+          "evidence": "OnlyB is delivered, pending0, processed1 and iteratorclosed."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 167,
+      "upstreamTestName": "ordered push consumers - last per subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - delivery policy start sequence=%s",
+          "evidence": "Latest message for one subject begins at streamsequence2."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 193,
+      "upstreamTestName": "ordered push consumers - start sequence",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - delivery policy start sequence=%s",
+          "evidence": "opt_start_seq2 begins at streamsequence2 and subjectB."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 220,
+      "upstreamTestName": "ordered push consumers - sub leak",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "ordered push consumers - sub leak",
+          "evidence": "After two-message ordered consumption, all publicly observed delivery subscriptions areclosed and brokerflush succeeds; stronger assertion than upstream logging-only diagnostic."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/pushconsumers_ordered_test.ts",
+      "upstreamLine": 250,
+      "upstreamTestName": "push consumers - flow control",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamLegacyOrderedPushParity.test.ts",
+          "testName": "push consumers - flow control",
+          "evidence": "Ordered normal+headers_only consumers force FC; ordinary consumer leaves FC/heartbeat absent; bound handle creates zero consumer API requests with correct $JS.API spy prefix."
+        }
+      ]
+    }
+  ]
+}

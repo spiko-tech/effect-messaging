@@ -3,7 +3,6 @@
  */
 import * as Publisher from "@effect-messaging/core/Publisher"
 import * as PublisherError from "@effect-messaging/core/PublisherError"
-import type * as NATSCore from "@nats-io/nats-core"
 import * as Effect from "effect/Effect"
 import * as Option from "effect/Option"
 import * as Schedule from "effect/Schedule"
@@ -11,6 +10,7 @@ import type * as Tracer from "effect/Tracer"
 import * as NATSConnection from "./NATSConnection.ts"
 import * as NATSError from "./NATSError.ts"
 import * as NATSHeaders from "./NATSHeaders.ts"
+import type * as NATSOptions from "./NATSOptions.ts"
 
 /**
  * @category type ids
@@ -30,8 +30,8 @@ export type TypeId = typeof TypeId
  */
 export interface NATSPublishMessage {
   subject: string
-  payload: NATSCore.Payload
-  options?: NATSCore.PublishOptions
+  payload: NATSOptions.Payload
+  options?: NATSOptions.PublishOptions
 }
 
 /**
@@ -67,7 +67,7 @@ const publishEffect = (
 /** @internal */
 const publish = (
   connection: NATSConnection.NATSConnection,
-  connectionInfo: NATSCore.ServerInfo,
+  connectionInfo: NATSOptions.ServerInfo,
   retrySchedule: Schedule.Schedule<unknown, NATSError.NATSConnectionError>
 ) =>
 (message: NATSPublishMessage): Effect.Effect<void, PublisherError.PublisherError, never> =>

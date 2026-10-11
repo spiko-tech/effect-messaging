@@ -1,0 +1,429 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "core servers_test/heartbeats_test/reconnect_test: all33 named cases",
+  "total": 33,
+  "covered": 33,
+  "uncovered": 0,
+  "notes": [
+    "No options_test.ts exists in this upstream version; native NATSOptions.test.ts independently validates configuration before transport acquisition.",
+    "Private Servers, Heartbeat and protocol lifecycle observations map to public pool metadata, scoped Socket ownership, status streams and TestClock-controlled wire behavior.",
+    "Native Option.none replaces nullable server selection. Native explicit factory injection replaces global transport URL parser registration.",
+    "Upstream jitter case checks custom delay callback and private presence of a default function; native Schedule/Random delay law replaces that private representation.",
+    "Remote broker dependencies are replaced by isolated local integration brokers.",
+    "This artifact covers only these three upstream files."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - single",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "configured pool entries retain order and are never gossiped %j",
+          "evidence": "One endpoint parameter; pool/current server and gossiped flag"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - multiples",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "configured pool entries retain order and are never gossiped %j",
+          "evidence": "Two endpoint parameter; ordered pool and configured flags"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - add/delete",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSStateMachine.test.ts",
+          "testName": "removes disappeared discovered servers while retaining configured seeds",
+          "evidence": "INFO adds discovered endpoint, subsequent update deletes it and reports deleted status"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - url parse fn",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "a transport factory applies endpoint conversion to configured and discovered servers",
+          "evidence": "Private global transport parser replaced by explicit native factory boundary; both seed and gossip converted"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - save tls name",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "gossiped IP reconnects retain the original DNS identity in transport metadata",
+          "evidence": "Discovered IP metadata tlsName inherits original DNS host"
+        },
+        {
+          "file": "packages/nats/test/NATSNodeTransport.test.ts",
+          "testName": "verifies gossiped IP endpoints against their preserved DNS identity and respects explicit overrides",
+          "evidence": "Real trusted TLS verifies inherited DNS identity and rejects explicit wrong override"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - port 80",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "normalizes endpoint port %s to %s",
+          "evidence": "All eight upstream hostname/path/port/IPv6 forms represented"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - hostname only",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "classifies endpoint hostname through public metadata %s",
+          "evidence": "Host/host:port and mapped IPv6 yield normalized public hostname; private classifier replaced by observable parser output"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - randomize shuffles initial pool",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "randomizes initial and replacement pools while preserving all configured endpoints",
+          "evidence": "Twenty trial pools yield multiple orders; complete endpoint set retained"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - randomize=false preserves order",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "configured pool entries retain order and are never gossiped %j",
+          "evidence": "noRandomize preserves configured order"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/servers_test.ts",
+      "upstreamTestName": "servers - gossip update shuffles new servers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "gossip shuffles discovered endpoints while retaining the active seed at the head",
+          "evidence": "Twenty INFO pools produce multiple gossip orders; seed remains index zero"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/heartbeats_test.ts",
+      "upstreamTestName": "heartbeat - timers fire",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "healthy heartbeats report pending pings and stop after explicit close",
+          "evidence": "TestClock advances exact intervals; ping statuses and no postclose traffic"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/heartbeats_test.ts",
+      "upstreamTestName": "heartbeat - errors fire on missed maxOut",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "three stale sessions reconnect without closing the logical client",
+          "evidence": "Each maxPingOut+1 missed heartbeat retires one session, emits stale and reconnects"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/heartbeats_test.ts",
+      "upstreamTestName": "heartbeat - recovers from missed",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "heartbeat pongs recover from two missed intervals before the stale threshold",
+          "evidence": "Statuses pendingPings 1,2,1 after PONG recovery; connection stays usable"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - should receive when some servers are invalid",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "invalid initial servers are discarded and the usable server delivers traffic",
+          "evidence": "Real refused seed removed; publication delivered; survivor didConnect=true"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - events",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "reconnect retirement emits one disconnect and honors reconnect=%s",
+          "evidence": "Three configured retries emit exactly three reconnecting and one original disconnect"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - reconnect not emitted if suppressed",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "reconnect retirement emits one disconnect and honors reconnect=%s",
+          "evidence": "False parameter emits no retry statuses"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - reconnecting after proper delay",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "reconnection delay and custom delay handler govern physical retry attempts",
+          "evidence": "TestClock confirms exact physical retry delay and callback invocation"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - indefinite reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "unlimited reconnect attempts remain active until the broker returns",
+          "evidence": "Real stopped broker receives at least six attempts and reconnects successfully"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - jitter",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "default reconnect jitter uses the configured TLS policy=%s budget",
+          "evidence": "Default Schedule/Random retry delay falls within reconnectTimeWait plus plaintext/TLS jitter budget; explicit TLS policy selects the configured TLS budget"
+        },
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "reconnection delay and custom delay handler govern physical retry attempts",
+          "evidence": "Explicit native delay callback overrides normal schedule; physical attempts honor delay. Native Schedule/Random replaces private default callback property"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - internal disconnect forces reconnect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSNodeParity.test.ts",
+          "testName": "stale transport retirement emits stale, disconnect and reconnecting statuses",
+          "evidence": "Native public heartbeat retirement replaces direct private protocol.disconnect call"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - wait on first connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "waitOnFirstConnect retries until a stopped broker becomes available",
+          "evidence": "Real stopped local broker starts after second observed failed attempt; connection flush succeeds"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - close stops reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "closing an indefinitely reconnecting client cancels all future dials",
+          "evidence": "At least five physical retry intervals then close; subsequent TestClock advance makes zero new dials"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - stale connections don't close",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "three stale sessions reconnect without closing the logical client",
+          "evidence": "Three independent heartbeat-stale epochs reestablish logical connection; graceful close result None"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - protocol errors don't close client",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "server-reported protocol errors reconnect three times without a fatal close",
+          "evidence": "-ERR Unknown Protocol Operation retires physical session three times; logical connection reestablishes and closes cleanly. Malformed incoming wire remains typed fatal protocol error."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnect - authentication timeout reconnects",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "authentication timeouts retry and re-evaluate native Effect credentials",
+          "evidence": "Real broker timeout0.02s and three Effect-delayed authenticators before timely fourth succeeds"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - handler invoked on initial connect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "Callback invoked before first dial with one pool entry and info None"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - returning null uses default",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "an absent server selection uses the normal pool and a delayed selection defers the actual dial",
+          "evidence": "Option.none is native equivalent of nullable selection"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - handler throws rejects connect()",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "throwing server selection closes the %s attempt through a typed error",
+          "evidence": "Initial parameter yields reconnect_handler with no Socket acquisition"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - out-of-pool rejects connect()",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSStateMachine.test.ts",
+          "testName": "rejects a reconnect handler selecting a server outside the pool",
+          "evidence": "Typed reconnect_handler and no physical session"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - throws on reconnect closes connection",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "throwing server selection closes the %s attempt through a typed error",
+          "evidence": "Reconnect parameter closes with typed reconnect_handler after established session retires"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - picks chosen server on reconnect",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSStateMachine.test.ts",
+          "testName": "uses the reconnect selection handler and passes complete server metadata",
+          "evidence": "Callback explicitly selects alternate public pool member and dial metadata verifies target"
+        },
+        {
+          "file": "packages/nats/test/NATSTransportParity.test.ts",
+          "testName": "fails over to another configured server and restores subscriptions",
+          "evidence": "Real distinct brokers prove successful physical failover and restored subscription"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "reconnectToServer - {server, delay} return waits before dial",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSPoolReconnectParity.test.ts",
+          "testName": "an absent server selection uses the normal pool and a delayed selection defers the actual dial",
+          "evidence": "TestClock499ms causes no acquisition; 500ms records actual dial timestamp"
+        }
+      ]
+    },
+    {
+      "upstreamFile": "core/tests/reconnect_test.ts",
+      "upstreamTestName": "setServers - replaces pool and reconnect dials new pool",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/NATSWebSocketTransport.test.ts",
+          "testName": "initial server selection and pool replacement dial the selected WebSocket endpoint",
+          "evidence": "Real different brokers; replacement metadata and actual reconnect dial verified"
+        }
+      ]
+    }
+  ]
+}

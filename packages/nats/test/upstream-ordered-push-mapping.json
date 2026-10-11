@@ -1,0 +1,596 @@
+{
+  "upstreamVersion": "v3.4.0",
+  "total": 45,
+  "verification": {
+    "command": "pnpm test packages/nats/test/JetStreamOrderedPushParity.test.ts",
+    "result": "45 tests passed",
+    "broker": "localhost:4222 NATS2.15.0"
+  },
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 40,
+      "upstreamTestName": "ordered consumers - get",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - get",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 66,
+      "upstreamTestName": "ordered consumers - fetch",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - fetch",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 94,
+      "upstreamTestName": "ordered consumers - consume reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume reset [94]",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Upstream rewinds private cursor and asserts duplicated callbacks[2,2,1]. Native injects two wire delivery-sequence discontinuities rather than exposing mutable private state: two recreation notifications and contiguous replay[1,2,3] are asserted; private-state duplicate callback assertion is adapted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 138,
+      "upstreamTestName": "ordered consumers - consume",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 161,
+      "upstreamTestName": "ordered consumers - filters consume",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - filters consume",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 191,
+      "upstreamTestName": "ordered consumers - filters fetch",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - filters fetch",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 217,
+      "upstreamTestName": "ordered consumers - fetch reject consumer type change or concurrency",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - fetch reject consumer type change or concurrency",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Concurrent same mode fails and fetch/consume mode remains fixed even after closing active resource."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 252,
+      "upstreamTestName": "ordered consumers - consume reject consumer type change or concurrency",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume reject consumer type change or concurrency",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Concurrent same mode fails and fetch/consume mode remains fixed even after closing active resource."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 287,
+      "upstreamTestName": "ordered consumers - last per subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - last per subject",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 322,
+      "upstreamTestName": "ordered consumers - start sequence",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - start sequence",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 359,
+      "upstreamTestName": "ordered consumers - last",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - last",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 397,
+      "upstreamTestName": "ordered consumers - new",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - new",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 437,
+      "upstreamTestName": "ordered consumers - start time",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - start time",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Broker stored-message time defines start boundary, preventing client/server clock-skew assumptions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 482,
+      "upstreamTestName": "ordered consumers - start time reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - start time reset",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Native corrupts an incoming wire delivery-sequence token to force genuine ordered reset, asserting exact replay sequences, recreation counts and updated broker consumer identity; normal finite expiry asserts no recreation. Broker stored-message time defines start boundary, preventing client/server clock-skew assumptions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 519,
+      "upstreamTestName": "ordered consumers - next",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - next",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 544,
+      "upstreamTestName": "ordered consumers - sub leaks next()",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - sub leaks next()",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. All tracked native subscriptions close and native status stream terminates; replaces upstream private protocol subscription/status iterator internals."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 558,
+      "upstreamTestName": "ordered consumers - sub leaks fetch()",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - sub leaks fetch()",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. All tracked native subscriptions close and native status stream terminates; replaces upstream private protocol subscription/status iterator internals."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 578,
+      "upstreamTestName": "ordered consumers - sub leaks consume()",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - sub leaks consume()",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. All tracked native subscriptions close and native status stream terminates; replaces upstream private protocol subscription/status iterator internals."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 602,
+      "upstreamTestName": "ordered consumers - consume drain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume drain",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 623,
+      "upstreamTestName": "ordered consumers - headers only",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - headers only",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 638,
+      "upstreamTestName": "ordered consumers - max deliver",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - max deliver",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 653,
+      "upstreamTestName": "ordered consumers - mem",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - mem",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 668,
+      "upstreamTestName": "ordered consumers - inboxPrefix is respected",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - inboxPrefix is respected",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 690,
+      "upstreamTestName": "ordered consumers - fetch deleted consumer",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - fetch deleted consumer",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 719,
+      "upstreamTestName": "ordered consumers - next deleted consumer",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - next deleted consumer",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 743,
+      "upstreamTestName": "ordered consumers - consume stream not found request abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume stream not found request abort",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 771,
+      "upstreamTestName": "ordered consumers - consume consumer deleted request abort",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume consumer deleted request abort",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 801,
+      "upstreamTestName": "ordered consumers - bind is rejected",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - bind is rejected",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. fetch/next/consume each reject ordered bind options."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 837,
+      "upstreamTestName": "ordered consumers - name prefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - name prefix",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 867,
+      "upstreamTestName": "ordered consumers - fetch reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - fetch reset",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Native corrupts an incoming wire delivery-sequence token to force genuine ordered reset, asserting exact replay sequences, recreation counts and updated broker consumer identity; normal finite expiry asserts no recreation."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 918,
+      "upstreamTestName": "ordered consumers - consume reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume reset [918]",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Native corrupts an incoming wire delivery-sequence token to force genuine ordered reset, asserting exact replay sequences, recreation counts and updated broker consumer identity; normal finite expiry asserts no recreation."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 966,
+      "upstreamTestName": "ordered consumers - next reset",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - next reset",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Native corrupts an incoming wire delivery-sequence token to force genuine ordered reset, asserting exact replay sequences, recreation counts and updated broker consumer identity; normal finite expiry asserts no recreation."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 993,
+      "upstreamTestName": "ordered consumers - no reset on next",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - no reset on next",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Native corrupts an incoming wire delivery-sequence token to force genuine ordered reset, asserting exact replay sequences, recreation counts and updated broker consumer identity; normal finite expiry asserts no recreation."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1016,
+      "upstreamTestName": "ordered consumers - initial creation fails, consumer fails",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - initial creation fails, consumer fails",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1044,
+      "upstreamTestName": "ordered consumers - stale reference recovers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - stale reference recovers",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Live broker deletion; finite stale call fails no-responders once then next recreates and resumes cursor, continuous recreates once and delivers retained message."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1084,
+      "upstreamTestName": "ordered consumers - consume stale reference recovers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumers - consume stale reference recovers",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Live broker deletion; finite stale call fails no-responders once then next recreates and resumes cursor, continuous recreates once and delivers retained message."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1128,
+      "upstreamTestName": "ordered consumer - deliver all policy",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered consumer - deliver all policy",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1139,
+      "upstreamTestName": "ordered - consume stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered - consume stream not found and no responders",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Missing live stream returns finite failure or continuous no-responders/missing/heartbeat notifications, then real recreation resumes message delivery."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1185,
+      "upstreamTestName": "ordered - fetch stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered - fetch stream not found and no responders",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Missing live stream returns finite failure or continuous no-responders/missing/heartbeat notifications, then real recreation resumes message delivery."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_ordered_test.ts",
+      "upstreamLine": 1224,
+      "upstreamTestName": "ordered - next stream not found and no responders",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "ordered - next stream not found and no responders",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Missing live stream returns finite failure or continuous no-responders/missing/heartbeat notifications, then real recreation resumes message delivery."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_push_test.ts",
+      "upstreamLine": 16,
+      "upstreamTestName": "push consumers - basics",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "push consumers - basics",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Push identity/config, all3 confirmed acknowledgements, processed3, pending0, delivered3 and ack_floor3."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_push_test.ts",
+      "upstreamLine": 66,
+      "upstreamTestName": "push consumers - basics cb",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "push consumers - basics cb",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Push identity/config, all3 confirmed acknowledgements, processed3, pending0, delivered3 and ack_floor3."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_push_test.ts",
+      "upstreamLine": 113,
+      "upstreamTestName": "push consumers - queue",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "push consumers - queue",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. Two live queue subscribers both process messages; all1000 sequences are unique, pending0 and delivered1000."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_push_test.ts",
+      "upstreamLine": 183,
+      "upstreamTestName": "push consumers - connection status iterator closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "push consumers - connection status iterator closes",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit. All tracked native subscriptions close and native status stream terminates; replaces upstream private protocol subscription/status iterator internals."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/consumers_push_test.ts",
+      "upstreamLine": 215,
+      "upstreamTestName": "push consumers - connection close closes",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamOrderedPushParity.test.ts",
+          "testName": "push consumers - connection close closes",
+          "evidence": "Live isolated NATS2.15 broker assertions through Effect/Stream/Scope, with exact upstream case audit."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,575 @@
+{
+  "upstream": "nats-io/nats.js",
+  "version": "3.4.0",
+  "scope": "jetstream/tests/jetstream_test.ts all46 named cases",
+  "total": 46,
+  "covered": 46,
+  "outsideBaseline": 0,
+  "uncovered": 0,
+  "notes": [
+    "All46 upstream named cases map to passing native assertions;45 general integration tests plus existing explicit-consumer ackAck law.",
+    "Native Effects and scoped ownership replace Promise constructors/iterators; typed options validation occurs at .options and operation Effects.",
+    "Private client finder and _request assertions are adapted to public manager finder and real public API requests; duplicate constructors collapse to the single native factory.",
+    "Full45 general +11 message assertion sweep passed56/56; strengthened existing-consumer rollup pending10\u21921 passed independently after final edit.",
+    "Live backoff tolerance100ms replaces upstream50ms to account for Docker scheduling jitter; exact configured delays and all delivery counts remain asserted."
+  ],
+  "cases": [
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - default options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - default options",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - default override timeout",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - default override timeout",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - default override prefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - default override prefix",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - options rejects empty prefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - options rejects empty prefix",
+          "evidence": "Synchronous Promise constructor rejection adapted to typed native .options Effect failure for client and manager."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - options removes trailing dot",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - options removes trailing dot",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - find stream throws when not found",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - find stream throws when not found",
+          "evidence": "Official private client.findStream law exercised through public manager.streams.find; missing subject remains a typed API failure."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish basic",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish basic",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - ackAck",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamMessageParity.test.ts",
+          "testName": "jsmsg - explicit consumer ackAck",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish id",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish id",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish require stream",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish require stream",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish require last message id",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish require last message id",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - get message last by subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - get message last by subject",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish first sequence",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish first sequence",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish require last sequence",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish require last sequence",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish require last sequence by subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish require last sequence by subject",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - last subject sequence subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - last subject sequence subject",
+          "evidence": "All22 upstream wildcard expected-subject sequence accept/reject rows preserved against real server."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - ephemeral options",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - ephemeral options",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish headers",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish headers",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - JSON",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - JSON",
+          "evidence": "Every upstream scalar/list/object JSON value, including wire null, decoded through typed Effect message.json."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - domain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - domain",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - account domain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - account domain",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - puback domain",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - puback domain",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - source",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - source",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - seal",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - seal",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - deny delete",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - deny delete",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - deny purge",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - deny purge",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - rollup all",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - rollup all",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - rollup subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - rollup subject",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - no rollup",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - no rollup",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - backoff",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - backoff",
+          "evidence": "Exact three configured nanosecond delays and four delivery counts; live scheduling tolerance100ms accommodates Docker jitter (upstream50ms)."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - redelivery",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - redelivery",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - detailed errors",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - detailed errors",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - repub on 503",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - repub on 503",
+          "evidence": "Real three-node majority cluster replaces four-node fixture; stopping stream leader immediately triggers publish retry with eventual sequence2 and persisted message count2. The client uses host-mapped seeds because Docker gossip advertises private bridge addresses."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - duplicate message pub",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - duplicate message pub",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - republish",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - republish",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - num_replicas consumer option",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - num_replicas consumer option",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        },
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - detailed errors",
+          "evidence": "Standalone stream num_replicas3 rejects code500/err_code10074; consumer replica request also rejected while normal stream defaults1."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - filter_subject consumer update",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - filter_subject consumer update",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - jsmsg decode",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - jsmsg decode",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - input transform",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - input transform",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - source transforms",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - source transforms",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - term reason",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - term reason",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - publish no responder",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - publish no responder",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - base client timeout",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - base client timeout",
+          "evidence": "Native factory replaces duplicate implementation/public constructors; publish and stream-info API requests enforce default5000ms and override500ms with real silent broker subscriptions."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - jsm base timeout",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - jsm base timeout",
+          "evidence": "Native factory replaces duplicate implementation/public constructors; public manager.accountInfo replaces private _request and enforces default5000ms/override500ms."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - watcherPrefix",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - watcherPrefix",
+          "evidence": "Typed .options failure replaces synchronous invalid constructor throw; default undefined, inherited custom inbox, explicit override and client-manager-client transitivity asserted."
+        }
+      ]
+    },
+    {
+      "upstreamFile": "jetstream/tests/jetstream_test.ts",
+      "upstreamTestName": "jetstream - watcher deliver_subject",
+      "status": "covered",
+      "nativeTests": [
+        {
+          "file": "packages/nats/test/JetStreamGeneralParity.test.ts",
+          "testName": "jetstream - watcher deliver_subject",
+          "evidence": "Upstream observable assertions ported to isolated real broker through native Effect APIs."
+        }
+      ]
+    }
+  ]
+}

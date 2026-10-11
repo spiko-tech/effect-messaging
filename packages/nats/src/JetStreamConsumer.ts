@@ -228,6 +228,7 @@ const makeMessages = Effect.fnUntraced(function*(
   let callbacksCompleted = 0
   let callbacksExpected = 0
   const callbackProgress = Latch.makeUnsafe()
+  const deliveryCapacity = Latch.makeUnsafe()
   let heartbeatMisses = 1
   let missingConsumerCount = 0
   let orderedCreateFailures = 0
@@ -362,8 +363,9 @@ const makeMessages = Effect.fnUntraced(function*(
         }
       )
       : undefined
+    let deliveryBlocked = false
     const currentDemand = Effect.gen(function*() {
-      if (monitor) yield* monitor.restart
+      if (monitor && !deliveryBlocked) yield* monitor.restart
       yield* refill()
     })
     callbackDemand = currentDemand
@@ -373,6 +375,28 @@ const makeMessages = Effect.fnUntraced(function*(
         resumeDemand = Effect.void
       })
     )
+    const retain = Effect.fnUntraced(function*(jsMessage: JetStreamMessage.JetStreamMessage) {
+      const admit = Effect.sync(() => {
+        Latch.closeUnsafe(deliveryCapacity)
+        if (!Queue.offerUnsafe(callbackQueue ?? queue, jsMessage)) return false
+        // Admission and cursor advancement must be atomic with respect to recovery.
+        if (state) {
+          state.deliverySequence = jsMessage.info.deliverySequence
+          state.lastSequence = jsMessage.seq
+        }
+        if (callbackQueue) callbacksExpected++
+        return true
+      })
+      if (yield* admit) return
+      deliveryBlocked = true
+      // The reader cannot observe heartbeats while application demand is paused.
+      if (monitor) yield* monitor.cancel
+      do {
+        yield* deliveryCapacity.await
+      } while (!(yield* admit))
+      deliveryBlocked = false
+      if (monitor && (!pulling || pendingMessages > 0)) yield* monitor.restart
+    })
     const source = subscription.stream.pipe(
       Stream.tap(() => monitor?.work ?? Effect.void),
       Stream.takeUntil((message) => !continuous && statusCode(message) >= 300),
@@ -482,10 +506,6 @@ const makeMessages = Effect.fnUntraced(function*(
         if (ordered && jsMessage.info.deliverySequence !== (state?.deliverySequence ?? 0) + 1) {
           return yield* new OrderedReset({})
         }
-        if (state) {
-          state.deliverySequence = jsMessage.info.deliverySequence
-          state.lastSequence = jsMessage.seq
-        }
         if (options.group && options.min_pending === undefined && options.min_ack_pending === undefined && !pinId) {
           const id = Option.getOrUndefined(message.headers)?.get("Nats-Pin-Id")
           if (id) {
@@ -499,8 +519,6 @@ const makeMessages = Effect.fnUntraced(function*(
         received++
         if (callbackQueue) {
           if (monitor && pulling && pendingMessages === 0) yield* monitor.cancel
-          callbacksExpected++
-          yield* Queue.offer(callbackQueue, jsMessage)
         } else {
           if (pinnedDemand) {
             if (monitor && pendingMessages === 0) yield* monitor.cancel
@@ -509,8 +527,8 @@ const makeMessages = Effect.fnUntraced(function*(
               yield* refill()
             })
           } else yield* refill()
-          yield* Queue.offer(queue, jsMessage)
         }
+        yield* retain(jsMessage)
         if (!continuous && count >= maxMessages) {
           yield* subscription.unsubscribe().pipe(mapError)
         }
@@ -589,6 +607,7 @@ const makeMessages = Effect.fnUntraced(function*(
     ? yield* Effect.gen(function*() {
       while (true) {
         const jsMessage = yield* Queue.take(callbackQueue)
+        Latch.openUnsafe(deliveryCapacity)
         processed++
         const callback = options.callback
         if (!callback) return
@@ -639,6 +658,7 @@ const makeMessages = Effect.fnUntraced(function*(
       : Stream.fromQueue(queue)).pipe(
         Stream.tap(() =>
           Effect.sync(() => {
+            Latch.openUnsafe(deliveryCapacity)
             processed++
           })
         ),

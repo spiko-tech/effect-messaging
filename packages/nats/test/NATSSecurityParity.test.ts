@@ -293,8 +293,15 @@ describe("security and authorization public laws", () => {
           Effect.forkChild({ startImmediately: true })
         )
         pass = "wrong"
-        yield* connection.reconnect
-        expect(Option.isSome(yield* connection.closed)).toBe(true)
+        const reconnectFailure = yield* connection.reconnect.pipe(Effect.flip)
+        expect(reconnectFailure).toMatchObject({ _tag: "NATSConnectionError", code: "closed" })
+        const closed = yield* connection.closed
+        expect(Option.isSome(closed)).toBe(true)
+        if (Option.isSome(closed)) {
+          expect(closed.value.reason).toContain("Authorization Violation")
+          expect(closed.value.code).toBe(ignoreAuthErrorAbort ? "authorization" : "authorization_permanent")
+          expect(reconnectFailure.cause).toBe(closed.value)
+        }
         expect(yield* Fiber.join(errors)).toHaveLength(ignoreAuthErrorAbort ? 4 : 2)
       }).pipe(Effect.scoped),
     { timeout: 30_000 }

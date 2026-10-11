@@ -128,18 +128,18 @@ Total: **5 files**, **44 statically named cases**.
 
 ## Verification
 
-The PR branch based on `main` passed **1,116 tests across 51 files**, including **1,068 NATS tests across 44 files**. Coverage for `packages/nats/src` alone, excluding fixtures and other packages, is:
+The PR branch based on `main` passed **1,132 tests across 53 files**, including **1,084 NATS tests across 46 files**. Coverage for `packages/nats/src` alone, excluding fixtures and other packages, is:
 
 | Metric     | Coverage | Executed / total |
 | ---------- | -------: | ---------------: |
-| Statements |   93.21% |    2,620 / 2,811 |
-| Branches   |   90.14% |    1,855 / 2,058 |
-| Functions  |   87.29% |        673 / 771 |
-| Lines      |   94.86% |    2,382 / 2,511 |
+| Statements |   93.36% |    2,643 / 2,831 |
+| Branches   |   90.28% |    1,877 / 2,079 |
+| Functions  |   87.32% |        675 / 773 |
+| Lines      |   94.97% |    2,400 / 2,527 |
 
 The suites exercise core messaging, binary framing and fragmentation, headers, queue groups, requests, permission changes, authentication, verified TLS, mutual TLS, WebSockets, server discovery, reconnect limits, subscription replay, drains, shutdown and buffer ownership. The full clobber workload retains and verifies 256,000 messages of 1,024 bytes each.
 
-JetStream coverage includes CRUD and large paginated listings, cross-account and domain APIs, tiered limits, retention and replication, publish expectations and deduplication, atomic batches, fast ingest, scheduled messages, stored and direct reads, acknowledgements, pull/push and ordered recovery, heartbeat and flow control, byte/message budgets, pinned demand and unpinning, source/mirror placement and actual cluster leader loss. Slow callbacks and iterators verify that consumer protocol controls keep advancing while application processing waits.
+JetStream coverage includes CRUD and large paginated listings, cross-account and domain APIs, tiered limits, retention and replication, publish expectations and deduplication, atomic batches, fast ingest, scheduled messages, stored and direct reads, acknowledgements, pull/push and ordered recovery, heartbeat and flow control, byte/message budgets, pinned demand and unpinning, source/mirror placement and actual cluster leader loss. Slow callbacks and iterators exercise protocol controls and bounded delivery. When application demand fills a consumer queue, its heartbeat watchdog pauses until admission resumes; ordered recovery commits its cursor only after safe retention.
 
 Type tests verify native error channels, owned acknowledgement types and Scope requirements on TypeScript 5.9.3 and 6.0.3. Release checks build declarations, load all packed public entry points in an isolated installation, reject internal exports and detect circular dependencies.
 

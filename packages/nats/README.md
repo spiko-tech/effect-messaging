@@ -64,8 +64,15 @@ The default outbound budget is 8 MiB and 65,536 commands. Configure
 writer waits for capacity; explicit limits and disconnected writes fail with a
 typed error when their budget is exhausted. Subscription
 `maxPendingMessages` and `maxPendingBytes` provide explicit admission limits;
-overflow closes the affected subscription with a typed error. The socket
-reader never waits for a user's callback to complete.
+the byte charge includes headers, subject, reply and payload. Overflow closes
+the affected subscription with a typed error. The inbound parser's 64 MiB
+payload guard is independent of the outbound budget. The socket reader never
+waits for a user's callback to complete.
+
+JetStream consumers use bounded delivery queues. While a queue is full, the
+consumer pauses its heartbeat watchdog until application demand resumes.
+Ordered recovery resumes after the last message safely retained for delivery,
+including when reconnection interrupts a blocked admission.
 
 This rewrite removes underlying `.nc`, `.sub`, `.msg` and official-client
 iterator escape hatches. Optional messages, replies, errors and server

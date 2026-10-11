@@ -422,7 +422,7 @@ export const make = Effect.fnUntraced(function*<R>(
               Stream.mapEffect((message) =>
                 Effect.sync(() => {
                   sub.processed++
-                  sub.bytes -= message.data.length
+                  sub.bytes -= message.size
                   sub.slow = false
                   if (Queue.sizeUnsafe(queue) === 0) Latch.openUnsafe(sub.empty)
                   return message
@@ -495,7 +495,7 @@ export const make = Effect.fnUntraced(function*<R>(
             Effect.provideService(CurrentCallback, sub),
             Effect.andThen(Effect.sync(() => {
               sub.processed++
-              sub.bytes -= message.data.length
+              sub.bytes -= message.size
               sub.slow = false
               if (Queue.sizeUnsafe(queue) === 0) Latch.openUnsafe(sub.empty)
             }))
@@ -681,8 +681,8 @@ export const make = Effect.fnUntraced(function*<R>(
           break
         }
         Latch.closeUnsafe(changed)
-        const notified = yield* changed.await.pipe(Effect.timeoutOption(remaining))
-        if (Option.isNone(notified)) finish()
+        // Recheck the deadline after waking: a scheduler timer may fire early.
+        yield* changed.await.pipe(Effect.timeoutOption(remaining))
       }
     }).pipe(Effect.forkIn(scope))
     const cleanup = Effect.gen(function*() {
@@ -819,7 +819,7 @@ export const make = Effect.fnUntraced(function*<R>(
         complete(sub.first, Effect.void)
         const message = NATSMessage.make(frame, publish)
         if (
-          sub.options.maxPendingBytes !== undefined && sub.bytes + message.data.length > sub.options.maxPendingBytes
+          sub.options.maxPendingBytes !== undefined && sub.bytes + message.size > sub.options.maxPendingBytes
         ) {
           finishSubscription(sub, subError("Subscription pending byte limit exceeded"))
           yield* command("UNSUB " + sub.id + "\r\n")
@@ -827,7 +827,7 @@ export const make = Effect.fnUntraced(function*<R>(
           finishSubscription(sub, subError("Subscription pending message limit exceeded"))
           yield* command("UNSUB " + sub.id + "\r\n")
         } else {
-          sub.bytes += message.data.length
+          sub.bytes += message.size
           Latch.closeUnsafe(sub.empty)
           const pending = Queue.sizeUnsafe(sub.queue)
           if (sub.options.slow !== undefined && pending > sub.options.slow && !sub.slow && sub.handle !== undefined) {
@@ -929,8 +929,7 @@ export const make = Effect.fnUntraced(function*<R>(
         Effect.sync(() => retire(epoch, error("Physical connection retired", "disconnected")))
       )
       const parser = new Protocol.Parser({
-        maxControlLine: options.maxControlLine ?? 4096,
-        maxPayload: maxBufferedBytes
+        maxControlLine: options.maxControlLine ?? 4096
       })
       // INFO is plaintext on traditional TLS endpoints. Do not pull encrypted
       // bytes through the plaintext parser before upgrading the reader.
@@ -1183,11 +1182,18 @@ export const make = Effect.fnUntraced(function*<R>(
     if (epoch === undefined) return
     yield* PubSub.publish(statuses, { type: "forceReconnect" })
     retire(epoch, error("Forced reconnection", "disconnected"))
-    yield* states.pipe(
+    const terminal = yield* states.pipe(
       SubscriptionRef.changes,
-      Stream.filter((s) => s.generation > epoch.generation && (s.state === "Connected" || s.state === "Closed")),
+      Stream.filter((s) => s.state === "Closed" || (s.generation > epoch.generation && s.state === "Connected")),
       Stream.runHead
     )
+    if (Option.isNone(terminal) || terminal.value.state === "Closed") {
+      return yield* error(
+        "Connection closed before reconnection completed",
+        "closed",
+        Option.isSome(terminal) ? terminal.value.error : undefined
+      )
+    }
   })
   connection = {
     [Services.ConnectionTypeId]: Services.ConnectionTypeId,

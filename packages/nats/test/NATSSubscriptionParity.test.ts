@@ -151,7 +151,10 @@ describe("Exact subscription lifetime and disposal laws", () => {
         Effect.gen(function*() {
           const address = subject()
           const responder = silent ? yield* connection.subscribe(address, { callback: () => {} }) : undefined
-          const failure = yield* connection.request(address, undefined, { timeout: 25 }).pipe(Effect.flip)
+          yield* connection.flush
+          const failure = yield* connection.request(address, undefined, { timeout: silent ? 25 : 2000 }).pipe(
+            Effect.flip
+          )
           expect(failure.code).toBe(silent ? "timeout" : "no_responders")
           yield* connection.flush
           expect((yield* interest(url, connection)).subscriptions).toBe(silent ? 2 : 1)

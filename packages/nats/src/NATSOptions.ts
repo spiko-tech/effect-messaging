@@ -212,7 +212,9 @@ export interface NodeConnectionOptions extends Omit<ConnectionOptions, "tls"> {
 }
 
 /** @since 0.1.0 */
-export type { Auth, Authenticator } from "./NATSAuth.ts"
+export type Auth = NATSAuth.Auth
+/** @since 0.1.0 */
+export type Authenticator = NATSAuth.Authenticator
 
 const positiveNumber = Schema.Number.check(Schema.isFinite(), Schema.isGreaterThan(0))
 const nonNegativeNumber = Schema.Number.check(Schema.isFinite(), Schema.isGreaterThanOrEqualTo(0))

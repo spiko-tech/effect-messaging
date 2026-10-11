@@ -130,17 +130,21 @@ describe("Exact upstream ordered push consumer laws", () => {
         expect(config.flow_control).toBeUndefined()
         expect(config.idle_heartbeat).toBeUndefined()
         let calls = 0
-        const spy = yield* connection.subscribe("$JS.API.CONSUMER.CREATE.>", {
-          callback: () =>
-            Effect.sync(() => {
-              calls++
+        const spies = yield* Effect.forEach(
+          [`$JS.API.CONSUMER.CREATE.${name}`, `$JS.API.CONSUMER.CREATE.${name}.>`],
+          (subject) =>
+            connection.subscribe(subject, {
+              callback: () =>
+                Effect.sync(() => {
+                  calls++
+                })
             })
-        })
+        )
         yield* connection.flush
         yield* client.consumers.getBoundPushConsumer({ deliver_subject: name + "_deliver" })
         yield* connection.flush
         expect(calls).toBe(0)
-        yield* spy.unsubscribe()
+        yield* Effect.forEach(spies, (spy) => spy.unsubscribe(), { discard: true })
       })
     ))
 

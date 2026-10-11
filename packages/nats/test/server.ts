@@ -129,7 +129,10 @@ export const makeServer = (options?: {
               await execute("docker", ["start", name])
               break
             } catch (cause) {
-              if (!(cause instanceof Error) || !cause.message.includes("address already in use") || attempt === 9) {
+              if (
+                !(cause instanceof Error) || !/address already in use|port is already allocated/.test(cause.message) ||
+                attempt === 9
+              ) {
                 throw cause
               }
               await execute("docker", ["rm", "--force", name])

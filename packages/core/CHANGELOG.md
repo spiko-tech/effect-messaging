@@ -1,5 +1,11 @@
 # @effect-messaging/core
 
+## 1.0.0-beta.1
+
+### Patch Changes
+
+- [#167](https://github.com/spiko-tech/effect-messaging/pull/167) [`5b90e7d`](https://github.com/spiko-tech/effect-messaging/commit/5b90e7d815e7430e6308c28092eb7b617bacb875) Thanks [@samuelbriole](https://github.com/samuelbriole)! - Validate the messaging packages against Effect 4.1.0 and @effect/vitest 4.1.0; refresh compatible development dependencies.
+
 ## 1.0.0-beta.0
 
 ### Major Changes

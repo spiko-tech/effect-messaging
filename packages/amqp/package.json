@@ -46,10 +46,10 @@
   },
   "devDependencies": {
     "@effect-messaging/core": "workspace:^",
-    "@effect/vitest": "4.0.2",
-    "@types/node": "^26.6.4",
+    "@effect/vitest": "4.1.0",
+    "@types/node": "^26.6.6",
     "amqplib": "^2.2.0",
-    "effect": "4.0.2"
+    "effect": "4.1.0"
   },
   "peerDependencies": {
     "@effect-messaging/core": "workspace:^",

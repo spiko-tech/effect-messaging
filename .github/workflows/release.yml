@@ -18,7 +18,7 @@ jobs:
     environment: release
     services:
       rabbitmq:
-        image: rabbitmq:4.3.6-management
+        image: rabbitmq:4.3.7-management
         ports:
           - 5679:5672
         options: >-

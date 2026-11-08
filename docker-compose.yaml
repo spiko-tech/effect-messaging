@@ -1,6 +1,6 @@
 services:
   rabbitmq:
-    image: rabbitmq:4.3.6-management
+    image: rabbitmq:4.3.7-management
     container_name: rabbitmq-test
     ports:
       - "5679:5672" # AMQP protocol port

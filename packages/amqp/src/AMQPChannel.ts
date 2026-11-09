@@ -43,8 +43,11 @@ export interface AMQPChannel {
   readonly nackAll: (...parameters: Parameters<Channel["nackAll"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   readonly reject: (...parameters: Parameters<Channel["reject"]>) => Effect.Effect<void, AMQPError.AMQPChannelError>
   /**
-   * The boolean is amqplib's write-buffer flag, never a failure signal. It is
-   * stale when `confirm` is `true`.
+   * Resolves with amqplib's write-buffer flag. `false` means the frame was
+   * queued and the socket buffer was full: the effect waits for `drain` (or
+   * fails on close or `waitChannelTimeout`) before returning that flag. With
+   * `confirm: true` the flag is stale and the effect waits for the broker
+   * acknowledgement instead.
    */
   readonly publish: (
     ...parameters: Parameters<Channel["publish"]>

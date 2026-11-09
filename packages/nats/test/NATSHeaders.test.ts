@@ -18,4 +18,22 @@ describe("NATSHeaders", () => {
         expect(decoded.spanId).toBe(span.spanId)
         expect(decoded.sampled).toBe(span.sampled)
       })))
+
+  it.effect("drops server-owned headers and keeps caller headers", () =>
+    Effect.sync(() => {
+      const existing = headers()
+      existing.set("Nats-Request-Info", "{\"user\":\"forged\"}")
+      existing.set("Nats-Trace-Hop", "4")
+      existing.set("Nats-Trace-Origin-Account", "OTHER")
+      existing.set("Nats-Trace-Dest", "trace.receiver")
+      existing.set("x-app", "orders")
+
+      const merged = NATSHeaders.mergeNatsHeaders(existing, headers())
+
+      expect(merged.has("Nats-Request-Info")).toBe(false)
+      expect(merged.has("Nats-Trace-Hop")).toBe(false)
+      expect(merged.has("Nats-Trace-Origin-Account")).toBe(false)
+      expect(merged.get("Nats-Trace-Dest")).toBe("trace.receiver")
+      expect(merged.get("x-app")).toBe("orders")
+    }))
 })

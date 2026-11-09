@@ -201,6 +201,20 @@ export const monitorChannelErrors = Effect.gen(function*() {
 /** @internal */
 const publishError = (error: unknown) => new AMQPChannelError({ reason: `Failed to publish on channel`, cause: error })
 
+/** @internal */
+const waitForWriteDrain = (channel: Channel) =>
+  Effect.callback<void, AMQPChannelError>((resume) => {
+    const onDrain = () => resume(Effect.void)
+    const onClose = () =>
+      resume(Effect.fail(new AMQPChannelError({ reason: "Channel closed before the write buffer drained" })))
+    channel.once("drain", onDrain)
+    channel.once("close", onClose)
+    return Effect.sync(() => {
+      channel.removeListener("drain", onDrain)
+      channel.removeListener("close", onClose)
+    })
+  })
+
 // amqplib only tells a nack from a close through the error message
 const confirmReasons: Record<string, string> = {
   "message nacked": "Broker nacked message",
@@ -251,7 +265,7 @@ export const publish = (
   ...[exchange, routingKey, content, options]: Parameters<Channel["publish"]>
 ): Effect.Effect<boolean, AMQPChannelError, Context.Service.Identifier<typeof InternalAMQPChannel>> =>
   Effect.gen(function*() {
-    const { confirm, serverProperties } = yield* InternalAMQPChannel
+    const { confirm, serverProperties, waitChannelTimeout } = yield* InternalAMQPChannel
     return yield* Effect.useSpan(
       `amqp.publish ${routingKey}`,
       {
@@ -280,9 +294,21 @@ export const publish = (
           }
           return yield* confirm
             ? publishAndConfirm(channel as ConfirmChannel, exchange, routingKey, content, finalOptions)
-            : Effect.try({
-              try: () => channel.publish(exchange, routingKey, content, finalOptions),
-              catch: publishError
+            : Effect.gen(function*() {
+              const accepted = yield* Effect.try({
+                try: () => channel.publish(exchange, routingKey, content, finalOptions),
+                catch: publishError
+              })
+              if (!accepted) {
+                yield* waitForWriteDrain(channel).pipe(
+                  Effect.timeout(waitChannelTimeout),
+                  Effect.catchTag(
+                    "TimeoutError",
+                    () => new AMQPChannelError({ reason: "Timed out waiting for the write buffer to drain" })
+                  )
+                )
+              }
+              return accepted
             })
         })
     )

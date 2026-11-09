@@ -3,7 +3,8 @@ import type { Channel } from "amqplib"
 import { Cause, Deferred, Effect, Exit, Fiber, Option, Ref, Schedule, Stream, SubscriptionRef } from "effect"
 import * as TestClock from "effect/testing/TestClock"
 import { EventEmitter } from "node:events"
-import { closeChannel, InternalAMQPChannel } from "../src/internal/AMQPChannel.ts"
+import { AMQPChannelError } from "../src/AMQPError.ts"
+import { closeChannel, InternalAMQPChannel, publish } from "../src/internal/AMQPChannel.ts"
 import { closeStream, errorStream, trackResource } from "../src/internal/closeStream.ts"
 
 const makeResource = () => trackResource(new EventEmitter() as unknown as Channel)
@@ -308,5 +309,83 @@ describe("AMQP resource lifecycle", { concurrent: false }, () => {
       expect(yield* Fiber.join(monitor)).toEqual(Exit.fail(expect.objectContaining({ _tag: "TimeoutError" })))
       channel.finishConfirms()
       yield* Fiber.join(closing)
+    }))
+})
+
+const makePublishChannel = (accepted: boolean) =>
+  Effect.gen(function*() {
+    const resource = Object.assign(makeResource(), {
+      publish: vi.fn(() => accepted)
+    })
+    const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(resource))
+    const internal = InternalAMQPChannel.of({
+      channelRef,
+      serverProperties: {
+        host: "localhost",
+        product: "RabbitMQ",
+        version: "test",
+        platform: "test",
+        information: "test",
+        hostname: "localhost",
+        port: "5679"
+      },
+      retryConnectionSchedule: Schedule.spaced("1 second"),
+      retryConsumptionSchedule: Schedule.spaced("1 second"),
+      waitChannelTimeout: "50 millis",
+      confirm: false,
+      confirmTimeout: "1 second"
+    })
+    return { resource, internal }
+  })
+
+describe("AMQP publish drain", { concurrent: false }, () => {
+  it.live("returns immediately when the write buffer accepts the frame", () =>
+    Effect.gen(function*() {
+      const channel = yield* makePublishChannel(true)
+      const accepted = yield* publish("", "orders", Buffer.from("a")).pipe(
+        Effect.provideService(InternalAMQPChannel, channel.internal)
+      )
+      expect(accepted).toBe(true)
+      expect(channel.resource.listenerCount("drain")).toBe(0)
+    }))
+
+  it.live("stays suspended until the write buffer drains", () =>
+    Effect.gen(function*() {
+      const channel = yield* makePublishChannel(false)
+      const fiber = yield* Effect.forkChild(
+        publish("", "orders", Buffer.from("a")).pipe(Effect.provideService(InternalAMQPChannel, channel.internal))
+      )
+      yield* waitForListeners(channel.resource, "drain", 1)
+
+      expect(fiber.pollUnsafe()).toBeUndefined()
+      channel.resource.emit("drain")
+
+      expect(yield* Fiber.join(fiber)).toBe(false)
+    }))
+
+  it.live("fails when the channel closes while the write buffer is full", () =>
+    Effect.gen(function*() {
+      const channel = yield* makePublishChannel(false)
+      const fiber = yield* Effect.forkChild(
+        publish("", "orders", Buffer.from("a")).pipe(
+          Effect.provideService(InternalAMQPChannel, channel.internal),
+          Effect.exit
+        )
+      )
+      yield* waitForListeners(channel.resource, "close", 1)
+      channel.resource.emit("close")
+
+      const exit = yield* Fiber.join(fiber)
+      expect(Exit.isFailure(exit) && Cause.squash(exit.cause)).toBeInstanceOf(AMQPChannelError)
+    }))
+
+  it.live("fails when the write buffer does not drain in time", () =>
+    Effect.gen(function*() {
+      const channel = yield* makePublishChannel(false)
+      const exit = yield* publish("", "orders", Buffer.from("a")).pipe(
+        Effect.provideService(InternalAMQPChannel, channel.internal),
+        Effect.exit
+      )
+      expect(Exit.isFailure(exit) && Cause.squash(exit.cause)).toBeInstanceOf(AMQPChannelError)
     }))
 })

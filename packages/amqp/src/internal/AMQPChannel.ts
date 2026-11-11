@@ -372,7 +372,11 @@ export const consume = (queueName: string, options?: { readonly prefetch?: numbe
           Stream.callback<ConsumeMessage, AMQPChannelError>((queue) =>
             Effect.gen(function*() {
               yield* endQueueOnChannelClose(channel, queue)
-              yield* initiateConsumption(channel, queueName, queue, options).pipe(
+              // `while` is checked before the retry delay, so a shutdown during the delay is caught here
+              const consumeIfChannelOpen = Effect.suspend(() =>
+                isChannelOpen(channel) ? initiateConsumption(channel, queueName, queue, options) : Queue.end(queue)
+              )
+              yield* consumeIfChannelOpen.pipe(
                 Effect.retry({ schedule: retryConsumptionSchedule, while: () => isChannelOpen(channel) }),
                 // The replacement channel takes over: failing here would kill the whole consume stream
                 Effect.catch((error) => isChannelOpen(channel) ? Queue.fail(queue, error) : Queue.end(queue))

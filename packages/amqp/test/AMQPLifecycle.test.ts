@@ -3,6 +3,7 @@ import type { Channel, ConsumeMessage } from "amqplib"
 import { Cause, Deferred, Effect, Exit, Fiber, Option, Ref, Schedule, Stream, SubscriptionRef } from "effect"
 import * as TestClock from "effect/testing/TestClock"
 import { EventEmitter } from "node:events"
+import type { AMQPChannelError } from "../src/AMQPError.ts"
 import { closeChannel, consume, InternalAMQPChannel } from "../src/internal/AMQPChannel.ts"
 import { closeStream, errorStream, resourceStates, trackResource } from "../src/internal/closeStream.ts"
 
@@ -13,7 +14,10 @@ const waitForListeners = (resource: Channel, eventName: string, count: number) =
 
 const makeInternal = (
   channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>,
-  { confirm }: { confirm: boolean }
+  { confirm, retryConsumptionSchedule = Schedule.spaced("1 second") }: {
+    confirm: boolean
+    retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError> | undefined
+  }
 ) =>
   InternalAMQPChannel.of({
     channelRef,
@@ -27,7 +31,7 @@ const makeInternal = (
       port: "5679"
     },
     retryConnectionSchedule: Schedule.spaced("1 second"),
-    retryConsumptionSchedule: Schedule.spaced("1 second"),
+    retryConsumptionSchedule,
     waitChannelTimeout: "5 seconds",
     confirm,
     confirmTimeout: "30 seconds"
@@ -46,11 +50,12 @@ const makeConsumingChannel = (prefetch: () => Promise<unknown>) =>
   })
 
 const collectConsumedMessages = Effect.fnUntraced(function*(
-  channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>
+  channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>,
+  retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError>
 ) {
   const messages = yield* Ref.make<Array<ConsumeMessage>>([])
   const stream = yield* consume("TEST_QUEUE").pipe(
-    Effect.provideService(InternalAMQPChannel, makeInternal(channelRef, { confirm: false }))
+    Effect.provideService(InternalAMQPChannel, makeInternal(channelRef, { confirm: false, retryConsumptionSchedule }))
   )
   const fiber = yield* Effect.forkChild(
     Stream.runForEach(stream, (message) => Ref.update(messages, (current) => [...current, message]))
@@ -368,16 +373,19 @@ describe("AMQP resource lifecycle", { concurrent: false }, () => {
       yield* Fiber.interrupt(fiber)
     }))
 
-  it.effect("stops retrying consumption on a channel shut down without a close event", () =>
+  it.effect("stops retrying consumption on a channel shut down without a close event during the retry delay", () =>
     Effect.gen(function*() {
-      const stalePrefetchFailed = yield* Deferred.make<void>()
+      const retryDelayStarted = yield* Deferred.make<void>()
       const stale = makeConsumingChannel(async () => {
-        Deferred.doneUnsafe(stalePrefetchFailed, Effect.void)
         throw new Error("Channel closed")
       })
       const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(stale))
-      const { fiber } = yield* collectConsumedMessages(channelRef)
-      yield* Deferred.await(stalePrefetchFailed)
+      const { fiber } = yield* collectConsumedMessages(
+        channelRef,
+        Schedule.spaced("1 second").pipe(Schedule.tap(() => Deferred.succeed(retryDelayStarted, undefined)))
+      )
+      yield* Deferred.await(retryDelayStarted)
+      yield* TestClock.adjust("500 millis")
 
       stale.removeAllListeners()
       resourceStates.set(stale, "shutdown")

@@ -302,6 +302,29 @@ export const wrapChannelMethod = <A>(
   }).pipe(Effect.withSpan(`AMQPChannel.${methodName}`))
 
 /** @internal */
+const isChannelOpen = (channel: Channel) => !resourceStates.has(channel)
+
+/**
+ * Listens before consumption starts, so a channel closing mid-setup ends the
+ * stream and interrupts the pending retries instead of leaving them looping on
+ * a dead channel while its replacement does the work.
+ *
+ * @internal
+ */
+const endQueueOnChannelClose = (
+  channel: Channel,
+  queue: Queue.Queue<ConsumeMessage, AMQPChannelError | Cause.Done>
+) =>
+  Effect.acquireRelease(
+    Effect.sync(() => {
+      const onClose = () => Queue.endUnsafe(queue)
+      channel.once("close", onClose)
+      return onClose
+    }),
+    (onClose) => Effect.sync(() => channel.removeListener("close", onClose))
+  )
+
+/** @internal */
 const initiateConsumption = Effect.fn("initiateConsumption")(
   function*(
     channel: Channel,
@@ -331,9 +354,6 @@ const initiateConsumption = Effect.fn("initiateConsumption")(
         Effect.ignore
       )
     )
-    channel.on("close", () => {
-      Queue.endUnsafe(queue)
-    })
     yield* Effect.logDebug(`AMQPChannel: consuming from queue ${queueName} with consumer tag ${consumerTag}`)
   },
   Effect.withSpan("AMQPChannel.initiateConsumption")
@@ -350,10 +370,14 @@ export const consume = (queueName: string, options?: { readonly prefetch?: numbe
       Stream.flatMap(
         (channel) =>
           Stream.callback<ConsumeMessage, AMQPChannelError>((queue) =>
-            initiateConsumption(channel, queueName, queue, options).pipe(
-              Effect.retry(retryConsumptionSchedule),
-              Effect.catch((error) => Queue.fail(queue, error))
-            )
+            Effect.gen(function*() {
+              yield* endQueueOnChannelClose(channel, queue)
+              yield* initiateConsumption(channel, queueName, queue, options).pipe(
+                Effect.retry({ schedule: retryConsumptionSchedule, while: () => isChannelOpen(channel) }),
+                // The replacement channel takes over: failing here would kill the whole consume stream
+                Effect.catch((error) => isChannelOpen(channel) ? Queue.fail(queue, error) : Queue.end(queue))
+              )
+            })
           ),
         { concurrency: "unbounded" }
       )

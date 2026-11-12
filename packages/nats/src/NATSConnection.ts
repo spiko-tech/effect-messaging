@@ -11,6 +11,7 @@ import type * as Scope from "effect/Scope"
 import * as Stream from "effect/Stream"
 import * as utils from "./internal/utils.ts"
 import * as NATSError from "./NATSError.ts"
+import * as NATSHeaders from "./NATSHeaders.ts"
 import * as NATSMessage from "./NATSMessage.ts"
 import * as NATSSubscription from "./NATSSubscription.ts"
 
@@ -88,11 +89,22 @@ const make = (
     const connection: NATSConnection = {
       [TypeId]: TypeId,
       info: Option.fromNullishOr(nc.info),
-      publish: (...params) => wrap(() => nc.publish(...params), "Failed to publish message"),
-      publishMessage: (...params) => wrap(() => nc.publishMessage(...params), "Failed to publish message"),
+      publish: (...params) =>
+        wrap(() => {
+          NATSHeaders.omitOwnedHeaders(params[2])
+          return nc.publish(...params)
+        }, "Failed to publish message"),
+      publishMessage: (...params) =>
+        wrap(() => {
+          NATSHeaders.omitOwnedHeaders(params[0])
+          return nc.publishMessage(...params)
+        }, "Failed to publish message"),
       respondMessage: (...params) => wrap(() => nc.respondMessage(...params), "Failed to respond to message"),
       request: (...params) =>
-        wrapAsync(() => nc.request(...params), "Failed to request message").pipe(
+        wrapAsync(() => {
+          NATSHeaders.omitOwnedHeaders(params[2])
+          return nc.request(...params)
+        }, "Failed to request message").pipe(
           Effect.map(NATSMessage.make)
         ),
       subscribe: (...params) =>

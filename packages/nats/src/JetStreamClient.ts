@@ -11,6 +11,7 @@ import * as JetStreamConsumers from "./JetStreamConsumer.ts"
 import * as JetStreamStream from "./JetStreamStream.ts"
 import * as NATSConnection from "./NATSConnection.ts"
 import * as NATSError from "./NATSError.ts"
+import * as NATSHeaders from "./NATSHeaders.ts"
 
 /**
  * @category type ids
@@ -61,7 +62,10 @@ export const make = (js: JetStream.JetStreamClient): JetStreamClient => ({
   [TypeId]: TypeId,
   apiPrefix: js.apiPrefix,
   publish: (...params: Parameters<JetStream.JetStreamClient["publish"]>) =>
-    wrapAsync(() => js.publish(...params), `Failed to publish message`),
+    wrapAsync(() => {
+      NATSHeaders.omitOwnedHeaders(params[2])
+      return js.publish(...params)
+    }, `Failed to publish message`),
   startBatch: (...params: Parameters<JetStream.JetStreamClient["startBatch"]>) =>
     wrapAsync(() => js.startBatch(...params), `Failed to start batch`).pipe(
       Effect.map(JetStreamBatch.make)

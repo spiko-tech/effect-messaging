@@ -1,16 +1,70 @@
 import { describe, expect, it, vi } from "@effect/vitest"
-import type { Channel } from "amqplib"
+import type { Channel, ConsumeMessage } from "amqplib"
 import { Cause, Deferred, Effect, Exit, Fiber, Option, Ref, Schedule, Stream, SubscriptionRef } from "effect"
 import * as TestClock from "effect/testing/TestClock"
 import { EventEmitter } from "node:events"
 import { AMQPChannelError } from "../src/AMQPError.ts"
-import { closeChannel, InternalAMQPChannel, publish } from "../src/internal/AMQPChannel.ts"
-import { closeStream, errorStream, trackResource } from "../src/internal/closeStream.ts"
+import { closeChannel, consume, InternalAMQPChannel, publish } from "../src/internal/AMQPChannel.ts"
+import { closeStream, errorStream, resourceStates, trackResource } from "../src/internal/closeStream.ts"
 
 const makeResource = () => trackResource(new EventEmitter() as unknown as Channel)
 
 const waitForListeners = (resource: Channel, eventName: string, count: number) =>
   Effect.repeat(Effect.yieldNow, { until: () => resource.listenerCount(eventName) >= count })
+
+const makeInternal = (
+  channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>,
+  { confirm, retryConsumptionSchedule = Schedule.spaced("1 second") }: {
+    confirm: boolean
+    retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError> | undefined
+  }
+) =>
+  InternalAMQPChannel.of({
+    channelRef,
+    serverProperties: {
+      host: "localhost",
+      product: "RabbitMQ",
+      version: "test",
+      platform: "test",
+      information: "test",
+      hostname: "localhost",
+      port: "5679"
+    },
+    retryConnectionSchedule: Schedule.spaced("1 second"),
+    retryConsumptionSchedule,
+    waitChannelTimeout: "5 seconds",
+    confirm,
+    confirmTimeout: "30 seconds"
+  })
+
+const consumedMessage = { content: Buffer.from("message"), fields: {}, properties: {} } as unknown as ConsumeMessage
+
+const makeConsumingChannel = (prefetch: () => Promise<unknown>) =>
+  Object.assign(makeResource(), {
+    prefetch: vi.fn(prefetch),
+    consume: vi.fn(async (_queue: string, onMessage: (message: ConsumeMessage | null) => void) => {
+      onMessage(consumedMessage)
+      return { consumerTag: "consumer" }
+    }),
+    cancel: vi.fn(async () => ({}))
+  })
+
+const collectConsumedMessages = Effect.fnUntraced(function*(
+  channelRef: SubscriptionRef.SubscriptionRef<Option.Option<Channel>>,
+  retryConsumptionSchedule?: Schedule.Schedule<unknown, AMQPChannelError>
+) {
+  const messages = yield* Ref.make<Array<ConsumeMessage>>([])
+  const stream = yield* consume("TEST_QUEUE").pipe(
+    Effect.provideService(InternalAMQPChannel, makeInternal(channelRef, { confirm: false, retryConsumptionSchedule }))
+  )
+  const fiber = yield* Effect.forkChild(
+    Stream.runForEach(stream, (message) => Ref.update(messages, (current) => [...current, message]))
+  )
+  const awaitFirstMessage = Effect.repeat(Effect.andThen(Effect.yieldNow, Ref.get(messages)), {
+    until: (current) => current.length > 0
+  })
+  return { awaitFirstMessage, fiber }
+})
 
 const makeClosingChannel = Effect.fnUntraced(function*() {
   const started = yield* Deferred.make<void>()
@@ -27,23 +81,7 @@ const makeClosingChannel = Effect.fnUntraced(function*() {
     )
   })
   const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(resource))
-  const internal = InternalAMQPChannel.of({
-    channelRef,
-    serverProperties: {
-      host: "localhost",
-      product: "RabbitMQ",
-      version: "test",
-      platform: "test",
-      information: "test",
-      hostname: "localhost",
-      port: "5679"
-    },
-    retryConnectionSchedule: Schedule.spaced("1 second"),
-    retryConsumptionSchedule: Schedule.spaced("1 second"),
-    waitChannelTimeout: "5 seconds",
-    confirm: true,
-    confirmTimeout: "30 seconds"
-  })
+  const internal = makeInternal(channelRef, { confirm: true })
   return {
     resource,
     channelRef,
@@ -309,6 +347,71 @@ describe("AMQP resource lifecycle", { concurrent: false }, () => {
       expect(yield* Fiber.join(monitor)).toEqual(Exit.fail(expect.objectContaining({ _tag: "TimeoutError" })))
       channel.finishConfirms()
       yield* Fiber.join(closing)
+    }))
+
+  it.effect("stops retrying consumption on a closed channel and consumes from its replacement", () =>
+    Effect.gen(function*() {
+      const stalePrefetchFailed = yield* Deferred.make<void>()
+      const stale = makeConsumingChannel(async () => {
+        Deferred.doneUnsafe(stalePrefetchFailed, Effect.void)
+        throw new Error("Channel closed")
+      })
+      const replacement = makeConsumingChannel(async () => ({}))
+      const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(stale))
+      const { awaitFirstMessage, fiber } = yield* collectConsumedMessages(channelRef)
+      yield* Deferred.await(stalePrefetchFailed)
+
+      stale.emit("close")
+      yield* SubscriptionRef.set(channelRef, Option.some<Channel>(replacement))
+      yield* TestClock.adjust("10 seconds")
+
+      expect(stale.prefetch).toHaveBeenCalledTimes(1)
+      expect(stale.listenerCount("close")).toBe(0)
+      expect(replacement.consume).toHaveBeenCalledTimes(1)
+      expect(yield* awaitFirstMessage).toEqual([consumedMessage])
+      expect(fiber.pollUnsafe()).toBeUndefined()
+      yield* Fiber.interrupt(fiber)
+    }))
+
+  it.effect("stops retrying consumption on a channel shut down without a close event during the retry delay", () =>
+    Effect.gen(function*() {
+      const retryDelayStarted = yield* Deferred.make<void>()
+      const stale = makeConsumingChannel(async () => {
+        throw new Error("Channel closed")
+      })
+      const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(stale))
+      const { fiber } = yield* collectConsumedMessages(
+        channelRef,
+        Schedule.spaced("1 second").pipe(Schedule.tap(() => Deferred.succeed(retryDelayStarted, undefined)))
+      )
+      yield* Deferred.await(retryDelayStarted)
+      yield* TestClock.adjust("500 millis")
+
+      stale.removeAllListeners()
+      resourceStates.set(stale, "shutdown")
+      yield* TestClock.adjust("10 seconds")
+
+      expect(stale.prefetch).toHaveBeenCalledTimes(1)
+      expect(fiber.pollUnsafe()).toBeUndefined()
+      yield* Fiber.interrupt(fiber)
+    }))
+
+  it.effect("keeps retrying consumption while the channel stays open", () =>
+    Effect.gen(function*() {
+      let attempts = 0
+      const channel = makeConsumingChannel(async () => {
+        attempts++
+        if (attempts === 1) throw new Error("Transient failure")
+        return {}
+      })
+      const channelRef = yield* SubscriptionRef.make(Option.some<Channel>(channel))
+      const { awaitFirstMessage, fiber } = yield* collectConsumedMessages(channelRef)
+
+      yield* TestClock.adjust("1 second")
+
+      expect(channel.prefetch).toHaveBeenCalledTimes(2)
+      expect(yield* awaitFirstMessage).toEqual([consumedMessage])
+      yield* Fiber.interrupt(fiber)
     }))
 })
 

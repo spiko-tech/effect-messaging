@@ -1,5 +1,11 @@
 # @effect-messaging/amqp
 
+## 1.0.0-beta.2
+
+### Patch Changes
+
+- [#172](https://github.com/spiko-tech/effect-messaging/pull/172) [`d771fde`](https://github.com/spiko-tech/effect-messaging/commit/d771fde3bc228471a17bbd641c916a482fd433db) Thanks [@thibaut-sauvage-spiko](https://github.com/thibaut-sauvage-spiko)! - Stop retrying consumer setup (`prefetch`/`consume`) on a channel that has closed. The retry used to loop forever on the dead channel, logging an `AMQPChannelError: Channel closed` every second per queue, while the replacement channel did the real work. The consume stream for a channel now ends as soon as that channel closes or is shut down, and the replacement channel takes over.
+
 ## 1.0.0-beta.1
 
 ### Patch Changes

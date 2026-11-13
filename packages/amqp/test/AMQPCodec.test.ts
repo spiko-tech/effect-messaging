@@ -56,6 +56,177 @@ const tableEntry = (tag: string, value: Uint8Array, key = "a"): Uint8Array =>
   concat(bytes(key.length), new TextEncoder().encode(key), bytes(tag.charCodeAt(0)), value)
 
 describe("AMQP 0-9-1 wire codec", () => {
+  it.effect("preserves every explicit integer width through decode and republish", () =>
+    Effect.gen(function*() {
+      const kinds = ["int8", "uint8", "int16", "uint16", "int32", "uint32", "int64"] as const
+      const tags = ["b", "B", "s", "u", "I", "i", "l"]
+      const sizes = [1, 1, 2, 2, 4, 4, 8]
+      for (const [index, kind] of kinds.entries()) {
+        const data = new Uint8Array(sizes[index])
+        data[data.length - 1] = 1
+        const expected = tablePayload(tableEntry(tags[index], data)).subarray(14)
+        const wire = yield* encodeFieldTable({ a: AMQPTypes.fieldInteger(kind, 1) })
+        expect(wire).toEqual(expected)
+        const decoded = yield* Schema.decodeEffect(FieldTableCodec)(wire)
+        expect(yield* encodeFieldTable(decoded)).toEqual(wire)
+        if (kind === "int8") expect(decoded.a).toBe(1)
+        else if (kind === "int64") expect(decoded.a).toBe(1n)
+        else expect(decoded.a).toEqual(AMQPTypes.fieldInteger(kind, 1))
+      }
+      for (
+        const invalid of [
+          AMQPTypes.fieldInteger("int8", 128),
+          AMQPTypes.fieldInteger("uint8", -1),
+          AMQPTypes.fieldInteger("uint32", 0x100000000n),
+          AMQPTypes.fieldInteger("int64", 1n << 63n)
+        ]
+      ) {
+        yield* schemaFailure(encodeFieldTable({ invalid }))
+      }
+    }))
+
+  it.effect("supports full-range timestamps, signed decimal mantissas and legacy own type wrappers", () =>
+    Effect.gen(function*() {
+      const maximum = AMQPTypes.fieldTimestamp(0xffffffffffffffffn)
+      const encoded = yield* encodeFieldTable({ a: maximum })
+      expect(encoded).toEqual(tablePayload(tableEntry("T", bytes(255, 255, 255, 255, 255, 255, 255, 255))).subarray(14))
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(encoded)).toEqual({ a: maximum })
+      yield* schemaFailure(encodeFieldTable({ invalid: AMQPTypes.fieldTimestamp(-1n) }))
+      const negative = yield* encodeFieldTable({ a: AMQPTypes.decimal(2, -1) })
+      expect(negative).toEqual(tablePayload(tableEntry("D", bytes(2, 255, 255, 255, 255))).subarray(14))
+      expect(yield* encodeFieldTable({ a: AMQPTypes.decimal(2, 0xffffffff) })).toEqual(negative)
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(negative)).toEqual({ a: AMQPTypes.decimal(2, -1) })
+      for (
+        const [legacy, native] of [
+          [{ "!": "string", value: "text" }, "text"],
+          [{ "!": "boolean", value: true }, true],
+          [{ "!": "number", value: 1 }, 1],
+          [{ "!": "object", value: [true, "text"] }, [true, "text"]],
+          [{ "!": "unsignedint", value: 1 }, AMQPTypes.fieldInteger("uint32", 1)],
+          [{ "!": "int16", value: -1 }, AMQPTypes.fieldInteger("int16", -1)],
+          [{ "!": "timestamp", value: 0xffffffffffffffffn }, maximum],
+          [{ "!": "decimal", value: { places: 2, digits: 0xffffffff } }, AMQPTypes.decimal(2, -1)],
+          [{ "!": "float64", value: 1 }, AMQPTypes.fieldNumber("double", 1)]
+        ] as const
+      ) expect(yield* encodeFieldTable({ a: legacy })).toEqual(yield* encodeFieldTable({ a: native }))
+      yield* schemaFailure(encodeFieldTable({ a: { "!": "unknown", value: 1 } }))
+      const ordinary = Object.create({ "!": "uint8", inherited: true })
+      ordinary.value = 1
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(yield* encodeFieldTable({ a: ordinary })))
+        .toEqual({ a: { "!": "uint8", inherited: true, value: 1 } })
+      const ordinaryWire = yield* encodeFieldTable({ a: ordinary })
+      expect(yield* encodeFieldTable(yield* Schema.decodeEffect(FieldTableCodec)(ordinaryWire))).toEqual(ordinaryWire)
+    }))
+
+  it.effect("encodes the single validated read of caller-owned table getters", () =>
+    Effect.gen(function*() {
+      let reads = 0
+      const table = {
+        get value() {
+          return ++reads === 1 ? 1 : NaN
+        }
+      }
+      const encoded = yield* encodeFieldTable(table)
+      expect(reads).toBe(1)
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(encoded)).toEqual({ value: 1 })
+    }))
+
+  it.effect("snapshots direct binary Schema inputs, nested wrappers and method/property getters", () =>
+    Effect.gen(function*() {
+      let scalarReads = 0
+      let arrayReads = 0
+      let methodReads = 0
+      let headerReads = 0
+      const wrapper = {
+        [AMQPTypes.FieldNumberTypeId]: AMQPTypes.FieldNumberTypeId,
+        type: "float" as const,
+        get value() {
+          return ++scalarReads === 1 ? 1.5 : NaN
+        }
+      }
+      const array = [0]
+      Object.defineProperty(array, "0", { get: () => ++arrayReads === 1 ? wrapper : NaN })
+      const encoded = yield* Schema.encodeEffect(FieldTableCodec)({ array })
+      expect(scalarReads).toBe(1)
+      expect(arrayReads).toBe(1)
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(encoded)).toEqual({
+        array: [AMQPTypes.fieldNumber("float", 1.5)]
+      })
+      const method = yield* encodeMethod(1, 60, 80, {
+        get deliveryTag() {
+          return ++methodReads === 1 ? 7n : -1n
+        }
+      })
+      expect((yield* decodeMethod(payload(method))).fields.deliveryTag).toBe(7n)
+      expect(methodReads).toBe(1)
+      const header = yield* encodeContentHeader(1, 0n, {
+        headers: {
+          get value() {
+            return ++headerReads === 1 ? 1 : NaN
+          }
+        }
+      })
+      expect((yield* decodeContentHeader(payload(header))).properties.headers).toEqual({ value: 1 })
+      expect(headerReads).toBe(1)
+    }))
+
+  it.effect("guards hostile reflection traps, revoked proxies and foreign scalar methods", () =>
+    Effect.gen(function*() {
+      const traps: Array<ProxyHandler<AMQPTypes.FieldTable>> = [
+        { getPrototypeOf: () => Reflect.getPrototypeOf(null as never) },
+        { ownKeys: () => Reflect.ownKeys(null as never) },
+        { getOwnPropertyDescriptor: () => Reflect.getOwnPropertyDescriptor(null as never, "value") },
+        { get: () => Reflect.get(null as never, "value") }
+      ]
+      for (const trap of traps) yield* schemaFailure(encodeFieldTable(new Proxy({ value: 1 }, trap)))
+      const revoked = Proxy.revocable({}, {})
+      revoked.revoke()
+      yield* schemaFailure(encodeFieldTable(revoked.proxy))
+      yield* schemaFailure(encodeFieldTable({ date: new Proxy(new Date(0), {}) }))
+      yield* schemaFailure(encodeFieldTable({ bytes: new Proxy(bytes(1), {}) }))
+      yield* schemaFailure(encodeMethod(1, 60, 80, new Proxy({}, traps[0])))
+      yield* schemaFailure(encodeContentHeader(1, 0n, new Proxy({}, traps[0])))
+    }))
+
+  it.effect("reads shared caller nodes once and rejects cyclic or exponentially expanded graphs before writing", () =>
+    Effect.gen(function*() {
+      let reads = 0
+      const shared = {
+        get value() {
+          return ++reads
+        }
+      }
+      const encoded = yield* encodeFieldTable({ first: shared, second: shared })
+      expect(reads).toBe(1)
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(encoded)).toEqual({
+        first: { value: 1 },
+        second: { value: 1 }
+      })
+      const cyclic: Record<string, AMQPTypes.FieldValue> = {}
+      cyclic.self = cyclic
+      yield* schemaFailure(encodeFieldTable(cyclic))
+      let dag: AMQPTypes.FieldValue = null
+      for (let i = 0; i < 31; i++) dag = [dag, dag]
+      yield* schemaFailure(encodeFieldTable({ dag }))
+      let replacementReads = 0
+      const oversized = "x".repeat(16 * 1024 * 1024 + 1)
+      const replacement = {
+        get value() {
+          return ++replacementReads === 1 ? 1 : oversized
+        }
+      }
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(yield* encodeFieldTable(replacement))).toEqual({ value: 1 })
+      expect(replacementReads).toBe(1)
+    }))
+
+  it.effect("preserves non-enumerable named method properties without promoting hidden table entries", () =>
+    Effect.gen(function*() {
+      const fields = Object.defineProperty({}, "deliveryTag", { value: 7n })
+      expect((yield* decodeMethod(payload(yield* encodeMethod(1, 60, 80, fields)))).fields.deliveryTag).toBe(7n)
+      const table = Object.defineProperty({ visible: true }, "hidden", { value: 1 })
+      expect(yield* Schema.decodeEffect(FieldTableCodec)(yield* encodeFieldTable(table))).toEqual({ visible: true })
+    }))
+
   it.effect("allocates fresh wire readers and writers on every execution of a codec Effect", () =>
     Effect.gen(function*() {
       const fields = { deliveryTag: 0xffffffffffffffffn, multiple: true }
@@ -279,12 +450,13 @@ describe("AMQP 0-9-1 wire codec", () => {
   it.effect("encodes and decodes every supported method with protocol defaults", () =>
     Effect.gen(function*() {
       const methods: ReadonlyArray<readonly [number, ReadonlyArray<number>]> = [
-        [10, [10, 11, 30, 31, 40, 41, 50, 51, 60, 61, 70, 71]],
+        [10, [10, 11, 20, 21, 30, 31, 40, 41, 50, 51, 60, 61, 70, 71]],
         [20, [10, 11, 20, 21, 40, 41]],
         [40, [10, 11, 20, 21, 30, 31, 40, 51]],
         [50, [10, 11, 20, 21, 30, 31, 40, 41, 50, 51]],
         [60, [10, 11, 20, 21, 30, 31, 40, 50, 60, 70, 71, 72, 80, 90, 100, 110, 111, 120]],
-        [85, [10, 11]]
+        [85, [10, 11]],
+        [90, [10, 11, 20, 21, 30, 31]]
       ]
       for (const [classId, ids] of methods) {
         for (const methodId of ids) {
@@ -387,7 +559,7 @@ describe("AMQP 0-9-1 wire codec", () => {
         nested: { array: ["a", true, null, { inner: 5 }] }
       }
       const result = yield* decodeContentHeader(payload(yield* encodeContentHeader(1, 0n, { headers: table })))
-      expect(result.properties.headers).toEqual(table)
+      expect(result.properties.headers).toEqual({ ...table, decimal: AMQPTypes.decimal(2, -1) })
       const copied = result.properties.headers!.binary as Uint8Array
       expect(copied).not.toBe(table.binary)
       const grown = { many: "x".repeat(1000), last: 127 }
@@ -401,12 +573,12 @@ describe("AMQP 0-9-1 wire codec", () => {
     Effect.gen(function*() {
       const cases: ReadonlyArray<readonly [string, Uint8Array, AMQPTypes.FieldValue]> = [
         ["b", bytes(255), -1],
-        ["B", bytes(255), 255],
-        ["s", bytes(255, 255), -1],
+        ["B", bytes(255), AMQPTypes.fieldInteger("uint8", 255)],
+        ["s", bytes(255, 255), AMQPTypes.fieldInteger("int16", -1)],
         ["U", bytes(128, 0), -32768],
-        ["u", bytes(255, 255), 65535],
-        ["I", bytes(255, 255, 255, 255), -1],
-        ["i", bytes(255, 255, 255, 255), 4294967295],
+        ["u", bytes(255, 255), AMQPTypes.fieldInteger("uint16", 65535)],
+        ["I", bytes(255, 255, 255, 255), AMQPTypes.fieldInteger("int32", -1)],
+        ["i", bytes(255, 255, 255, 255), AMQPTypes.fieldInteger("uint32", 4294967295)],
         ["l", bytes(255, 255, 255, 255, 255, 255, 255, 255), -1n],
         ["L", bytes(255, 255, 255, 255, 255, 255, 255, 255), -1n],
         ["f", bytes(63, 160, 0, 0), AMQPTypes.fieldNumber("float", 1.25)]
@@ -560,9 +732,11 @@ describe("AMQP 0-9-1 wire codec", () => {
         .toEqual(AMQPTypes.longString(bytes(255)))
       yield* malformed(decodeContentHeader(tablePayload(tableEntry("A", bytes(0, 0, 0, 2, 73, 1)))))
       yield* malformed(decodeContentHeader(tablePayload(tableEntry("F", bytes(0, 0, 0, 1, 1)))))
-      yield* malformed(
-        decodeContentHeader(tablePayload(tableEntry("T", bytes(255, 255, 255, 255, 255, 255, 255, 255))))
+      expect(
+        (yield* decodeContentHeader(tablePayload(tableEntry("T", bytes(255, 255, 255, 255, 255, 255, 255, 255)))))
+          .properties.headers?.a
       )
+        .toEqual(AMQPTypes.fieldTimestamp(0xffffffffffffffffn))
       yield* malformed(decodeContentHeader(tablePayload(concat(tableEntry("V", bytes()), tableEntry("V", bytes())))))
       let nested: AMQPTypes.FieldValue = null
       for (let i = 0; i < 40; i++) nested = { nested }
@@ -572,7 +746,7 @@ describe("AMQP 0-9-1 wire codec", () => {
       yield* malformed(encodeContentHeader(1, 0n, { headers: cyclic }))
       yield* malformed(encodeContentHeader(1, 0n, { headers: { invalid: Number.NaN } }))
       yield* malformed(encodeContentHeader(1, 0n, { headers: { invalid: 0xffffffffffffffffn } }))
-      yield* malformed(encodeContentHeader(1, 0n, { headers: { invalid: AMQPTypes.decimal(2, -1) } }))
+      yield* malformed(encodeContentHeader(1, 0n, { headers: { invalid: AMQPTypes.decimal(2, -0x80000001) } }))
       yield* malformed(encodeContentHeader(1, 0n, { headers: { invalid: new Date(Number.NaN) } }))
       let nestedWire = tableEntry("V", bytes())
       for (let i = 0; i < 40; i++) {

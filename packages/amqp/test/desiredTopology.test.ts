@@ -64,9 +64,203 @@ const applyBinding = Effect.fnUntraced(function*(
 })
 
 describe("desired topology", () => {
+  for (const deleteByReference of [false, true]) {
+    it.effect(`deleting a queue by ${deleteByReference ? "reference" : "name"} removes all desired consumers before cancel`, () =>
+      Effect.gen(function*() {
+        const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+        const owner = {}
+        const consumerOwner = {}
+        const aliasOwner = {}
+        const stringOwner = {}
+        const routingOwner = {}
+        const deleted = topology.queueDeclared(owner, "", { exclusive: true }, reply("deleted"))
+        const alias = topology.queueDeclared(aliasOwner, "deleted", {}, reply("deleted"))
+        const surviving = topology.queueDeclared(consumerOwner, "surviving", {}, reply("surviving"))
+        topology.addConsumer(consumerOwner, deleted)
+        topology.addConsumer(consumerOwner, surviving)
+        topology.addConsumer(aliasOwner, alias)
+        topology.addConsumer(stringOwner, "deleted")
+        topology.exchangeDeclared(routingOwner, exchange("source"))
+        topology.exchangeDeclared(routingOwner, exchange("destination"))
+        yield* applyBinding(topology, routingOwner, { ...binding(deleted), source: "destination" }, false)
+        yield* applyBinding(topology, routingOwner, {
+          source: "source",
+          destination: "destination",
+          routingKey: "key",
+          arguments: {}
+        }, false)
+        topology.remove(routingOwner)
+        const cancelled = topology.queueDeleted(deleteByReference ? deleted : "deleted")
+        // No broker cancel is needed to make the desired graph safe for immediate recovery.
+        const observed = recorder()
+        yield* topology.restore(
+          [owner, consumerOwner, aliasOwner, stringOwner],
+          () => observed.restorer,
+          (_owner, error) => Effect.fail(error)
+        )
+        expect(observed.consumers).toEqual(["surviving"])
+        expect(observed.queues).toEqual([{ requested: "surviving", options: {} }])
+        expect(observed.bindings).toEqual([])
+        expect(observed.exchanges).toEqual([])
+        expect(cancelled).toEqual([deleted, alias, "deleted"])
+        expect(Array.from(topology.consumers(consumerOwner))).toEqual([surviving])
+        expect(topology.consumers(aliasOwner).size).toBe(0)
+        expect(topology.consumers(stringOwner).size).toBe(0)
+        expect(topology.queueDeleted(deleted)).toEqual([])
+      }))
+  }
+
+  it.effect("retains closed-owner exclusive declarations and releases them after the last consumer", () =>
+    Effect.gen(function*() {
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+      const owner = {}
+      const first = {}
+      const last = {}
+      const queue = topology.queueDeclared(owner, "", { exclusive: true }, reply("old"))
+      topology.addConsumer(first, queue)
+      topology.addConsumer(last, queue)
+      topology.remove(owner)
+      const observed = recorder()
+      yield* topology.restore([first, last], () => observed.restorer, (_owner, error) => Effect.fail(error))
+      expect(observed.queues).toEqual([{ requested: "", options: { exclusive: true } }])
+      expect(observed.consumers).toEqual(["owner-regenerated", "owner-regenerated"])
+      expect(queue.queue).toBe("owner-regenerated")
+      topology.remove(first)
+      const transferred = recorder([], "last")
+      yield* topology.restore([last], () => transferred.restorer, (_owner, error) => Effect.fail(error))
+      expect(queue.queue).toBe("last-regenerated")
+      topology.removeConsumer(last, queue)
+      const after = recorder()
+      yield* topology.restore([last, owner, first], () => after.restorer, (_owner, error) => Effect.fail(error))
+      expect(after.queues).toEqual([])
+      expect(after.consumers).toEqual([])
+    }))
+
+  it.effect("retains transitive upstream routing across closed owners and prunes it with the last dependency", () =>
+    Effect.gen(function*() {
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+      const declarations = {}
+      const routing = {}
+      const consumer = {}
+      const queue = topology.queueDeclared(declarations, "", { exclusive: true }, reply("old"))
+      topology.exchangeDeclared(declarations, exchange("source"))
+      topology.exchangeDeclared(declarations, exchange("destination"))
+      yield* applyBinding(topology, routing, { ...binding(queue), source: "destination" }, false)
+      yield* applyBinding(topology, routing, {
+        source: "source",
+        destination: "destination",
+        routingKey: "key",
+        arguments: {}
+      }, false)
+      topology.addConsumer(consumer, queue)
+      topology.remove(declarations)
+      topology.remove(routing)
+      const observed = recorder()
+      yield* topology.restore([consumer], () => observed.restorer, (_owner, error) => Effect.fail(error))
+      expect(observed.exchanges).toEqual([exchange("source"), exchange("destination")])
+      expect(observed.bindings).toHaveLength(2)
+      expect(observed.queues).toHaveLength(1)
+      topology.remove(consumer)
+      const after = recorder()
+      yield* topology.restore(
+        [consumer, routing, declarations],
+        () => after.restorer,
+        (_owner, error) => Effect.fail(error)
+      )
+      expect(after.exchanges).toEqual([])
+      expect(after.queues).toEqual([])
+      expect(after.bindings).toEqual([])
+    }))
+
+  for (const reference of [false, true]) {
+    it.effect(`retains declarations for another owner's ${reference ? "reference" : "string"} binding until unbound`, () =>
+      Effect.gen(function*() {
+        const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+        const owner = {}
+        const survivor = {}
+        const queue = topology.queueDeclared(owner, "named", { exclusive: true }, reply("named"))
+        topology.exchangeDeclared(owner, exchange("source"))
+        const value = binding(reference ? queue : "named")
+        yield* applyBinding(topology, survivor, value, false)
+        topology.remove(owner)
+        const before = recorder()
+        yield* topology.restore([survivor], () => before.restorer, (_owner, error) => Effect.fail(error))
+        expect(before.queues).toHaveLength(1)
+        expect(before.exchanges).toEqual([exchange("source")])
+        yield* applyBinding(topology, survivor, value, true)
+        const after = recorder()
+        yield* topology.restore([survivor], () => after.restorer, (_owner, error) => Effect.fail(error))
+        expect(after.queues).toEqual([])
+        expect(after.exchanges).toEqual([])
+      }))
+  }
+
+  it.effect("retains both exchange binding endpoints and respects explicit deletion of inherited declarations", () =>
+    Effect.gen(function*() {
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+      const owner = {}
+      const survivor = {}
+      topology.exchangeDeclared(owner, exchange("source"))
+      topology.exchangeDeclared(owner, exchange("destination"))
+      yield* applyBinding(topology, survivor, {
+        source: "source",
+        destination: "destination",
+        routingKey: "key",
+        arguments: {}
+      }, false)
+      topology.remove(owner)
+      const before = recorder()
+      yield* topology.restore([survivor], () => before.restorer, (_owner, error) => Effect.fail(error))
+      expect(before.exchanges).toEqual([exchange("source"), exchange("destination")])
+      topology.exchangeDeleted("source")
+      const after = recorder()
+      yield* topology.restore([survivor], () => after.restorer, (_owner, error) => Effect.fail(error))
+      expect(after.exchanges).toEqual([])
+      expect(after.bindings).toEqual([])
+      const queue = topology.queueDeclared(owner, "", { exclusive: true }, reply("temporary"))
+      yield* applyBinding(topology, survivor, binding(queue), false)
+      topology.remove(owner)
+      topology.queueDeleted(queue)
+      const deleted = recorder()
+      yield* topology.restore([survivor], () => deleted.restorer, (_owner, error) => Effect.fail(error))
+      expect(deleted.queues).toEqual([])
+      expect(deleted.bindings).toEqual([])
+    }))
+
+  it.effect("promotes inherited declarations to explicit ownership after a successful redeclaration", () =>
+    Effect.gen(function*() {
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
+      const owner = {}
+      const survivor = {}
+      const queue = topology.queueDeclared(owner, "named", {}, reply("named"))
+      topology.addConsumer(survivor, queue)
+      topology.remove(owner)
+      expect(topology.queueDeclared(survivor, "named", {}, reply("named"))).toBe(queue)
+      topology.removeConsumer(survivor, queue)
+      const observed = recorder()
+      yield* topology.restore([survivor], () => observed.restorer, (_owner, error) => Effect.fail(error))
+      expect(observed.queues).toEqual([{ requested: "named", options: {} }])
+    }))
+
+  it.effect("snapshots option getters once and reports throwing reflection as a protocol failure", () =>
+    Effect.gen(function*() {
+      let reads = 0
+      const copied = yield* DesiredTopology.snapshotOptions({
+        get arguments() {
+          reads++
+          return { value: reads }
+        }
+      })
+      expect(reads).toBe(1)
+      expect(copied.arguments).toEqual({ value: 1 })
+      const throwing = new Proxy({}, { ownKeys: () => JSON.parse("{") })
+      const failure = yield* DesiredTopology.snapshotOptions(throwing).pipe(Effect.flip)
+      expect(failure._tag).toBe("AMQPProtocolError")
+    }))
+
   it.effect("prepares immutable binding arguments before the broker wait and commits without another Effect", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const arguments_ = { nested: { label: "before" } }
       const prepared = yield* topology.prepareBinding(owner, binding("queue", arguments_), false)
@@ -91,7 +285,7 @@ describe("desired topology", () => {
 
   it.effect("restores global phases and regenerates cross-channel references before dependent work", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const first = {}
       const second = {}
       const events: Array<string> = []
@@ -143,7 +337,7 @@ describe("desired topology", () => {
 
   it.effect("deduplicates canonical nested arguments without erasing AMQP field types", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const observed = recorder()
       const original = binding("queue", {
@@ -180,7 +374,7 @@ describe("desired topology", () => {
 
   it.effect("unbinds resolved queue names across owners while retaining different arguments", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const first = {}
       const second = {}
       const queue = topology.queueDeclared(first, "", {}, reply("resolved"))
@@ -197,7 +391,7 @@ describe("desired topology", () => {
 
   it.effect("deduplicates and unbinds tables with distinct Unicode keys regardless of insertion order", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const first = binding("queue", { nested: { "\u00e9": 1, "e\u0301": 2 } })
       const reversed = binding("queue", { nested: { "e\u0301": 2, "\u00e9": 1 } })
@@ -214,7 +408,7 @@ describe("desired topology", () => {
 
   it.effect("treats argument tables as tables even when they contain decimal-shaped metadata", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const original = binding("queue", { _tag: "Decimal", scale: 1, value: 2 })
       const reversed = binding("queue", { value: 2, scale: 1, _tag: "Decimal" })
@@ -231,7 +425,7 @@ describe("desired topology", () => {
 
   it.effect("deletes matching queues and bindings globally without removing other declarations", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const first = {}
       const second = {}
       const deleted = topology.queueDeclared(first, "", {}, reply("deleted"))
@@ -254,7 +448,7 @@ describe("desired topology", () => {
 
   it.effect("deletes exchange declarations and source or destination bindings across owners", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const first = {}
       const second = {}
       for (const owner of [first, second]) topology.exchangeDeclared(owner, exchange("deleted"))
@@ -279,7 +473,7 @@ describe("desired topology", () => {
 
   it.effect("does not restore unregistered consumers or removed owners' declarations", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const removed = {}
       const survivor = {}
       topology.exchangeDeclared(removed, exchange("removed"))
@@ -302,7 +496,7 @@ describe("desired topology", () => {
 
   it.effect("lets owner error policy disable later phases while surviving owners complete", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const failed = {}
       const survivor = {}
       for (const owner of [failed, survivor]) {
@@ -339,7 +533,7 @@ describe("desired topology", () => {
 
   it.effect("snapshots nested dates, bytes, arrays and decimals before waiting for a declaration reply", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const date = new Date(1000)
       const bytes = new Uint8Array([1, 2])
@@ -376,7 +570,7 @@ describe("desired topology", () => {
 
   it.effect("copies Buffer views rather than retaining their mutable backing storage", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       const backing = Buffer.from([1, 2, 3, 4])
       const snapshot = yield* DesiredTopology.snapshotOptions({
@@ -394,7 +588,7 @@ describe("desired topology", () => {
 
   it.effect("keeps named references stable, anonymous declarations distinct and ephemeral status current", () =>
     Effect.gen(function*() {
-      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>()
+      const topology = DesiredTopology.make<object, AMQPTopology.QueueName>((queue) => queue)
       const owner = {}
       expect(topology.hasEphemeralQueues(owner)).toBe(false)
       const named = topology.queueDeclared(owner, "named", {}, reply("named"))

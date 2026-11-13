@@ -42,6 +42,58 @@ const protocolError = (result: Result.Result<unknown, AMQPProtocolError>): void 
 }
 
 describe("delivery settlement ownership", () => {
+  it.effect("recover revokes only unstaged receipts and preserves transactional settlement credit", () =>
+    Effect.gen(function*() {
+      const { ledger, origin, owner, register } = setup()
+      const staged = yield* Effect.fromResult(register(1))
+      const unstaged = yield* Effect.fromResult(register(2))
+      ledger.commit(origin, BigInt(1), false, true)
+      ledger.recover(origin)
+      settlementError(ledger.validate(owner, staged), "AlreadySettled")
+      settlementError(ledger.validate(owner, unstaged), "Stale")
+      expect(ledger.count(origin)).toBe(1)
+      ledger.transaction(origin, "Rollback")
+      expect((yield* Effect.fromResult(ledger.validate(owner, staged))).tag).toBe(BigInt(1))
+      expect(DeliverySettlement.isActive(staged)).toBe(true)
+      settlementError(ledger.validate(owner, unstaged), "Stale")
+      const redelivery = yield* Effect.fromResult(register(3))
+      expect(ledger.count(origin)).toBe(2)
+      ledger.retire(origin)
+      settlementError(ledger.validate(owner, staged), "Stale")
+      settlementError(ledger.validate(owner, redelivery), "Stale")
+      expect(ledger.count(origin)).toBe(0)
+    }))
+
+  it.effect("keeps transactional settlements bounded and restores their authority on rollback", () =>
+    Effect.gen(function*() {
+      const { ledger, origin, owner, register } = setup()
+      const message = yield* Effect.fromResult(register(1))
+      ledger.commit(origin, BigInt(1), false, true)
+      settlementError(ledger.validate(owner, message), "AlreadySettled")
+      expect(ledger.count(origin)).toBe(1)
+      ledger.transaction(origin, "Rollback")
+      expect((yield* Effect.fromResult(ledger.validate(owner, message))).tag).toBe(BigInt(1))
+      ledger.commit(origin, BigInt(1), false, true)
+      ledger.transaction(origin, "Commit")
+      expect(ledger.count(origin)).toBe(0)
+      settlementError(ledger.validate(owner, message), "AlreadySettled")
+    }))
+
+  it.effect("auto-acknowledged deliveries have no outstanding settlement authority", () =>
+    Effect.gen(function*() {
+      const { ledger, origin, owner } = setup()
+      const message = {}
+      yield* Effect.fromResult(ledger.register(origin, message, BigInt(1), { noAck: true }))
+      expect(ledger.count(origin)).toBe(0)
+      const result = ledger.validate(owner, message)
+      expect(Result.isFailure(result)).toBe(true)
+      if (Result.isFailure(result)) expect(result.failure.kind).toBe("AutoAcknowledged")
+      expect(ledger.revoke(message)).toBeUndefined()
+      expect(DeliverySettlement.isActive(message)).toBe(true)
+      ledger.retire(origin)
+      expect(DeliverySettlement.isActive(message)).toBe(false)
+    }))
+
   it.effect("binds authority to object identity and owner, not copied message fields", () =>
     Effect.gen(function*() {
       const { ledger, origin, owner, register } = setup()

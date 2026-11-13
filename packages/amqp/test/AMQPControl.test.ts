@@ -97,7 +97,7 @@ describe("AMQP native control and faults", () => {
       const frame = yield* Fiber.join(heartbeat)
       expect(frame.channel).toBe(0)
       expect(frame.payload.length).toBe(0)
-      yield* TestClock.adjust("5 seconds")
+      yield* TestClock.adjust("2 seconds")
       const replacement = yield* Queue.take(broker.sessions)
       yield* connection.awaitReady
       expect((yield* connection.state).generation).toBeGreaterThan(generation)

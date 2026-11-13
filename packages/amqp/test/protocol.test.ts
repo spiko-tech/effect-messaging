@@ -16,6 +16,111 @@ const malformed = Effect.fnUntraced(function*(effect: Effect.Effect<unknown, AMQ
 })
 
 describe("AMQP protocol vocabulary", () => {
+  it.effect("retains the sealed budgeted decode graph through repeated field validation", () =>
+    Effect.gen(function*() {
+      const frame = yield* Codec.encodeMethod(1, Protocol.QueueBind, {
+        arguments: { nested: [new Uint8Array([1]), "text"] }
+      })
+      const decoded = yield* Codec.decodeMethod(payload(frame))
+      const first = yield* Protocol.decodeFields(Protocol.QueueBind, decoded.fields)
+      const second = yield* Protocol.decodeFields(Protocol.QueueBind, decoded.fields)
+      expect(first.arguments).toBe(decoded.fields.arguments)
+      expect(second.arguments).toBe(decoded.fields.arguments)
+      expect(Reflect.defineProperty(decoded.fields, "queue", { get: () => "changed" })).toBe(false)
+    }))
+  it.effect("charges repeated string wire expansion during the snapshot, before semantic validation", () =>
+    Effect.gen(function*() {
+      const text = "x".repeat(1024 * 1024)
+      expect(Result.isFailure(yield* Effect.result(Protocol.snapshotInput({ values: Array(17).fill(text) })))).toBe(
+        true
+      )
+      const shared = { text }
+      expect(
+        Result.isFailure(
+          yield* Effect.result(Protocol.snapshotInput({ values: Array.from({ length: 17 }, () => shared) }))
+        )
+      ).toBe(
+        true
+      )
+    }))
+
+  it.effect("guards decoded field getters and nested scalar getters without re-reading them", () =>
+    Effect.gen(function*() {
+      const fields = {
+        get active() {
+          return Reflect.get(null as never, "value")
+        }
+      }
+      yield* malformed(Protocol.decodeFields(Protocol.ChannelFlow, fields))
+      let reads = 0
+      expect(
+        yield* Protocol.decodeFields(Protocol.ChannelFlow, {
+          get active() {
+            return ++reads === 1 ? true : 1
+          }
+        })
+      )
+        .toEqual({ active: true })
+      expect(reads).toBe(1)
+      const nested = {
+        [Symbol.for("@effect-messaging/amqp/FieldInteger")]: Symbol.for("@effect-messaging/amqp/FieldInteger"),
+        type: "uint8",
+        get value() {
+          return Reflect.get(null as never, "value")
+        }
+      }
+      yield* malformed(
+        Protocol.decodeFields(Protocol.QueueBind, {
+          reserved1: 0,
+          queue: "q",
+          exchange: "e",
+          routingKey: "r",
+          noWait: false,
+          arguments: { nested }
+        })
+      )
+    }))
+  it.effect("returns an isolated validated field-table snapshot for retained topology", () =>
+    Effect.gen(function*() {
+      let reads = 0
+      const bytes = new Uint8Array([1, 2])
+      const date = new Date(1000)
+      const input = {
+        get value() {
+          return ++reads
+        },
+        nested: [{ bytes, date }]
+      }
+      const effect = Protocol.snapshotFieldTable(input)
+      const snapshot = yield* effect
+      expect(reads).toBe(1)
+      expect(snapshot).toEqual({ value: 1, nested: [{ bytes, date }] })
+      bytes[0] = 9
+      date.setTime(2000)
+      expect(snapshot).toEqual({ value: 1, nested: [{ bytes: new Uint8Array([1, 2]), date: new Date(1000) }] })
+      expect((yield* effect).value).toBe(2)
+    }))
+
+  it.effect("encodes transaction controls and binary authentication challenges with independent golden bytes", () =>
+    Effect.gen(function*() {
+      for (
+        const [descriptor, methodId] of [
+          [Protocol.TxSelect, 10],
+          [Protocol.TxSelectOk, 11],
+          [Protocol.TxCommit, 20],
+          [Protocol.TxCommitOk, 21],
+          [Protocol.TxRollback, 30],
+          [Protocol.TxRollbackOk, 31]
+        ] as const
+      ) {
+        expect(payload(yield* Codec.encodeMethod(1, descriptor))).toEqual(new Uint8Array([0, 90, 0, methodId]))
+      }
+      expect(payload(yield* Codec.encodeMethod(0, Protocol.ConnectionSecure, { challenge: new Uint8Array([0, 255]) })))
+        .toEqual(new Uint8Array([0, 10, 0, 20, 0, 0, 0, 2, 0, 255]))
+      expect(payload(yield* Codec.encodeMethod(0, Protocol.ConnectionSecureOk, { response: new Uint8Array([0, 255]) })))
+        .toEqual(new Uint8Array([0, 10, 0, 21, 0, 0, 0, 2, 0, 255]))
+    }))
+
   it("preserves recursively validated table, array and byte identities without rebuilding the graph", () => {
     const bytes = new Uint8Array([0, 255])
     const array: ReadonlyArray<AMQPTypes.FieldValue> = [bytes, { _tag: "Decimal", scale: 256, value: -1 }]
@@ -267,8 +372,8 @@ describe("AMQP protocol vocabulary", () => {
   it.effect("resolves every named method to one stable immutable descriptor", () =>
     Effect.gen(function*() {
       const descriptors = Object.values(Protocol.methods)
-      expect(descriptors).toHaveLength(56)
-      expect(new Set(descriptors.map((value) => `${value.classId}:${value.methodId}`)).size).toBe(56)
+      expect(descriptors).toHaveLength(64)
+      expect(new Set(descriptors.map((value) => `${value.classId}:${value.methodId}`)).size).toBe(64)
       for (const [name, descriptor] of Object.entries(Protocol.methods)) {
         expect(descriptor.name).toBe(name)
         expect(yield* Protocol.lookup(descriptor.classId, descriptor.methodId)).toBe(descriptor)
@@ -324,7 +429,9 @@ describe("AMQP protocol vocabulary", () => {
     Effect.gen(function*() {
       type Relationship = readonly [Protocol.MethodDescriptor, ReadonlyArray<Protocol.MethodDescriptor>]
       const relationships: ReadonlyArray<Relationship> = [
-        [Protocol.ConnectionStartOk, [Protocol.ConnectionTune]],
+        [Protocol.ConnectionStartOk, [Protocol.ConnectionTune, Protocol.ConnectionSecure]],
+        [Protocol.ConnectionSecure, [Protocol.ConnectionSecureOk]],
+        [Protocol.ConnectionSecureOk, [Protocol.ConnectionTune, Protocol.ConnectionSecure]],
         [Protocol.ConnectionOpen, [Protocol.ConnectionOpenOk]],
         [Protocol.ConnectionClose, [Protocol.ConnectionCloseOk]],
         [Protocol.ConnectionUpdateSecret, [Protocol.ConnectionUpdateSecretOk]],
@@ -345,7 +452,10 @@ describe("AMQP protocol vocabulary", () => {
         [Protocol.BasicCancel, [Protocol.BasicCancelOk]],
         [Protocol.BasicGet, [Protocol.BasicGetOk, Protocol.BasicGetEmpty]],
         [Protocol.BasicRecover, [Protocol.BasicRecoverOk]],
-        [Protocol.ConfirmSelect, [Protocol.ConfirmSelectOk]]
+        [Protocol.ConfirmSelect, [Protocol.ConfirmSelectOk]],
+        [Protocol.TxSelect, [Protocol.TxSelectOk]],
+        [Protocol.TxCommit, [Protocol.TxCommitOk]],
+        [Protocol.TxRollback, [Protocol.TxRollbackOk]]
       ]
       for (const [request, replies] of relationships) {
         expect(request.replies).toEqual(replies)
@@ -359,7 +469,7 @@ describe("AMQP protocol vocabulary", () => {
 
   it.effect("keeps unsupported method coverage and encoding validation unchanged", () =>
     Effect.gen(function*() {
-      for (const [classId, methodId] of [[10, 20], [10, 21], [90, 10]]) {
+      for (const [classId, methodId] of [[10, 22], [90, 12], [90, 40]]) {
         yield* malformed(Protocol.lookup(classId, methodId))
         yield* malformed(Codec.encodeMethod(0, classId, methodId))
         yield* malformed(Codec.decodeMethod(new Uint8Array([0, classId, 0, methodId])))

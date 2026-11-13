@@ -5,6 +5,7 @@
   "include": [
     "**/vitest.*.ts", // All vitest config files across all packages
     "./scripts/test/**/*.ts",
+    "./test/**/*.ts",
     "./packages/*/test/**/*.ts",
     "./packages/*/test/**/*.json",
     "./packages/*/typetest/**/*.ts",

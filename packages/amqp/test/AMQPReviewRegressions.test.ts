@@ -42,7 +42,7 @@ describe("AMQP review regressions", () => {
       yield* session.pauseWrites
       yield* TestClock.adjust("1 second")
       yield* Queue.take(session.stalledWrites)
-      yield* TestClock.adjust("5 seconds")
+      yield* TestClock.adjust("1 second")
       const replacement = yield* Queue.take(broker.sessions)
       yield* connection.awaitReady
       expect(replacement).not.toBe(session)

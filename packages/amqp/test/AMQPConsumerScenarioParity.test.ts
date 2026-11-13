@@ -8,8 +8,6 @@ import * as AMQPSubscriber from "../src/AMQPSubscriber.ts"
 import * as AMQPSubscriberResponse from "../src/AMQPSubscriberResponse.ts"
 import { expectFailure } from "./assertions.ts"
 
-// Reference noAck and callback/helper facades are intentionally unsupported.
-// These scenarios exercise their supported manual-settlement/Stream counterparts only.
 import { broker, decode, encode } from "./dependencies.ts"
 
 const fixture = Effect.fnUntraced(function*(prefetch = 1) {
@@ -222,7 +220,7 @@ describe("AMQP supported consumer scenario parity", { concurrent: false }, () =>
   )
 
   it.live(
-    "C-T55: preloads 100000 five-byte messages sequentially before manual consumer drain with frameMax 8192",
+    "C-T55: preloads 100000 five-byte messages sequentially before automatic-ack consumer drain with frameMax 8192",
     () =>
       Effect.gen(function*() {
         const connection = yield* AMQPNodeConnection.make({ ...broker, frameMax: 8192 })
@@ -238,15 +236,14 @@ describe("AMQP supported consumer scenario parity", { concurrent: false }, () =>
         }))
         expect(preloaded.messageCount).toBe(100000)
         expect(preloaded.consumerCount).toBe(0)
-        const stream = yield* channel.consume(queue, { prefetch: 256 })
+        const stream = yield* channel.consume(queue, { noAck: true, prefetch: 0, maxBufferedMessages: 100000 })
         let count = 0
         yield* stream.pipe(
           Stream.take(100000),
           Stream.runForEach((message) =>
-            Effect.gen(function*() {
+            Effect.sync(() => {
               expect(message.content).toEqual(body)
               expect(message.fields.deliveryTag).toBe(BigInt(++count))
-              yield* channel.ack(message)
             })
           )
         )

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "@effect/vitest"
 import { Cause, Deferred, Effect, Exit, Fiber, Queue, Ref, Stream } from "effect"
 import * as Socket from "effect/socket/Socket"
+import * as TestClock from "effect/testing/TestClock"
 import * as AMQPChannel from "../src/AMQPChannel.ts"
 import * as AMQPConnection from "../src/AMQPConnection.ts"
 import * as AMQPConsumeMessage from "../src/AMQPConsumeMessage.ts"
@@ -122,6 +123,55 @@ const gatedPeer = Effect.fnUntraced(function*(replyMethod: 11 | 21) {
 })
 
 describe("AMQP consumer controlled-peer fault parity", () => {
+  it.effect.each(["completion", "timeout"] as const)(
+    "actual subscriber cancels consumption before draining an admitted handler (%s)",
+    (mode) =>
+      Effect.gen(function*() {
+        const broker = yield* makeBroker({ automaticTopology: true })
+        const connection = yield* AMQPConnection.make(broker.factory)
+        const channel = yield* connection.createChannel()
+        const session = yield* Queue.take(broker.sessions)
+        yield* channel.assertQueue("adapter-retirement")
+        const started = yield* Deferred.make<void>()
+        const finish = yield* Deferred.make<void>()
+        const finalized = yield* Deferred.make<void>()
+        const events: Array<string> = []
+        const subscriber = yield* AMQPSubscriber.make("adapter-retirement", {
+          concurrency: 1,
+          ...(mode === "timeout" ? { handlerTimeout: "1 second" } : {})
+        }).pipe(Effect.provideService(AMQPChannel.AMQPChannel, channel))
+        const fiber = yield* subscriber.subscribe(
+          Effect.gen(function*() {
+            const span = yield* Effect.currentSpan
+            expect(span.name).toBe("amqp.consume adapter-retirement")
+            yield* Deferred.succeed(started, undefined)
+            yield* Deferred.await(finish)
+            events.push("handler finished")
+            return AMQPSubscriberResponse.ack()
+          }).pipe(Effect.ensuring(Deferred.succeed(finalized, undefined)))
+        ).pipe(Effect.forkScoped)
+        yield* Effect.addFinalizer(() => Deferred.succeed(finish, undefined))
+        const registration = yield* nextMethod(session, 60, 20)
+        yield* deliver(session, registration.channel, 1n, "held", "cancel-before-drain")
+        yield* Deferred.await(started)
+        yield* Effect.sync(() => fiber.interruptUnsafe())
+        yield* nextMethod(session, 60, 30)
+        events.push("consumer cancelled")
+        expect(fiber.pollUnsafe()).toBeUndefined()
+        expect(yield* Deferred.isDone(finalized)).toBe(false)
+        if (mode === "timeout") yield* TestClock.adjust("1 second")
+        else yield* Deferred.succeed(finish, undefined)
+        const exit = yield* Fiber.await(fiber)
+        expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+        expect(yield* Deferred.isDone(finalized)).toBe(true)
+        expect(events).toEqual(
+          mode === "timeout"
+            ? ["consumer cancelled"]
+            : ["consumer cancelled", "handler finished"]
+        )
+      }).pipe(Effect.scoped)
+  )
+
   it.live("R-C05 adversarial peer projection: actual subscriber never admits retired original green after channel failure", () =>
     Effect.gen(function*() {
       const broker = yield* makeBroker({ automaticTopology: true })

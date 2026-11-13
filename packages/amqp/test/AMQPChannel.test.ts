@@ -103,7 +103,7 @@ describe("AMQPChannel", () => {
           count: 42,
           maximum: BigInt("9223372036854775807"),
           minimum: BigInt("-9223372036854775808"),
-          decimal: AMQPTypes.decimal(2, 4294967295)
+          decimal: AMQPTypes.decimal(2, -1)
         }
       })
       yield* channel.ack(result.value)

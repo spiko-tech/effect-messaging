@@ -20,33 +20,35 @@ describe("AMQP real broker parity", () => {
         }))
         const expected = new Map(payloads.map((message) => [message.id, message.content]))
         const received = new Set<string>()
-        const stream = yield* channel.consume(queue, { prefetch: 64 })
-        const consuming = yield* stream.pipe(
-          Stream.take(100000),
-          Stream.runForEach((message) =>
-            Effect.gen(function*() {
-              const id = message.properties.messageId
-              expect(id).toBeDefined()
-              if (id === undefined) return
-              expect(expected.has(id)).toBe(true)
-              expect(received.has(id)).toBe(false)
-              expect(message.content).toEqual(expected.get(id))
-              received.add(id)
-              yield* channel.ack(message)
-            })
-          ),
-          Effect.forkChild
-        )
+        let mismatches = 0
+        const sameBytes = (left: Uint8Array, right: Uint8Array) =>
+          left.length === right.length && left.every((byte, index) => byte === right[index])
         yield* Effect.forEach(
           payloads,
           (message) => channel.sendToQueue(queue, message.content, { messageId: message.id }),
           { concurrency: 32, discard: true }
         )
-        yield* Fiber.join(consuming)
+        const stream = yield* channel.consume(queue, { noAck: true, maxBufferedMessages: 100000 })
+        yield* stream.pipe(
+          Stream.take(100000),
+          Stream.runForEach((message) =>
+            Effect.gen(function*() {
+              const id = message.properties.messageId
+              const content = id === undefined ? undefined : expected.get(id)
+              if (
+                id === undefined || content === undefined || received.has(id) || !sameBytes(message.content, content)
+              ) {
+                mismatches++
+              }
+              if (id !== undefined) received.add(id)
+            })
+          )
+        )
+        expect(mismatches).toBe(0)
         expect(received.size).toBe(100000)
         expect(received).toEqual(new Set(expected.keys()))
         expect(yield* channel.get(queue)).toEqual(Option.none())
-      }).pipe(Effect.provide(testConfirmChannel)),
+      }).pipe(Effect.scoped, Effect.provide(testConfirmChannel)),
     120000
   )
 
@@ -91,7 +93,7 @@ describe("AMQP real broker parity", () => {
         ])
         expect(yield* channel.get(source)).toEqual(Option.none())
         expect(yield* channel.get(destination)).toEqual(Option.none())
-      }).pipe(Effect.provide(testConfirmChannel)), 15000)
+      }).pipe(Effect.scoped, Effect.provide(testConfirmChannel)), 15000)
   }
 
   it.live(
@@ -240,7 +242,7 @@ describe("AMQP real broker parity", () => {
         expect(returned[0].content).toEqual(new Uint8Array())
         expect(returned[1].properties.messageId).toBe("next")
         expect(decode(returned[1].content)).toBe("following")
-      }).pipe(Effect.provide(testConfirmChannel)),
+      }).pipe(Effect.scoped, Effect.provide(testConfirmChannel)),
     15000
   )
 
@@ -274,7 +276,7 @@ describe("AMQP real broker parity", () => {
         expect(decode((yield* Queue.take(deliveries)).content)).toBe("still-usable")
         expect((yield* channel.checkQueue(retained)).consumerCount).toBe(1)
         expect((yield* channel.connection.state).state).toBe("Ready")
-      }).pipe(Effect.provide(testConfirmChannel)),
+      }).pipe(Effect.scoped, Effect.provide(testConfirmChannel)),
     15000
   )
 

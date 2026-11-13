@@ -34,17 +34,21 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
     readonly capability: Capability<Origin>
     settled = false
     revoked = false
+    readonly noAck: boolean
 
-    constructor(origin: Origin, tag: bigint) {
+    constructor(origin: Origin, tag: bigint, noAck: boolean) {
       this.capability = Object.freeze({ origin, tag })
+      this.noAck = noAck
     }
 
     get active(): boolean {
-      return !this.settled && !this.revoked && options.isActive(this.capability.origin)
+      return !this.settled && !this.revoked && channels.get(this.capability.origin)?.retired !== true &&
+        options.isActive(this.capability.origin)
     }
   }
   interface Channel {
     readonly outstanding: Map<bigint, Entry>
+    readonly staged: Map<bigint, Entry>
     lastTag: bigint
     retired: boolean
   }
@@ -56,14 +60,21 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
     const channel = channels.get(origin)
     if (channel === undefined) return
     for (const entry of channel.outstanding.values()) entry.revoked = true
+    for (const entry of channel.staged.values()) entry.revoked = true
     channel.outstanding.clear()
+    channel.staged.clear()
   }
 
   return {
-    register(origin: Origin, message: Message, tag: bigint): Result.Result<void, AMQPProtocolError> {
+    register(
+      origin: Origin,
+      message: Message,
+      tag: bigint,
+      deliveryOptions: { readonly noAck?: boolean } = {}
+    ): Result.Result<void, AMQPProtocolError> {
       let channel = channels.get(origin)
       if (channel === undefined) {
-        channel = { outstanding: new Map(), lastTag: BigInt(0), retired: false }
+        channel = { outstanding: new Map(), staged: new Map(), lastTag: BigInt(0), retired: false }
       }
       // A gracefully closing logical channel may still receive deliveries before cancel-ok.
       // Its owner decides whether settlement is allowed; only physical retirement ends registration.
@@ -76,17 +87,25 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
       if (messages.has(message)) {
         return Result.fail(new AMQPProtocolError({ reason: "Delivery message already registered" }))
       }
-      const entry = new Entry(origin, tag)
+      const entry = new Entry(origin, tag, deliveryOptions.noAck === true)
       channels.set(origin, channel)
       channel.lastTag = tag
       messages.set(message, entry)
       activities.set(message, entry)
-      channel.outstanding.set(tag, entry)
+      if (!entry.noAck) channel.outstanding.set(tag, entry)
       return Result.succeed(undefined)
     },
 
     validate(owner: Owner, message: Message): Result.Result<Capability<Origin>, AMQPSettlementError> {
       const entry = messages.get(message)
+      if (entry?.noAck === true) {
+        return Result.fail(
+          new AMQPSettlementError({
+            kind: "AutoAcknowledged",
+            reason: "Automatically acknowledged deliveries cannot be settled"
+          })
+        )
+      }
       if (
         entry === undefined || entry.revoked || channels.get(entry.capability.origin)?.retired ||
         options.ownerOf(entry.capability.origin) !== owner || !options.isActive(entry.capability.origin)
@@ -108,7 +127,7 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
 
     revoke(message: Message): Capability<Origin> | undefined {
       const entry = messages.get(message)
-      if (entry === undefined || entry.settled || entry.revoked) return undefined
+      if (entry === undefined || entry.noAck || entry.settled || entry.revoked) return undefined
       entry.revoked = true
       channels.get(entry.capability.origin)?.outstanding.delete(entry.capability.tag)
       return entry.capability
@@ -116,23 +135,33 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
 
     revokeAll,
 
+    recover(origin: Origin): void {
+      const channel = channels.get(origin)
+      if (channel === undefined) return
+      // basic.recover does not cancel staged transactional acknowledgements or rejections.
+      // Their original receipts must remain available if the transaction is subsequently rolled back.
+      for (const entry of channel.outstanding.values()) entry.revoked = true
+      channel.outstanding.clear()
+    },
+
     retire(origin: Origin): void {
       revokeAll(origin)
       const channel = channels.get(origin)
       if (channel === undefined) {
-        channels.set(origin, { outstanding: new Map(), lastTag: BigInt(0), retired: true })
+        channels.set(origin, { outstanding: new Map(), staged: new Map(), lastTag: BigInt(0), retired: true })
       } else {
         channel.retired = true
       }
     },
 
-    commit(origin: Origin, tag: bigint, multiple = false): void {
+    commit(origin: Origin, tag: bigint, multiple = false, transactional = false): void {
       const channel = channels.get(origin)
       if (channel === undefined) return
       if (!multiple) {
         const entry = channel.outstanding.get(tag)
         if (entry !== undefined) {
           entry.settled = true
+          if (transactional) channel.staged.set(tag, entry)
           channel.outstanding.delete(tag)
         }
         return
@@ -140,13 +169,27 @@ export const make = <Message extends object, Origin extends object, Owner>(optio
       for (const [deliveryTag, entry] of channel.outstanding) {
         if (tag === BigInt(0) || deliveryTag <= tag) {
           entry.settled = true
+          if (transactional) channel.staged.set(deliveryTag, entry)
           channel.outstanding.delete(deliveryTag)
         }
       }
     },
 
+    transaction(origin: Origin, action: "Commit" | "Rollback"): void {
+      const channel = channels.get(origin)
+      if (channel === undefined) return
+      if (action === "Rollback") {
+        for (const [tag, entry] of channel.staged) {
+          entry.settled = false
+          channel.outstanding.set(tag, entry)
+        }
+      }
+      channel.staged.clear()
+    },
+
     count(origin: Origin): number {
-      return channels.get(origin)?.outstanding.size ?? 0
+      const channel = channels.get(origin)
+      return channel === undefined ? 0 : channel.outstanding.size + channel.staged.size
     }
   }
 }

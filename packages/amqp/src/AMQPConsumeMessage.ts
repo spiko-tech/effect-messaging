@@ -6,6 +6,9 @@ import * as Layer from "effect/Layer"
 import type * as AMQPTypes from "./AMQPTypes.ts"
 
 /**
+ * One received body and its AMQP properties. Delivery tags belong to the receiving
+ * physical channel; retain the message itself when settling, not a copied tag.
+ * Automatically acknowledged deliveries have no later settlement authority.
  * @category models
  * @since 0.3.0
  */
@@ -23,12 +26,14 @@ export interface AMQPConsumeMessage {
 }
 
 /**
+ * Provides a delivery to a subscriber handler for that handler's lifetime.
  * @category tags
  * @since 0.3.0
  */
 export const AMQPConsumeMessage = Context.Service<AMQPConsumeMessage>("@effect-messaging/amqp/AMQPConsumeMessage")
 
 /**
+ * A layer supplying one delivery to an Effect handler.
  * @since 0.3.0
  * @category Layers
  */

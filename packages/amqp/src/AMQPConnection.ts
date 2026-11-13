@@ -11,6 +11,7 @@ import type * as Schedule from "effect/Schedule"
 import type * as Scope from "effect/Scope"
 import type * as Socket from "effect/socket/Socket"
 import type * as Stream from "effect/Stream"
+import type * as AMQPAuthentication from "./AMQPAuthentication.ts"
 import type * as AMQPChannel from "./AMQPChannel.ts"
 import type * as AMQPError from "./AMQPError.ts"
 import type * as AMQPTypes from "./AMQPTypes.ts"
@@ -43,6 +44,11 @@ export interface ConnectionState {
 export interface AMQPConnectionOptions {
   readonly username?: string
   readonly password?: string | Redacted.Redacted<string>
+  /** SASL mechanism, default PLAIN. Custom callbacks are run once per handshake/challenge round.
+   * @since 1.0.0-beta.0
+   * @category authentication
+   */
+  readonly authentication?: AMQPAuthentication.Authentication
   readonly virtualHost?: string
   readonly heartbeat?: number
   readonly frameMax?: number

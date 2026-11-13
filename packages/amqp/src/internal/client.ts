@@ -17,6 +17,7 @@ import * as Semaphore from "effect/Semaphore"
 import * as Socket from "effect/socket/Socket"
 import * as Stream from "effect/Stream"
 import * as SubscriptionRef from "effect/SubscriptionRef"
+import * as AMQPAuthentication from "../AMQPAuthentication.ts"
 import type * as AMQPChannel from "../AMQPChannel.ts"
 import type * as AMQPConnection from "../AMQPConnection.ts"
 import type * as AMQPConsumeMessage from "../AMQPConsumeMessage.ts"
@@ -24,16 +25,29 @@ import * as AMQPError from "../AMQPError.ts"
 import type * as AMQPTopology from "../AMQPTopology.ts"
 import type * as AMQPTypes from "../AMQPTypes.ts"
 import * as Codec from "./codec.ts"
+import * as Configuration from "./configuration.ts"
 import * as DeliverySettlement from "./deliverySettlement.ts"
 import * as DesiredTopology from "./desiredTopology.ts"
+import * as Normalize from "./normalizeOptions.ts"
+import * as Outbound from "./outbound.ts"
 import * as Protocol from "./protocol.ts"
 import { ChannelTypeId, ConnectionTypeId } from "./typeIds.ts"
 
-type Error = AMQPError.AMQPError
-type Fields = Record<string, AMQPTypes.FieldValue>
+type AMQPFailure = AMQPError.AMQPError
+type Fields = Protocol.Fields
 type Message = AMQPConsumeMessage.AMQPConsumeMessage
 
 const isContent = Schema.is(Schema.Uint8Array)
+const typedArrayPrototype = Object.getPrototypeOf(Uint8Array.prototype)
+const getOptionsSchema = Schema.Struct({
+  noAck: Schema.optional(Schema.Boolean)
+})
+const decodeGetOptions = Effect.fnUntraced(function*(input: AMQPTypes.GetOptions) {
+  const snapshot = yield* Protocol.snapshotNamedInput(input, ["noAck"]).pipe(
+    Effect.mapError((issue) => protocolError(new Schema.SchemaError(issue)))
+  )
+  return yield* Schema.decodeUnknownEffect(getOptionsSchema)(snapshot).pipe(Effect.mapError(protocolError))
+})
 
 interface Reply {
   readonly method: Codec.Method
@@ -42,53 +56,52 @@ interface Reply {
 
 interface Pending {
   readonly expected: ReadonlyArray<Protocol.MethodDescriptor>
-  readonly done: Deferred.Deferred<Reply, Error>
+  readonly done: Deferred.Deferred<Reply, AMQPFailure>
+  readonly noAck?: boolean
+  readonly onReply?: () => void
 }
 
-interface Write {
-  readonly frames: Array<Uint8Array>
-  readonly bytes: number
-  readonly done: Deferred.Deferred<void, Error>
-  readonly drained: Deferred.Deferred<void>
-  readonly publish: boolean
-  readonly priority: boolean
-  readonly channel: number
-  readonly physical?: Physical
-  started: boolean
-  cancelled: boolean
-}
+type WriteCommand = Outbound.WriteCommand<PhysicalChannel>
 
 interface PublishAdmission {
-  readonly command: Write
-  readonly confirm: Deferred.Deferred<void, Error> | undefined
+  readonly command: WriteCommand
+  readonly confirm: Deferred.Deferred<void, AMQPFailure> | undefined
 }
 
 interface Envelope<A> {
   readonly value: A
-  readonly physical: Physical
+  readonly physical: PhysicalChannel
   readonly release: () => void
 }
 
 interface Consumer {
   readonly queue: AMQPTopology.QueueName
-  readonly options: AMQPTypes.ConsumeOptions
-  readonly mailbox: Queue.Queue<Envelope<Message>, Error | Cause.Done>
+  readonly logical: LogicalChannel
+  readonly options: AMQPTypes.ConsumeOptions & {
+    readonly prefetch: number
+    readonly maxBufferedMessages: number
+  }
+  readonly mailbox: Queue.Queue<Envelope<Message>, AMQPFailure | Cause.Done>
   tag: string
   active: boolean
+  cancelled: boolean
 }
 
-interface Logical {
+interface LogicalChannel {
   readonly options: AMQPChannel.AMQPChannelOptions
   readonly ready: Latch.Latch
   readonly closeDone: Deferred.Deferred<void>
   readonly operations: Semaphore.Semaphore
-  readonly returned: Queue.Queue<Envelope<AMQPTypes.ReturnedMessage>, Error | Cause.Done>
-  physical: Physical | undefined
+  readonly returned: Queue.Queue<Envelope<AMQPTypes.ReturnedMessage>, AMQPFailure | Cause.Done>
+  physical: PhysicalChannel | undefined
   closed: boolean
-  error: Error | undefined
+  error: AMQPFailure | undefined
   prefetch: number
   globalPrefetch: number | undefined
   pendingOperations: number
+  transactional: boolean
+  transactionPending: boolean
+  transactionLost: boolean
 }
 
 interface Content {
@@ -99,16 +112,16 @@ interface Content {
   release: (() => void) | undefined
 }
 
-interface Physical {
+interface PhysicalChannel {
   readonly id: number
   readonly epoch: Epoch
-  readonly logical: Logical
+  readonly logical: LogicalChannel
   readonly rpc: Semaphore.Semaphore
   readonly publishing: Semaphore.Semaphore
   readonly flow: Latch.Latch
   readonly confirmCapacity: Latch.Latch
   readonly admissionClosed: Deferred.Deferred<void>
-  readonly confirms: Map<bigint, Deferred.Deferred<void, Error>>
+  readonly confirms: Map<bigint, Deferred.Deferred<void, AMQPFailure>>
   readonly consumers: Map<string, Consumer>
   active: boolean
   closing: boolean
@@ -122,24 +135,19 @@ interface Epoch {
   readonly scope: Scope.Scope
   readonly writer: Socket.Writer
   readonly failure: Deferred.Deferred<never, AMQPError.AMQPConnectionError>
-  readonly wakeWriter: Latch.Latch
+  readonly outbound: ReturnType<typeof Outbound.make<PhysicalChannel>>
   readonly publishGate: Latch.Latch
-  readonly control: Array<Write>
-  readonly data: Array<Write>
-  readonly channels: Map<number, Physical>
+  readonly channels: Map<number, PhysicalChannel>
   readonly freeChannels: Array<number>
   readonly rpc: Semaphore.Semaphore
   active: boolean
   nextChannel: number
   pending: Pending | undefined
-  writing: Write | undefined
-  outboundBytes: number
-  outboundCommands: number
   bufferedBytes: number
   frameMax: number
   channelMax: number
   heartbeat: number
-  heartbeatWrite: Write | undefined
+  heartbeatWrite: WriteCommand | undefined
   lastRead: number
   lastWrite: number
   serverProperties: AMQPTypes.FieldTable
@@ -149,6 +157,19 @@ interface Epoch {
 
 const connectionError = (reason: string, cause?: unknown, permanent = false) =>
   new AMQPError.AMQPConnectionError({ reason, cause, permanent })
+const authenticationResponse = (
+  invoke: () => Effect.Effect<Uint8Array, AMQPError.AMQPConnectionError>,
+  reason: string
+) =>
+  Effect.try({ try: invoke, catch: () => connectionError(reason, undefined, true) }).pipe(
+    Effect.flatMap((response) => response),
+    Effect.flatMap(Schema.decodeUnknownEffect(Schema.Uint8Array)),
+    Effect.catchCause((cause) =>
+      Cause.hasInterrupts(cause) ?
+        Effect.interrupt :
+        Effect.fail(connectionError(reason, undefined, true))
+    )
+  )
 const channelError = (reason: string, cause?: unknown) => new AMQPError.AMQPChannelError({ reason, cause })
 const protocolError = (cause: unknown): AMQPError.AMQPProtocolError =>
   cause instanceof AMQPError.AMQPProtocolError
@@ -156,9 +177,6 @@ const protocolError = (cause: unknown): AMQPError.AMQPProtocolError =>
     : new AMQPError.AMQPProtocolError({ reason: "Invalid AMQP wire data", cause })
 const publishError = (outcome: "NotSent" | "Unknown" | "Nacked", reason: string, cause?: unknown) =>
   new AMQPError.AMQPPublishError({ outcome, reason, cause })
-const finish = <A, E>(deferred: Deferred.Deferred<A, E>, effect: Effect.Effect<A, E>): void => {
-  Deferred.doneUnsafe(deferred, effect)
-}
 const combineReleases = (first: (() => void) | undefined, second: () => void): () => void => {
   return () => {
     first?.()
@@ -173,7 +191,7 @@ const wire = <A>(thunk: () => A): Effect.Effect<A, AMQPError.AMQPProtocolError> 
   Effect.try({ try: thunk, catch: protocolError })
 
 // Queue.takeUnsafe never waits. This is used on retirement, not on the application read path.
-const discard = <A>(mailbox: Queue.Queue<Envelope<A>, Error | Cause.Done>): void => {
+const discard = <A>(mailbox: Queue.Queue<Envelope<A>, AMQPFailure | Cause.Done>): void => {
   while (true) {
     const item = Queue.takeUnsafe(mailbox)
     if (item === undefined || Exit.isFailure(item)) return
@@ -181,27 +199,36 @@ const discard = <A>(mailbox: Queue.Queue<Envelope<A>, Error | Cause.Done>): void
   }
 }
 
-const mailboxStream = <A>(mailbox: Queue.Queue<Envelope<A>, Error | Cause.Done>): Stream.Stream<A, Error> =>
+const mailboxStream = <A>(mailbox: Queue.Queue<Envelope<A>, AMQPFailure | Cause.Done>): Stream.Stream<A, AMQPFailure> =>
   Stream.fromEffectRepeat(Queue.take(mailbox)).pipe(
-    Stream.filter((envelope) => {
-      envelope.release()
-      return envelope.physical.active && envelope.physical.epoch.active
-    }),
+    Stream.mapEffect((envelope) =>
+      Effect.sync(() => {
+        envelope.release()
+        return envelope
+      })
+    ),
+    Stream.filter((envelope) => envelope.physical.active && envelope.physical.epoch.active),
     Stream.map((envelope) => envelope.value)
   )
 
 /** @internal */
 export const make = <R>(
   socketFactory: AMQPConnection.SocketFactory<R>,
-  options: AMQPConnection.AMQPConnectionOptions
-): Effect.Effect<AMQPConnection.AMQPConnection, Error, Scope.Scope | R> =>
+  inputOptions: AMQPConnection.AMQPConnectionOptions
+): Effect.Effect<AMQPConnection.AMQPConnection, AMQPFailure, Scope.Scope | R> =>
   Effect.gen(function*() {
-    options = {
-      ...options,
-      ...(options.clientProperties === undefined ? {} : {
-        clientProperties: yield* DesiredTopology.snapshotTable(options.clientProperties ?? {})
+    const captured = yield* Configuration.connection(inputOptions).pipe(
+      Effect.mapError(() => connectionError("Invalid connection options", undefined, true))
+    )
+    const options = Object.freeze({
+      ...captured,
+      authentication: yield* AMQPAuthentication.resolve(captured.authentication),
+      ...(captured.clientProperties === undefined ? {} : {
+        clientProperties: yield* Protocol.snapshotFieldTable(captured.clientProperties).pipe(
+          Effect.mapError(() => connectionError("Invalid client properties", undefined, true))
+        )
       })
-    }
+    })
     const scope = yield* Effect.scope
     const maxMessageBytes = options.maxMessageBytes ?? 16 * 1024 * 1024
     const maxBufferedBytes = options.maxBufferedBytes ?? 64 * 1024 * 1024
@@ -230,9 +257,9 @@ export const make = <R>(
     const state = yield* SubscriptionRef.make<AMQPConnection.ConnectionState>({ state: "Connecting", generation: 0 })
     const ready = Latch.makeUnsafe()
     const closeDone = Deferred.makeUnsafe<void>()
-    const logicals = new Set<Logical>()
-    const topology = DesiredTopology.make<Logical, Consumer>()
-    const settlements = DeliverySettlement.make<Message, Physical, Logical>({
+    const logicals = new Set<LogicalChannel>()
+    const topology = DesiredTopology.make<LogicalChannel, Consumer>((consumer) => consumer.queue)
+    const settlements = DeliverySettlement.make<Message, PhysicalChannel, LogicalChannel>({
       ownerOf: (origin) => origin.logical,
       isActive: (origin) => origin.active && origin.epoch.active && !origin.logical.closed
     })
@@ -240,7 +267,7 @@ export const make = <R>(
     let brokerClosing: Epoch | undefined
     let generation = 0
     let closing = false
-    let terminal: Error | undefined
+    let terminal: AMQPFailure | undefined
     let secret = options.password ?? "guest"
     let connection: AMQPConnection.AMQPConnection
 
@@ -255,24 +282,16 @@ export const make = <R>(
       if (brokerClosing === epoch) brokerClosing = undefined
       ready.closeUnsafe()
       epoch.publishGate.openUnsafe()
-      epoch.wakeWriter.openUnsafe()
-      if (epoch.pending !== undefined) finish(epoch.pending.done, Effect.fail(error))
+      epoch.outbound.wake.openUnsafe()
+      if (epoch.pending !== undefined) Deferred.doneUnsafe(epoch.pending.done, Effect.fail(error))
       for (const physical of epoch.channels.values()) retirePhysical(physical, error)
-      for (
-        const command of [...epoch.control, ...epoch.data, ...(epoch.writing === undefined ? [] : [epoch.writing])]
-      ) {
-        finish(
-          command.done,
-          Effect.fail(
-            command.publish
-              ? publishError(command.started ? "Unknown" : "NotSent", "Connection lost during publish", error)
-              : error
-          )
-        )
-      }
-      epoch.control.length = 0
-      epoch.data.length = 0
-      finish(epoch.failure, Effect.fail(error))
+      epoch.outbound.retire({
+        error: (command) =>
+          command.publish
+            ? publishError(command.started ? "Unknown" : "NotSent", "Connection lost during publish", error)
+            : error
+      })
+      Deferred.doneUnsafe(epoch.failure, Effect.fail(error))
     }
 
     const awaitBrokerClose = (epoch: Epoch) =>
@@ -282,44 +301,44 @@ export const make = <R>(
           : Effect.void
       )
 
-    const retirePhysical = (physical: Physical, error: Error): void => {
+    const retirePhysical = (physical: PhysicalChannel, error: AMQPFailure): void => {
       if (!physical.active) return
       physical.active = false
       physical.closing = true
-      finish(physical.admissionClosed, Effect.void)
+      if (physical.logical.transactional && physical.logical.transactionPending) {
+        physical.logical.transactionLost = true
+      }
+      Deferred.doneUnsafe(physical.admissionClosed, Effect.void)
       physical.flow.openUnsafe()
       physical.confirmCapacity.openUnsafe()
       physical.logical.ready.closeUnsafe()
       if (physical.logical.physical === physical) physical.logical.physical = undefined
-      if (physical.pending !== undefined) finish(physical.pending.done, Effect.fail(error))
+      if (physical.pending !== undefined) Deferred.doneUnsafe(physical.pending.done, Effect.fail(error))
       for (const confirm of physical.confirms.values()) {
-        finish(confirm, Effect.fail(publishError("Unknown", "Channel lost before broker confirmation", error)))
+        Deferred.doneUnsafe(
+          confirm,
+          Effect.fail(publishError("Unknown", "Channel lost before broker confirmation", error))
+        )
       }
       physical.confirms.clear()
       settlements.retire(physical)
       physical.consumers.clear()
       const epoch = physical.epoch
-      for (
-        const command of [...epoch.control, ...epoch.data, ...(epoch.writing === undefined ? [] : [epoch.writing])]
-      ) {
-        if (command.physical !== physical) continue
-        if (!command.started) command.cancelled = true
-        finish(
-          command.done,
-          Effect.fail(
-            command.publish
-              ? publishError(command.started ? "Unknown" : "NotSent", "Channel retired during publish", error)
-              : error
-          )
-        )
-      }
+      epoch.outbound.retire({
+        matches: (command) => command.physical === physical,
+        owner: physical,
+        error: (command) =>
+          command.publish
+            ? publishError(command.started ? "Unknown" : "NotSent", "Channel retired during publish", error)
+            : error
+      })
       physical.content?.release?.()
       physical.content = undefined
       for (const consumer of topology.consumers(physical.logical)) discard(consumer.mailbox)
       discard(physical.logical.returned)
     }
 
-    const failLogical = (logical: Logical, error: Error): void => {
+    const failLogical = (logical: LogicalChannel, error: AMQPFailure): void => {
       logical.error = error
       if (logical.physical !== undefined) retirePhysical(logical.physical, error)
       logical.ready.openUnsafe()
@@ -331,7 +350,7 @@ export const make = <R>(
       Queue.failCauseUnsafe(logical.returned, Cause.fail(error))
     }
 
-    const stop = (error: Error) =>
+    const stop = (error: AMQPFailure) =>
       Effect.sync(() => {
         terminal = error
         ready.openUnsafe()
@@ -349,8 +368,8 @@ export const make = <R>(
       Effect.catchTag("TimeoutError", () => Effect.fail(connectionError("Timed out waiting for connection readiness")))
     )
 
-    const awaitPhysical = (logical: Logical) =>
-      Effect.gen(function*() {
+    const awaitPhysical = Effect.fnUntraced(
+      function*(logical: LogicalChannel) {
         yield* logical.ready.await
         if (logical.error !== undefined) return yield* Effect.fail(logical.error)
         if (logical.closed || closing) return yield* channelError("Channel is closed")
@@ -359,10 +378,13 @@ export const make = <R>(
           return yield* channelError("Channel is not ready")
         }
         return physical
-      }).pipe(
-        Effect.timeout(logical.options.waitChannelTimeout ?? "10 seconds"),
-        Effect.catchTag("TimeoutError", () => Effect.fail(channelError("Timed out waiting for channel readiness")))
-      )
+      },
+      (effect, logical) =>
+        effect.pipe(
+          Effect.timeout(logical.options.waitChannelTimeout ?? "10 seconds"),
+          Effect.catchTag("TimeoutError", () => Effect.fail(channelError("Timed out waiting for channel readiness")))
+        )
+    )
 
     const encodeMethodFrame = (epoch: Epoch, channel: number, method: Protocol.MethodDescriptor, fields: Fields = {}) =>
       Codec.encodeMethod(channel, method, fields).pipe(Effect.flatMap((frame) =>
@@ -371,14 +393,15 @@ export const make = <R>(
           : Effect.succeed(frame)
       ))
 
-    const submit = (
-      epoch: Epoch,
-      frames: Array<Uint8Array>,
-      publish = false,
-      physical?: Physical,
-      priority = false,
-      onAdmitted?: () => void
-    ): Result.Result<Write, Error> => {
+    const submit = (request: {
+      readonly epoch: Epoch
+      readonly frames: Array<Uint8Array>
+      readonly publish?: boolean
+      readonly physical?: PhysicalChannel | undefined
+      readonly priority?: boolean
+      readonly onAdmitted?: (() => void) | undefined
+    }): Result.Result<WriteCommand, AMQPFailure> => {
+      const { epoch, frames, publish = false, physical, priority = false, onAdmitted } = request
       if (
         !epoch.active || (epoch.brokerCloseError !== undefined && !priority) ||
         (physical !== undefined && !physical.active)
@@ -402,53 +425,20 @@ export const make = <R>(
         ? 0
         : new DataView(first.buffer, first.byteOffset, first.byteLength).getUint16(1)
       // A small separately bounded reserve keeps flow, close and settlement controls admissible under publish load.
-      const commandLimit = maxPending + (priority ? 16 : 0)
-      const byteLimit = maxOutboundBytes + (priority ? 65536 : 0)
-      if (epoch.outboundCommands >= commandLimit || epoch.outboundBytes + bytes > byteLimit) {
-        return Result.fail(
-          publish
-            ? publishError("NotSent", "Outbound admission limit exceeded")
-            : channelError("Outbound admission limit exceeded")
-        )
-      }
-      const command: Write = {
-        frames,
-        bytes,
-        done: Deferred.makeUnsafe(),
-        drained: Deferred.makeUnsafe(),
-        publish,
-        priority,
-        channel,
-        ...(physical === undefined ? {} : { physical }),
-        started: false,
-        cancelled: false
-      }
-      epoch.outboundBytes += bytes
-      epoch.outboundCommands++
-      const commands = priority ? epoch.control : epoch.data
-      commands.push(command)
-      // A transport writer can resume synchronously and feed a broker response back into the reader.
-      // Publish/settlement state must be installed before exposing this admitted command to that writer.
-      onAdmitted?.()
-      epoch.wakeWriter.openUnsafe()
-      return Result.succeed(command)
+      return Result.flatMap(epoch.outbound.reserve({ bytes, publish, priority, owner: physical }), (reservation) =>
+        epoch.outbound.commit({ reservation, frames, channel, physical, onAdmitted }))
     }
 
     const enqueue = Effect.fnUntraced(function*(
-      epoch: Epoch,
-      frames: Array<Uint8Array>,
-      publish = false,
-      physical?: Physical,
-      priority = false,
-      onAdmitted?: () => void
-    ): Effect.fn.Return<void, Error> {
+      request: Parameters<typeof submit>[0]
+    ): Effect.fn.Return<void, AMQPFailure> {
       const command = yield* Effect.suspend(() =>
-        Effect.fromResult(submit(epoch, frames, publish, physical, priority, onAdmitted))
+        Effect.fromResult(submit(request))
       )
       return yield* Deferred.await(command.done).pipe(Effect.onInterrupt(() =>
         Effect.sync(() => {
           // The writer, not the caller, owns a complete content sequence after admission.
-          if (!command.started) command.cancelled = true
+          request.epoch.outbound.cancelCommand(command)
         })
       ))
     })
@@ -461,78 +451,42 @@ export const make = <R>(
       priority = false
     ) =>
       encodeMethodFrame(epoch, channel, method, fields).pipe(
-        Effect.flatMap((frame) => enqueue(epoch, [frame], false, epoch.channels.get(channel), priority))
+        Effect.flatMap((frame) => enqueue({ epoch, frames: [frame], physical: epoch.channels.get(channel), priority }))
       )
 
     // The reader never waits for transport backpressure while acknowledging broker controls.
     const sendControl = (epoch: Epoch, channel: number, method: Protocol.MethodDescriptor, fields: Fields = {}) =>
       Codec.encodeMethod(channel, method, fields).pipe(
         Effect.flatMap((frame) =>
-          Effect.suspend(() => Effect.fromResult(submit(epoch, [frame], false, undefined, true)))
+          Effect.suspend(() => Effect.fromResult(submit({ epoch, frames: [frame], priority: true })))
         )
       )
 
-    const writerLoop = Effect.fnUntraced(function*(epoch: Epoch): Effect.fn.Return<void> {
-      while (epoch.active) {
-        let command = epoch.control.shift()
-        if (command === undefined) {
-          const index = epoch.data.findIndex((item) =>
-            !item.publish || item.cancelled ||
-            item.physical?.active === false || (epoch.publishGate.isOpen() && (item.physical?.flow.isOpen() ?? true))
-          )
-          if (index >= 0) command = epoch.data.splice(index, 1)[0]
-        }
-        if (command === undefined) {
-          epoch.wakeWriter.closeUnsafe()
-          yield* epoch.wakeWriter.await
-          continue
-        }
-        epoch.writing = command
-        let completion: Effect.Effect<void, Error> = Effect.void
-        if (
-          command.cancelled || (epoch.brokerCloseError !== undefined && !command.priority) ||
-          (command.physical !== undefined && !command.physical.active)
-        ) {
-          completion = Effect.fail(
-            command.publish
-              ? publishError("NotSent", "Publish cancelled before transport write")
-              : channelError("Channel retired before transport write")
-          )
-        } else {
-          command.started = true
-          // Only this fiber writes. A caller cannot interrupt a partially written content sequence.
-          const result = yield* Effect.exit(Effect.forEach(command.frames, (frame) =>
-            Effect.suspend((): Effect.Effect<void, Socket.SocketError | AMQPError.AMQPChannelError> => {
-              if (!epoch.active || command.physical?.active === false) {
-                return Effect.fail(channelError("Write session retired"))
-              }
-              return epoch.writer.write(frame)
-            }), {
-            discard: true
-          }))
-          if (Exit.isFailure(result)) {
-            if (command.physical?.active === false && epoch.active) {
-              completion = Effect.fail(
-                command.publish
-                  ? publishError("Unknown", "Channel retired while content was being written", result.cause)
-                  : channelError("Channel retired while method was being written", result.cause)
-              )
-            } else failEpoch(epoch, connectionError("Transport write failed", result.cause))
-          } else {
-            epoch.lastWrite = yield* Clock.currentTimeMillis
+    const writerLoop = (epoch: Epoch) =>
+      epoch.outbound.run(Effect.fnUntraced(function*(command: WriteCommand) {
+        const result = yield* Effect.exit(Effect.forEach(command.frames, (frame) =>
+          Effect.suspend((): Effect.Effect<void, Socket.SocketError | AMQPError.AMQPChannelError> => {
+            if (!epoch.active || command.physical?.active === false) {
+              return Effect.fail(channelError("Write session retired"))
+            }
+            return epoch.writer.write(frame)
+          }), { discard: true }))
+        if (Exit.isFailure(result)) {
+          if (command.physical?.active === false && epoch.active) {
+            return yield* Effect.fail(
+              command.publish
+                ? publishError("Unknown", "Channel retired while content was being written", result.cause)
+                : channelError("Channel retired while method was being written", result.cause)
+            )
           }
+          const error = connectionError("Transport write failed", result.cause)
+          failEpoch(epoch, error)
+          return yield* Effect.fail(error)
         }
-        epoch.outboundBytes -= command.bytes
-        epoch.outboundCommands--
-        epoch.writing = undefined
-        finish(command.drained, Effect.void)
-        // A completed waiter may immediately submit its next command. Release this write's reservation
-        // first so sequential operations do not spuriously exceed a one-command admission limit.
-        finish(command.done, completion)
-      }
-    })
+        epoch.lastWrite = yield* Clock.currentTimeMillis
+      }))
 
-    const reclaimPhysical = Effect.fnUntraced(function*(physical: Physical): Effect.fn.Return<void> {
+    const reclaimPhysical = Effect.fnUntraced(function*(physical: PhysicalChannel): Effect.fn.Return<void> {
       const epoch = physical.epoch
       retirePhysical(physical, channelError("Channel closed"))
       // A close-ok is the protocol barrier. Also drain local RPC ownership and every old write before reuse.
@@ -540,31 +494,7 @@ export const make = <R>(
         if (!epoch.active || epoch.channels.get(physical.id) !== physical) {
           return
         }
-        for (const commands of [epoch.control, epoch.data]) {
-          for (let index = commands.length - 1; index >= 0; index--) {
-            const command = commands[index]
-            if (command === undefined || command.channel !== physical.id) {
-              continue
-            }
-            commands.splice(index, 1)
-            epoch.outboundBytes -= command.bytes
-            epoch.outboundCommands--
-            command.cancelled = true
-            finish(
-              command.done,
-              Effect.fail(
-                command.publish
-                  ? publishError("NotSent", "Channel closed before queued publish was written")
-                  : channelError("Channel closed before queued control was written")
-              )
-            )
-            finish(command.drained, Effect.void)
-          }
-        }
-        const writing = epoch.writing
-        if (writing?.channel === physical.id) {
-          yield* Deferred.await(writing.drained)
-        }
+        yield* epoch.outbound.drain(physical.id)
         if (!epoch.active || epoch.channels.get(physical.id) !== physical) {
           return
         }
@@ -575,61 +505,91 @@ export const make = <R>(
 
     const rpc = Effect.fnUntraced(function*(
       epoch: Epoch,
-      physical: Physical | undefined,
+      physical: PhysicalChannel | undefined,
       method: Protocol.MethodDescriptor,
       fields: Fields,
       timeout: Duration.Input = connectionTimeout,
-      onAdmitted?: () => void
-    ): Effect.fn.Return<Reply, Error> {
+      onAdmitted?: () => void,
+      onReply?: () => void
+    ): Effect.fn.Return<Reply, AMQPFailure> {
       // Reject local encoding and size errors before a pending reply slot is installed.
       const frame = yield* encodeMethodFrame(epoch, physical?.id ?? 0, method, fields)
       const mutex = physical?.rpc ?? epoch.rpc
-      return yield* mutex.withPermit(Effect.gen(function*() {
-        if (!epoch.active || (physical !== undefined && !physical.active)) {
-          return yield* connectionError("Session retired before RPC admission")
-        }
-        // Logical shutdown still lets already queued RPC owners drain. The wire close admission,
-        // not logical.closed or the start of close encoding, is the barrier for ordinary methods.
-        if (physical?.closing === true && method !== Protocol.ChannelClose) {
-          return yield* channelError("Channel closing before RPC admission")
-        }
-        const pending: Pending = { expected: method.replies, done: Deferred.makeUnsafe() }
-        if (physical === undefined) {
-          epoch.pending = pending
-        } else physical.pending = pending
-        let admitted = false
-        const operation = enqueue(epoch, [frame], false, physical, false, () => {
-          admitted = true
-          if (physical !== undefined && method === Protocol.ChannelClose) physical.closing = true
-          onAdmitted?.()
-        }).pipe(
-          Effect.andThen(Deferred.await(pending.done)),
-          Effect.timeout(timeout),
-          Effect.catchTag("TimeoutError", () => {
-            const error = epoch.brokerCloseError ?? connectionError(`Timed out waiting for ${method.name}`)
-            if (admitted && epoch.brokerCloseError === undefined) {
-              failEpoch(epoch, error)
-            }
-            return Effect.fail(error)
-          }),
-          Effect.onInterrupt(() =>
-            Effect.sync(() => {
-              if (admitted && epoch.brokerCloseError === undefined) {
-                failEpoch(epoch, connectionError(`RPC ${method.name} interrupted after admission`))
+      return yield* mutex.withPermit(Effect.uninterruptibleMask((restore) =>
+        Effect.gen(function*() {
+          if (!epoch.active || (physical !== undefined && !physical.active)) {
+            return yield* connectionError("Session retired before RPC admission")
+          }
+          // Logical shutdown still lets already queued RPC owners drain. The wire close admission,
+          // not logical.closed or the start of close encoding, is the barrier for ordinary methods.
+          if (physical?.closing === true && method !== Protocol.ChannelClose) {
+            return yield* channelError("Channel closing before RPC admission")
+          }
+          const pending: Pending = {
+            expected: method === Protocol.ConnectionStartOk || method === Protocol.ConnectionSecureOk
+              ? [Protocol.ConnectionSecure, Protocol.ConnectionTune]
+              : method.replies,
+            done: Deferred.makeUnsafe(),
+            ...(onReply === undefined ? {} : { onReply }),
+            ...(method === Protocol.BasicGet ? { noAck: fields.noAck === true } : {})
+          }
+          if (physical === undefined) {
+            epoch.pending = pending
+          } else physical.pending = pending
+          let admitted = false
+          const operation = Effect.suspend(() => {
+            const result = submit({
+              epoch,
+              frames: [frame],
+              physical,
+              onAdmitted: () => {
+                admitted = true
+                if (physical !== undefined && method === Protocol.ChannelClose) physical.closing = true
+                onAdmitted?.()
               }
             })
+            if (Result.isFailure(result)) return Effect.fail(result.failure)
+            const command = result.success
+            // A broker reply is authoritative even while the transport write remains backpressured.
+            // The writer retains command ownership and still retires the session on a later write failure.
+            return Effect.raceFirst(
+              Deferred.await(pending.done),
+              Deferred.await(command.done).pipe(
+                Effect.andThen(Deferred.await(pending.done)),
+                Effect.catch((error) =>
+                  Deferred.isDoneUnsafe(pending.done) ? Deferred.await(pending.done) : Effect.fail(error)
+                )
+              )
+            )
+          }).pipe(
+            Effect.timeout(timeout),
+            Effect.catchTag("TimeoutError", () => {
+              if (Deferred.isDoneUnsafe(pending.done)) return Deferred.await(pending.done)
+              const error = epoch.brokerCloseError ?? connectionError(`Timed out waiting for ${method.name}`)
+              if (admitted && epoch.brokerCloseError === undefined) {
+                failEpoch(epoch, error)
+              }
+              return Effect.fail(error)
+            }),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                if (admitted && !Deferred.isDoneUnsafe(pending.done) && epoch.brokerCloseError === undefined) {
+                  failEpoch(epoch, connectionError(`RPC ${method.name} interrupted after admission`))
+                }
+              })
+            )
           )
-        )
-        return yield* operation.pipe(Effect.ensuring(Effect.sync(() => {
-          if (physical === undefined) {
-            if (epoch.pending === pending) {
-              epoch.pending = undefined
+          return yield* restore(operation).pipe(Effect.ensuring(Effect.sync(() => {
+            if (physical === undefined) {
+              if (epoch.pending === pending) {
+                epoch.pending = undefined
+              }
+            } else if (physical.pending === pending) {
+              physical.pending = undefined
             }
-          } else if (physical.pending === pending) {
-            physical.pending = undefined
-          }
-        })))
-      }))
+          })))
+        })
+      ))
     })
 
     const completeReply = Effect.fnUntraced(
@@ -643,11 +603,12 @@ export const make = <R>(
             reason: `Unexpected reply ${method.classId}.${method.methodId}`
           })
         }
-        finish(pending.done, Effect.succeed({ method, ...(message === undefined ? {} : { message }) }))
+        pending.onReply?.()
+        Deferred.doneUnsafe(pending.done, Effect.succeed({ method, ...(message === undefined ? {} : { message }) }))
       }
     )
 
-    const reserve = (physical: Physical, bytes: number, onReserved: (release: () => void) => void) =>
+    const reserve = (physical: PhysicalChannel, bytes: number, onReserved: (release: () => void) => void) =>
       Effect.suspend(() => {
         const epoch = physical.epoch
         if (!epoch.active || !physical.active) {
@@ -670,7 +631,7 @@ export const make = <R>(
       })
 
     const requeueBufferedConsumer = Effect.fnUntraced(function*(consumer: Consumer) {
-      const batches = new Map<Physical, Array<Uint8Array>>()
+      const batches = new Map<PhysicalChannel, Array<Uint8Array>>()
       while (true) {
         const envelope = Queue.takeUnsafe(consumer.mailbox)
         if (envelope === undefined || Exit.isFailure(envelope)) {
@@ -699,7 +660,7 @@ export const make = <R>(
       for (const [physical, frames] of batches) {
         // Only mailbox-resident deliveries are revoked. Messages already handed to application handlers
         // retain their original settlement capability, including after a broker-initiated consumer cancel.
-        const admitted = submit(physical.epoch, frames, false, physical, true)
+        const admitted = submit({ epoch: physical.epoch, frames, physical, priority: true })
         if (Result.isFailure(admitted)) {
           failEpoch(
             physical.epoch,
@@ -709,7 +670,7 @@ export const make = <R>(
       }
     })
 
-    const deliverContent = Effect.fnUntraced(function*(physical: Physical): Effect.fn.Return<void, Error> {
+    const deliverContent = Effect.fnUntraced(function*(physical: PhysicalChannel): Effect.fn.Return<void, AMQPFailure> {
       if (!physical.active || !physical.epoch.active) return
       const content = physical.content
       if (content?.body === undefined || content.properties === undefined || content.release === undefined) {
@@ -752,7 +713,13 @@ export const make = <R>(
         }
       }
       if (!physical.active || !physical.epoch.active) return
-      yield* Effect.fromResult(settlements.register(physical, value, tag))
+      const deliveryConsumer = descriptor === Protocol.BasicDeliver
+        ? physical.consumers.get(value.fields.consumerTag)
+        : undefined
+      const noAck = descriptor === Protocol.BasicGetOk
+        ? physical.pending?.noAck === true
+        : deliveryConsumer?.options.noAck === true
+      yield* Effect.fromResult(settlements.register(physical, value, tag, { noAck }))
       if (!physical.active || !physical.epoch.active) return
       physical.content = undefined
       if (descriptor === Protocol.BasicGetOk) {
@@ -767,19 +734,50 @@ export const make = <R>(
       }
       if (!consumer.active) {
         content.release()
+        if (noAck) return
         settlements.revoke(value)
         const frame = yield* Codec.encodeMethod(physical.id, Protocol.BasicReject, { deliveryTag: tag, requeue: true })
-        yield* Effect.suspend(() => Effect.fromResult(submit(physical.epoch, [frame], false, physical, true)))
+        yield* Effect.suspend(() =>
+          Effect.fromResult(submit({
+            epoch: physical.epoch,
+            frames: [frame],
+            physical,
+            priority: true
+          }))
+        )
         return
       }
       if (!Queue.offerUnsafe(consumer.mailbox, { value, physical, release: content.release })) {
         content.release()
-        return yield* new AMQPError.AMQPProtocolError({ reason: "Consumer mailbox overflow" })
+        const error = channelError(
+          "Consumer maxBufferedMessages exceeded; consumer retired (auto-ack deliveries may be lost)"
+        )
+        consumer.active = false
+        topology.removeConsumer(physical.logical, consumer)
+        yield* requeueBufferedConsumer(consumer)
+        if (!noAck) {
+          settlements.revoke(value)
+          yield* sendControl(physical.epoch, physical.id, Protocol.BasicReject, { deliveryTag: tag, requeue: true })
+        }
+        Queue.failCauseUnsafe(consumer.mailbox, Cause.fail(error))
+        // Never await cancel-ok on the reader: it must remain available for control and RPC replies.
+        yield* rpc(physical.epoch, physical, Protocol.BasicCancel, {
+          consumerTag: consumer.tag,
+          noWait: false
+        }).pipe(
+          Effect.map(() => physical.consumers.delete(consumer.tag)),
+          Effect.catch((cause) =>
+            Effect.sync(() =>
+              failEpoch(physical.epoch, connectionError("Overflowed consumer cancellation failed", cause))
+            )
+          ),
+          Effect.forkIn(physical.epoch.scope)
+        )
       }
     })
 
     const openPhysical = Effect.fnUntraced(
-      function*(epoch: Epoch, logical: Logical): Effect.fn.Return<Physical, Error> {
+      function*(epoch: Epoch, logical: LogicalChannel): Effect.fn.Return<PhysicalChannel, AMQPFailure> {
         if (logical.closed || closing) {
           return yield* channelError("Channel closed before recovery")
         }
@@ -793,7 +791,7 @@ export const make = <R>(
           }
           return yield* channelError("Negotiated simultaneous channel limit exhausted")
         }
-        const physical: Physical = {
+        const physical: PhysicalChannel = {
           id: reusable ?? epoch.nextChannel++,
           epoch,
           logical,
@@ -816,6 +814,7 @@ export const make = <R>(
         if (logical.options.confirm === true) {
           yield* rpc(epoch, physical, Protocol.ConfirmSelect, { noWait: false })
         }
+        if (logical.transactional) yield* rpc(epoch, physical, Protocol.TxSelect, {})
         yield* rpc(epoch, physical, Protocol.BasicQos, {
           prefetchSize: 0,
           prefetchCount: logical.prefetch,
@@ -832,7 +831,7 @@ export const make = <R>(
       }
     )
 
-    const declareExchange = (physical: Physical, declaration: DesiredTopology.ExchangeDeclaration) =>
+    const declareExchange = (physical: PhysicalChannel, declaration: DesiredTopology.ExchangeDeclaration) =>
       rpc(
         physical.epoch,
         physical,
@@ -850,7 +849,7 @@ export const make = <R>(
         }
       )
 
-    const declareQueue = (physical: Physical, queue: string, opts: AMQPTypes.QueueOptions, passive = false) =>
+    const declareQueue = (physical: PhysicalChannel, queue: string, opts: AMQPTypes.QueueOptions, passive = false) =>
       rpc(
         physical.epoch,
         physical,
@@ -867,7 +866,7 @@ export const make = <R>(
         }
       ).pipe(Effect.flatMap((reply) => Protocol.queueReply(reply.method)))
 
-    const applyBinding = (physical: Physical, binding: DesiredTopology.Binding, remove = false) =>
+    const applyBinding = (physical: PhysicalChannel, binding: DesiredTopology.Binding, remove = false) =>
       rpc(
         physical.epoch,
         physical,
@@ -889,9 +888,9 @@ export const make = <R>(
       ).pipe(Effect.asVoid)
 
     const startConsumer = Effect.fnUntraced(
-      function*(physical: Physical, consumer: Consumer): Effect.fn.Return<void, Error> {
+      function*(physical: PhysicalChannel, consumer: Consumer): Effect.fn.Return<void, AMQPFailure> {
         if (!consumer.active) return
-        const count = consumer.options.prefetch ?? physical.logical.prefetch
+        const count = consumer.options.prefetch
         yield* rpc(physical.epoch, physical, Protocol.BasicQos, {
           prefetchSize: 0,
           prefetchCount: count,
@@ -903,18 +902,24 @@ export const make = <R>(
           reserved1: 0,
           queue: DesiredTopology.queueName(consumer.queue),
           consumerTag: consumer.options.consumerTag ?? "",
-          noLocal: false,
-          noAck: false,
+          noLocal: consumer.options.noLocal ?? false,
+          noAck: consumer.options.noAck ?? false,
           exclusive: consumer.options.exclusive ?? false,
           noWait: false,
           arguments: consumer.options.arguments ?? {}
         })
         consumer.tag = yield* Protocol.readString(reply.method, "consumerTag")
-        physical.consumers.set(consumer.tag, consumer)
+        if (consumer.active) physical.consumers.set(consumer.tag, consumer)
+        // RabbitMQ captures per-consumer QoS at registration. Restore the channel default for future consumers.
+        yield* rpc(physical.epoch, physical, Protocol.BasicQos, {
+          prefetchSize: 0,
+          prefetchCount: physical.logical.prefetch,
+          global: false
+        })
       }
     )
 
-    const topologyRestorer = (logical: Logical): DesiredTopology.Restorer<Consumer, Error> | undefined => {
+    const topologyRestorer = (logical: LogicalChannel): DesiredTopology.Restorer<Consumer, AMQPFailure> | undefined => {
       const physical = logical.physical
       if (physical === undefined || logical.closed || logical.error !== undefined) return
       return {
@@ -930,7 +935,7 @@ export const make = <R>(
       }
     }
 
-    const restoreOne = Effect.fnUntraced(function*(epoch: Epoch, logical: Logical): Effect.fn.Return<void> {
+    const restoreOne = Effect.fnUntraced(function*(epoch: Epoch, logical: LogicalChannel): Effect.fn.Return<void> {
       const result = yield* Effect.exit(Effect.gen(function*() {
         yield* openPhysical(epoch, logical)
         yield* topology.restore([logical], topologyRestorer, (_logical, error) => Effect.fail(error))
@@ -950,7 +955,7 @@ export const make = <R>(
         channel: number,
         method: Codec.Method,
         methodBytes: number
-      ): Effect.fn.Return<void, Error> {
+      ): Effect.fn.Return<void, AMQPFailure> {
         const key = yield* Protocol.lookup(method.classId, method.methodId)
         if (channel === 0) {
           if (key === Protocol.ConnectionClose) {
@@ -970,7 +975,7 @@ export const make = <R>(
             epoch.publishGate.closeUnsafe()
             ready.closeUnsafe()
             if (current === epoch) current = undefined
-            if (epoch.pending !== undefined) finish(epoch.pending.done, Effect.fail(error))
+            if (epoch.pending !== undefined) Deferred.doneUnsafe(epoch.pending.done, Effect.fail(error))
             for (const physical of epoch.channels.values()) retirePhysical(physical, error)
             yield* sendMethod(epoch, 0, Protocol.ConnectionCloseOk, {}, true).pipe(
               Effect.timeout("1 second"),
@@ -989,7 +994,7 @@ export const make = <R>(
           } else if (key === Protocol.ConnectionUnblocked) {
             epoch.blocked = undefined
             epoch.publishGate.openUnsafe()
-            epoch.wakeWriter.openUnsafe()
+            epoch.outbound.wake.openUnsafe()
             yield* SubscriptionRef.update(state, (value) => {
               const { blocked: _blocked, ...rest } = value
               return rest
@@ -1033,7 +1038,7 @@ export const make = <R>(
           // Admission is invalidated synchronously before recovery starts.
           const recover = physical.logical.ready.isOpen()
           const recoverSession = recover && !physical.logical.closed && physical.logical.error === undefined &&
-            !closing && topology.hasEphemeralQueues(physical.logical, (consumer) => consumer.queue)
+            !closing && topology.hasEphemeralQueues(physical.logical)
           if (recoverSession) {
             // Completing the failed RPC can synchronously resume its caller. Fence readiness and publication
             // first, before that caller can observe this soon-to-be-retired session as ready.
@@ -1067,7 +1072,7 @@ export const make = <R>(
         } else if (key === Protocol.ChannelFlow) {
           if (method.fields.active === true) {
             physical.flow.openUnsafe()
-            epoch.wakeWriter.openUnsafe()
+            epoch.outbound.wake.openUnsafe()
           } else physical.flow.closeUnsafe()
           if (!physical.closing) {
             yield* sendControl(epoch, channel, Protocol.ChannelFlowOk, { active: method.fields.active === true })
@@ -1078,7 +1083,7 @@ export const make = <R>(
             return yield* new AMQPError.AMQPProtocolError({ reason: "Invalid publisher confirm tag" })
           }
           const multiple = method.fields.multiple === true
-          const confirmed: Array<Deferred.Deferred<void, Error>> = []
+          const confirmed: Array<Deferred.Deferred<void, AMQPFailure>> = []
           for (const [sequence, confirm] of physical.confirms) {
             if (sequence === tag || (multiple && (tag === BigInt(0) || sequence <= tag))) {
               physical.confirms.delete(sequence)
@@ -1088,7 +1093,7 @@ export const make = <R>(
           // Completing a deferred may synchronously admit the caller's next publish. Freeze this broker
           // reply's affected slots before resuming any caller, especially for the zero-tag "all" case.
           for (const confirm of confirmed) {
-            finish(
+            Deferred.doneUnsafe(
               confirm,
               key === Protocol.BasicAck ? Effect.void : Effect.fail(publishError("Nacked", "Broker nacked publish"))
             )
@@ -1103,8 +1108,7 @@ export const make = <R>(
           if (consumer !== undefined) {
             consumer.active = false
             yield* requeueBufferedConsumer(consumer)
-            topology.removeConsumer(physical.logical, consumer)
-            yield* Queue.fail(consumer.mailbox, channelError(`Broker cancelled consumer ${tag}`))
+            retireConsumerLocally(consumer, channelError(`Broker cancelled consumer ${tag}`))
           }
           if (method.fields.noWait !== true && !physical.closing) {
             yield* sendControl(epoch, channel, Protocol.BasicCancelOk, { consumerTag: tag })
@@ -1144,90 +1148,99 @@ export const make = <R>(
       }
     )
 
-    const dispatch = Effect.fnUntraced(function*(epoch: Epoch, frame: Codec.Frame): Effect.fn.Return<void, Error> {
-      if (!epoch.active) return
-      if (frame.payload.byteLength + 8 > epoch.frameMax) {
-        return yield* new AMQPError.AMQPProtocolError({ reason: "Frame exceeds negotiated frameMax" })
-      }
-      if (frame.type === 8) {
-        if (frame.channel !== 0 || frame.payload.byteLength !== 0) {
-          return yield* new AMQPError.AMQPProtocolError({ reason: "Invalid heartbeat frame" })
+    const dispatch = Effect.fnUntraced(
+      function*(epoch: Epoch, frame: Codec.Frame): Effect.fn.Return<void, AMQPFailure> {
+        if (!epoch.active) return
+        if (frame.payload.byteLength + 8 > epoch.frameMax) {
+          return yield* new AMQPError.AMQPProtocolError({ reason: "Frame exceeds negotiated frameMax" })
         }
-        return
-      }
-      if (frame.type === 1) {
-        const method = yield* Codec.decodeMethod(frame.payload)
-        return yield* handleMethod(epoch, frame.channel, method, frame.payload.byteLength + 8)
-      }
-      const physical = epoch.channels.get(frame.channel)
-      if (physical === undefined || !physical.active) {
-        return yield* new AMQPError.AMQPProtocolError({ reason: "Content frame on unavailable channel" })
-      }
-      const content = physical.content
-      if (content === undefined) return yield* new AMQPError.AMQPProtocolError({ reason: "Content without method" })
-      if (frame.type === 2) {
-        if (content.body !== undefined) {
-          return yield* new AMQPError.AMQPProtocolError({ reason: "Duplicate content header" })
+        if (frame.type === 8) {
+          if (frame.channel !== 0 || frame.payload.byteLength !== 0) {
+            return yield* new AMQPError.AMQPProtocolError({ reason: "Invalid heartbeat frame" })
+          }
+          return
         }
-        // Charge raw header bytes and envelope/property overhead before decoding a potentially expanding table.
-        yield* reserve(physical, frame.payload.byteLength + 8 + 128, (release) => {
-          content.release = combineReleases(content.release, release)
-        })
-        const header = yield* Codec.decodeContentHeader(frame.payload, {
-          maxDecodedBytes: Math.min(Codec.MAX_DECODED_BYTES, maxBufferedBytes - epoch.bufferedBytes)
-        })
-        yield* reserve(physical, header.decodedCost, (release) => {
-          content.release = combineReleases(content.release, release)
-        })
-        if (header.bodySize > BigInt(maxMessageBytes)) {
-          return yield* new AMQPError.AMQPProtocolError({ reason: "Message exceeds maxMessageBytes" })
+        if (frame.type === 1) {
+          const method = yield* Codec.decodeMethod(frame.payload)
+          return yield* handleMethod(epoch, frame.channel, method, frame.payload.byteLength + 8)
         }
-        const bytes = Number(header.bodySize)
-        yield* reserve(physical, bytes, (release) => {
-          content.release = combineReleases(content.release, release)
-        })
-        content.properties = header.properties
-        content.body = yield* wire(() => new Uint8Array(bytes))
-        if (bytes === 0) yield* deliverContent(physical)
-      } else if (frame.type === 3) {
-        if (
-          content.body === undefined || frame.payload.byteLength === 0 ||
-          content.offset + frame.payload.byteLength > content.body.byteLength
-        ) {
-          return yield* new AMQPError.AMQPProtocolError({ reason: "Invalid content body size or sequence" })
+        const physical = epoch.channels.get(frame.channel)
+        if (physical === undefined || !physical.active) {
+          return yield* new AMQPError.AMQPProtocolError({ reason: "Content frame on unavailable channel" })
         }
-        content.body.set(frame.payload, content.offset)
-        content.offset += frame.payload.byteLength
-        if (content.offset === content.body.byteLength) yield* deliverContent(physical)
-      } else {
-        return yield* new AMQPError.AMQPProtocolError({ reason: `Unsupported frame type ${frame.type}` })
+        const content = physical.content
+        if (content === undefined) return yield* new AMQPError.AMQPProtocolError({ reason: "Content without method" })
+        if (frame.type === 2) {
+          if (content.body !== undefined) {
+            return yield* new AMQPError.AMQPProtocolError({ reason: "Duplicate content header" })
+          }
+          // Charge raw header bytes and envelope/property overhead before decoding a potentially expanding table.
+          yield* reserve(physical, frame.payload.byteLength + 8 + 128, (release) => {
+            content.release = combineReleases(content.release, release)
+          })
+          const header = yield* Codec.decodeContentHeader(frame.payload, {
+            maxDecodedBytes: Math.min(Codec.MAX_DECODED_BYTES, maxBufferedBytes - epoch.bufferedBytes)
+          })
+          yield* reserve(physical, header.decodedCost, (release) => {
+            content.release = combineReleases(content.release, release)
+          })
+          if (header.bodySize > BigInt(maxMessageBytes)) {
+            return yield* new AMQPError.AMQPProtocolError({ reason: "Message exceeds maxMessageBytes" })
+          }
+          const bytes = Number(header.bodySize)
+          yield* reserve(physical, bytes, (release) => {
+            content.release = combineReleases(content.release, release)
+          })
+          content.properties = header.properties
+          content.body = yield* wire(() => new Uint8Array(bytes))
+          if (bytes === 0) yield* deliverContent(physical)
+        } else if (frame.type === 3) {
+          if (
+            content.body === undefined || frame.payload.byteLength === 0 ||
+            content.offset + frame.payload.byteLength > content.body.byteLength
+          ) {
+            return yield* new AMQPError.AMQPProtocolError({ reason: "Invalid content body size or sequence" })
+          }
+          content.body.set(frame.payload, content.offset)
+          content.offset += frame.payload.byteLength
+          if (content.offset === content.body.byteLength) yield* deliverContent(physical)
+        } else {
+          return yield* new AMQPError.AMQPProtocolError({ reason: `Unsupported frame type ${frame.type}` })
+        }
       }
-    })
+    )
 
-    const handshake = Effect.fnUntraced(function*(epoch: Epoch): Effect.fn.Return<void, Error> {
+    const handshake = Effect.fnUntraced(function*(epoch: Epoch): Effect.fn.Return<void, AMQPFailure> {
       const start: Pending = { expected: [Protocol.ConnectionStart], done: Deferred.makeUnsafe() }
       epoch.pending = start
-      yield* enqueue(epoch, [Codec.PROTOCOL_HEADER])
+      yield* enqueue({ epoch, frames: [Codec.PROTOCOL_HEADER] })
       const { method } = yield* Deferred.await(start.done)
       epoch.pending = undefined
       const serverProperties = yield* Protocol.readTable(method, "serverProperties")
       const mechanisms = yield* Protocol.readString(method, "mechanisms")
       const locales = yield* Protocol.readString(method, "locales")
+      const authentication = options.authentication
       if (
-        method.fields.versionMajor !== 0 || method.fields.versionMinor !== 9 || !mechanisms.split(" ").includes("PLAIN")
+        method.fields.versionMajor !== 0 || method.fields.versionMinor !== 9 ||
+        !mechanisms.split(/\s+/).includes(authentication.mechanism)
       ) {
-        return yield* connectionError("Broker does not support AMQP 0-9-1 PLAIN authentication", undefined, true)
+        return yield* connectionError(
+          "Broker does not advertise the selected AMQP 0-9-1 authentication mechanism",
+          undefined,
+          true
+        )
       }
       if (!locales.split(" ").includes("en_US")) {
         return yield* connectionError("Broker does not support en_US locale", undefined, true)
       }
       epoch.serverProperties = serverProperties
-      const password = Redacted.isRedacted(secret) ? Redacted.value(secret) : secret
+      const password = Redacted.isRedacted(secret) ? secret : Redacted.make(secret)
       const username = options.username ?? "guest"
-      if (username.includes("\0") || password.includes("\0")) {
-        return yield* connectionError("PLAIN credentials must not contain NUL", undefined, true)
-      }
-      const tune = yield* rpc(epoch, undefined, Protocol.ConnectionStartOk, {
+      const response = yield* authenticationResponse(
+        () => authentication.initialResponse(username, password),
+        "Authentication initial response failed"
+      )
+      let tune = yield* rpc(epoch, undefined, Protocol.ConnectionStartOk, {
         clientProperties: {
           product: "effect-messaging",
           version: "0.8.0",
@@ -1243,10 +1256,41 @@ export const make = <R>(
           ...options.clientProperties,
           ...(options.connectionName === undefined ? {} : { connection_name: options.connectionName })
         },
-        mechanism: "PLAIN",
-        response: new TextEncoder().encode(`\0${username}\0${password}`),
+        mechanism: authentication.mechanism,
+        response,
         locale: "en_US"
-      })
+      }).pipe(Effect.mapError((error) =>
+        error instanceof AMQPError.AMQPProtocolError
+          ? connectionError("Authentication exchange encoding failed", undefined, true)
+          : error
+      ))
+      while (
+        tune.method.classId === Protocol.ConnectionSecure.classId &&
+        tune.method.methodId === Protocol.ConnectionSecure.methodId
+      ) {
+        const respond = authentication.challenge
+        if (respond === undefined) {
+          return yield* connectionError(
+            "Selected authentication mechanism does not support broker challenges",
+            undefined,
+            true
+          )
+        }
+        const challenge = yield* Schema.decodeUnknownEffect(Schema.Uint8Array)(tune.method.fields.challenge).pipe(
+          Effect.mapError(() => connectionError("Invalid authentication challenge", undefined, true))
+        )
+        const response = yield* authenticationResponse(
+          () => respond(challenge),
+          "Authentication challenge response failed"
+        )
+        tune = yield* rpc(epoch, undefined, Protocol.ConnectionSecureOk, { response }).pipe(
+          Effect.mapError((error) =>
+            error instanceof AMQPError.AMQPProtocolError
+              ? connectionError("Authentication exchange encoding failed", undefined, true)
+              : error
+          )
+        )
+      }
       const serverFrame = yield* Protocol.readNumber(tune.method, "frameMax")
       const serverChannel = yield* Protocol.readNumber(tune.method, "channelMax")
       const serverHeartbeat = yield* Protocol.readNumber(tune.method, "heartbeat")
@@ -1291,7 +1335,7 @@ export const make = <R>(
             if (epoch.heartbeatWrite !== undefined && !Deferred.isDoneUnsafe(epoch.heartbeatWrite.done)) {
               return Effect.void
             }
-            return Effect.fromResult(submit(epoch, [frame], false, undefined, true)).pipe(
+            return Effect.fromResult(submit({ epoch, frames: [frame], priority: true })).pipe(
               Effect.map((command) => {
                 epoch.heartbeatWrite = command
               })
@@ -1326,19 +1370,29 @@ export const make = <R>(
             scope: epochScope,
             writer,
             failure: Deferred.makeUnsafe(),
-            wakeWriter: Latch.makeUnsafe(),
+            outbound: Outbound.make<PhysicalChannel>({
+              maxBytes: maxOutboundBytes,
+              maxCommands: maxPending,
+              frameMax: () => epoch.frameMax,
+              isActive: () => epoch.active,
+              isWritable: (command) =>
+                !command.publish || command.physical?.active === false ||
+                (epoch.publishGate.isOpen() && (command.physical?.flow.isOpen() ?? true)),
+              validate: (command) =>
+                !epoch.active || (epoch.brokerCloseError !== undefined && !command.priority) ||
+                  command.physical?.active === false
+                  ? command.publish
+                    ? publishError("NotSent", "Session retired before transport write")
+                    : channelError("Session retired before transport write")
+                  : undefined
+            }),
             publishGate: Latch.makeUnsafe(true),
-            control: [],
-            data: [],
             channels: new Map(),
             freeChannels: [],
             rpc: Semaphore.makeUnsafe(1),
             active: true,
             nextChannel: 1,
             pending: undefined,
-            writing: undefined,
-            outboundBytes: 0,
-            outboundCommands: 0,
             bufferedBytes: 0,
             frameMax: Math.max(requestedFrameMax || maxBufferedBytes, 4096),
             channelMax: 65535,
@@ -1355,14 +1409,7 @@ export const make = <R>(
           yield* Effect.addFinalizer(() =>
             Effect.sync(() => failEpoch(epoch, connectionError("Physical session retired")))
           )
-          yield* writerLoop(epoch).pipe(
-            Effect.ensuring(Effect.sync(() => {
-              const writing = epoch.writing
-              epoch.writing = undefined
-              if (writing !== undefined) finish(writing.drained, Effect.void)
-            })),
-            Effect.forkScoped
-          )
+          yield* writerLoop(epoch).pipe(Effect.forkScoped)
           const decoder = yield* Codec.makeFrameDecoder(epoch.frameMax, maxBufferedBytes)
           const readerLoop = Effect.gen(function*() {
             while (epoch.active) {
@@ -1481,9 +1528,9 @@ export const make = <R>(
     const supervisorFiber = yield* supervisor.pipe(Effect.forkIn(scope))
 
     const operation = <A>(
-      logical: Logical,
-      run: (physical: Physical) => Effect.Effect<A, Error>
-    ): Effect.Effect<A, Error> =>
+      logical: LogicalChannel,
+      run: (physical: PhysicalChannel) => Effect.Effect<A, AMQPFailure>
+    ): Effect.Effect<A, AMQPFailure> =>
       Effect.suspend(() => {
         if (logical.pendingOperations >= maxPending) {
           return Effect.fail(channelError("Pending operation limit exceeded"))
@@ -1497,10 +1544,11 @@ export const make = <R>(
       })
 
     const cancelConsumer = Effect.fnUntraced(
-      function*(logical: Logical, consumer: Consumer): Effect.fn.Return<void, Error> {
+      function*(logical: LogicalChannel, consumer: Consumer): Effect.fn.Return<void, AMQPFailure> {
         if (!consumer.active) return
         // Unregister desired consumption before any network wait, so shutdown cannot resurrect it.
         consumer.active = false
+        consumer.cancelled = true
         topology.removeConsumer(logical, consumer)
         const physical = logical.physical
         let admitted = false
@@ -1544,19 +1592,78 @@ export const make = <R>(
       }
     )
 
-    const drainConfirms = (physical: Physical) =>
+    const retireConsumerLocally = (consumer: Consumer, error: AMQPFailure): void => {
+      consumer.active = false
+      consumer.cancelled = true
+      topology.removeConsumer(consumer.logical, consumer)
+      const physical = consumer.logical.physical
+      if (physical?.consumers.get(consumer.tag) === consumer) physical.consumers.delete(consumer.tag)
+      while (true) {
+        const envelope = Queue.takeUnsafe(consumer.mailbox)
+        if (envelope === undefined || Exit.isFailure(envelope)) break
+        envelope.value.release()
+        settlements.revoke(envelope.value.value)
+      }
+      Queue.failCauseUnsafe(consumer.mailbox, Cause.fail(error))
+    }
+
+    const transaction = (logical: LogicalChannel, action: "Commit" | "Rollback") =>
+      operation(logical, (origin) => {
+        if (!logical.transactional) return Effect.fail(channelError("Transaction mode has not been selected"))
+        if (action === "Commit" && logical.transactionLost) {
+          return Effect.fail(
+            new AMQPError.AMQPTransactionError({
+              outcome: "Unknown",
+              reason: "Transaction session was lost; work was not replayed. Roll back before starting new work"
+            })
+          )
+        }
+        let admitted = false
+        return origin.publishing.withPermit(
+          origin.epoch.outbound.drain(origin.id).pipe(Effect.andThen(
+            rpc(
+              origin.epoch,
+              origin,
+              action === "Commit" ? Protocol.TxCommit : Protocol.TxRollback,
+              {},
+              connectionTimeout,
+              () => {
+                admitted = true
+              },
+              () => {
+                settlements.transaction(origin, action)
+                logical.transactionPending = false
+                logical.transactionLost = false
+              }
+            ).pipe(
+              Effect.asVoid,
+              Effect.mapError((cause) =>
+                new AMQPError.AMQPTransactionError({
+                  outcome: admitted ? "Unknown" : "NotSent",
+                  reason: admitted ?
+                    `Transaction ${action.toLowerCase()} outcome is unknown; work is not replayed` :
+                    `Transaction ${action.toLowerCase()} was not sent`,
+                  cause
+                })
+              )
+            )
+          ))
+        )
+      })
+
+    const drainConfirms = (physical: PhysicalChannel) =>
       Effect.forEach(
         Array.from(physical.confirms.values()),
         (confirm) => Deferred.await(confirm).pipe(Effect.ignore),
         { discard: true }
       )
 
-    const closeLogical = Effect.fnUntraced(function*(logical: Logical): Effect.fn.Return<void> {
+    const closeLogical = Effect.fnUntraced(function*(logical: LogicalChannel): Effect.fn.Return<void> {
       if (logical.closed) return yield* Deferred.await(logical.closeDone)
       logical.closed = true
       logicals.delete(logical)
       const physical = logical.physical
-      if (physical !== undefined) finish(physical.admissionClosed, Effect.void)
+      if (physical !== undefined) Deferred.doneUnsafe(physical.admissionClosed, Effect.void)
       const shutdown = Effect.gen(function*() {
         for (const consumer of Array.from(topology.consumers(logical))) {
           yield* cancelConsumer(logical, consumer).pipe(Effect.ignore)
@@ -1600,23 +1707,27 @@ export const make = <R>(
           topology.remove(logical)
           discard(logical.returned)
           Queue.endUnsafe(logical.returned)
-          finish(logical.closeDone, Effect.void)
+          Deferred.doneUnsafe(logical.closeDone, Effect.void)
         }))
       )
     })
 
     const createChannel = Effect.fn("AMQPConnection.createChannel")(function*(
-      channelOptions: AMQPChannel.AMQPChannelOptions = {}
-    ): Effect.fn.Return<AMQPChannel.AMQPChannel, Error, Scope.Scope> {
-      channelOptions = { ...channelOptions }
-      yield* integer("prefetch", channelOptions.prefetch ?? 50, 1, 65535)
+      inputChannelOptions: AMQPChannel.AMQPChannelOptions = {}
+    ): Effect.fn.Return<AMQPChannel.AMQPChannel, AMQPFailure, Scope.Scope> {
+      const channelOptions = Object.freeze(
+        yield* Configuration.channel(inputChannelOptions).pipe(
+          Effect.mapError(protocolError)
+        )
+      )
+      yield* integer("prefetch", channelOptions.prefetch ?? 50, 0, 65535)
       yield* integer("maxUnconfirmed", channelOptions.maxUnconfirmed ?? 1024, 1, 65535)
-      const logical: Logical = {
+      const logical: LogicalChannel = {
         options: channelOptions,
         ready: Latch.makeUnsafe(),
         closeDone: Deferred.makeUnsafe(),
         operations: Semaphore.makeUnsafe(1),
-        returned: yield* Queue.make<Envelope<AMQPTypes.ReturnedMessage>, Error | Cause.Done>({
+        returned: yield* Queue.make<Envelope<AMQPTypes.ReturnedMessage>, AMQPFailure | Cause.Done>({
           capacity: 64,
           strategy: "dropping"
         }),
@@ -1625,7 +1736,10 @@ export const make = <R>(
         error: undefined,
         prefetch: channelOptions.prefetch ?? 50,
         globalPrefetch: undefined,
-        pendingOperations: 0
+        pendingOperations: 0,
+        transactional: false,
+        transactionPending: false,
+        transactionLost: false
       }
       const epoch = yield* awaitEpoch
       logicals.add(logical)
@@ -1642,12 +1756,27 @@ export const make = <R>(
         routingKey: string | (() => string),
         content: Uint8Array,
         publishOptions: AMQPTypes.PublishOptions = {}
-      ): Effect.fn.Return<void, Error> {
-        if (!isContent(content)) {
+      ): Effect.fn.Return<void, AMQPFailure> {
+        const body = yield* Effect.try({
+          try: () =>
+            isContent(content)
+              ? new Uint8Array(
+                Reflect.get(typedArrayPrototype, "buffer", content),
+                Reflect.get(typedArrayPrototype, "byteOffset", content),
+                Reflect.get(typedArrayPrototype, "byteLength", content)
+              )
+              : undefined,
+          catch: (cause) => publishError("NotSent", "Invalid message content", cause)
+        })
+        if (body === undefined) {
           return yield* publishError("NotSent", "Message content must be a Uint8Array")
         }
-        if (content.byteLength > maxMessageBytes) {
+        const bodyLength = body.byteLength
+        if (bodyLength > maxMessageBytes) {
           return yield* publishError("NotSent", "Message exceeds maxMessageBytes")
+        }
+        if (logical.transactional && logical.transactionLost) {
+          return yield* publishError("NotSent", "Previous transaction session was lost; roll back before publishing")
         }
         const target = yield* awaitPhysical(logical).pipe(
           Effect.mapError((error) => publishError("NotSent", "Channel unavailable", error))
@@ -1667,68 +1796,117 @@ export const make = <R>(
                   Effect.andThen(Effect.fail(publishError("NotSent", "Session retired before publish admission")))
                 )
               ))
-              admitted = yield* target.publishing.withPermit(
+              admitted = yield* restore(target.publishing.withPermit(
                 Effect.gen(function*() {
-                  const properties: AMQPTypes.MessageProperties = {
-                    ...publishOptions,
-                    ...(publishOptions.persistent === undefined
-                      ? {}
-                      : { deliveryMode: publishOptions.persistent ? 2 : 1 })
-                  }
+                  const properties = yield* Normalize.publish(publishOptions)
                   const key = typeof routingKey === "string" ? routingKey : yield* Effect.try({
                     try: routingKey,
                     catch: (cause) => publishError("NotSent", "Routing key resolution failed", cause)
                   })
                   const frames = [
-                    yield* Codec.encodeMethod(target.id, Protocol.BasicPublish, {
+                    yield* encodeMethodFrame(target.epoch, target.id, Protocol.BasicPublish, {
                       reserved1: 0,
                       exchange,
                       routingKey: key,
-                      mandatory: publishOptions.mandatory ?? false,
+                      mandatory: properties.mandatory ?? false,
                       immediate: false
                     }),
-                    yield* Codec.encodeContentHeader(target.id, BigInt(content.byteLength), properties)
+                    yield* Codec.encodeContentHeader(target.id, BigInt(bodyLength), properties)
                   ]
-                  const bodyMax = target.epoch.frameMax - 8
-                  for (let offset = 0; offset < content.byteLength; offset += bodyMax) {
-                    frames.push(yield* Codec.encodeFrame(3, target.id, content.subarray(offset, offset + bodyMax)))
+                  if (frames[1] !== undefined && frames[1].byteLength > target.epoch.frameMax) {
+                    return yield* publishError("NotSent", "Content header exceeds negotiated frameMax")
                   }
-                  // Effects above may yield. All final checks, reservation and state installation below
-                  // share one synchronous turn, with no effect execution between validation and commit.
-                  return yield* Effect.suspend((): Effect.Effect<PublishAdmission | undefined, Error> => {
-                    if (!target.active || !target.epoch.active || target.closing || logical.closed || closing) {
-                      return Effect.fail(publishError("NotSent", "Session retired before publish admission"))
-                    }
-                    // A competing publisher or a broker control may have changed admission after the wakeup.
-                    // Recheck synchronously and retry outside the lock instead of consuming a stale permit.
-                    if (!target.epoch.publishGate.isOpen() || !target.flow.isOpen()) return Effect.succeed(undefined)
-                    if (target.confirms.size >= (channelOptions.maxUnconfirmed ?? 1024)) {
-                      target.confirmCapacity.closeUnsafe()
-                      return Effect.succeed(undefined)
-                    }
-                    if (target.epoch.outboundBytes + content.byteLength > maxOutboundBytes) {
-                      return Effect.fail(publishError("NotSent", "Outbound byte admission limit exceeded"))
-                    }
-                    // Commit the command and sequence slot atomically, including installation of interruption
-                    // cleanup below. A timed-out slot continues to consume capacity until ack/nack or retirement.
-                    const confirm = channelOptions.confirm === true ? Deferred.makeUnsafe<void, Error>() : undefined
-                    const result = submit(target.epoch, frames, true, target, false, () => {
-                      if (confirm !== undefined) {
-                        target.sequence++
-                        target.confirms.set(target.sequence, confirm)
-                        if (target.confirms.size >= (channelOptions.maxUnconfirmed ?? 1024)) {
-                          target.confirmCapacity.closeUnsafe()
+                  const bodyMax = target.epoch.frameMax - 8
+                  const bytes = frames.reduce((total, frame) => total + frame.byteLength, 0) +
+                    bodyLength + 8 * Math.ceil(bodyLength / bodyMax)
+                  // Mask acquisition through cleanup installation; the encoder use remains interruptible.
+                  return yield* Effect.acquireUseRelease(
+                    Effect.suspend(() =>
+                      Effect.fromResult(
+                        target.epoch.outbound.reserve({ bytes, publish: true, owner: target })
+                      )
+                    ),
+                    (reservation) =>
+                      Effect.gen(function*() {
+                        for (let offset = 0; offset < bodyLength; offset += bodyMax) {
+                          if (!target.active || !target.epoch.active || reservation.state === "Released") {
+                            return yield* publishError("NotSent", "Session retired during body encoding")
+                          }
+                          const chunk = yield* Effect.try({
+                            try: () => Uint8Array.prototype.subarray.call(body, offset, offset + bodyMax),
+                            catch: (cause) => publishError("NotSent", "Body slicing failed", cause)
+                          })
+                          frames.push(yield* Codec.encodeFrame(3, target.id, chunk))
+                          if (frames.length % 64 === 0) yield* Effect.yieldNow
                         }
-                      }
-                    })
-                    return Effect.fromResult(Result.map(result, (command) => ({ command, confirm })))
-                  })
+                        // Effects above may yield. All final checks, reservation and state installation below
+                        // share one synchronous turn, with no effect execution between validation and commit.
+                        return yield* Effect.suspend((): Effect.Effect<PublishAdmission | undefined, AMQPFailure> => {
+                          if (!target.active || !target.epoch.active || target.closing || logical.closed || closing) {
+                            return Effect.fail(publishError("NotSent", "Session retired before publish admission"))
+                          }
+                          // A competing publisher or a broker control may have changed admission after the wakeup.
+                          // Recheck synchronously and retry outside the lock instead of consuming a stale permit.
+                          if (!target.epoch.publishGate.isOpen() || !target.flow.isOpen()) {
+                            return Effect.succeed(undefined)
+                          }
+                          if (target.confirms.size >= (channelOptions.maxUnconfirmed ?? 1024)) {
+                            target.confirmCapacity.closeUnsafe()
+                            return Effect.succeed(undefined)
+                          }
+                          // Commit the command and sequence slot atomically, including installation of interruption
+                          // cleanup below. A timed-out slot continues to consume capacity until ack/nack or retirement.
+                          const confirm = channelOptions.confirm === true
+                            ? Deferred.makeUnsafe<void, AMQPFailure>()
+                            : undefined
+                          const result = target.epoch.outbound.commit({
+                            reservation,
+                            frames,
+                            channel: target.id,
+                            physical: target,
+                            onAdmitted: () => {
+                              if (logical.transactional) logical.transactionPending = true
+                              if (confirm !== undefined) {
+                                target.sequence++
+                                target.confirms.set(target.sequence, confirm)
+                                if (target.confirms.size >= (channelOptions.maxUnconfirmed ?? 1024)) {
+                                  target.confirmCapacity.closeUnsafe()
+                                }
+                              }
+                              if (logical.transactional && logical.transactionLost) {
+                                return Effect.fail(
+                                  publishError("NotSent", "Transaction session lost before publish admission")
+                                )
+                              }
+                            }
+                          })
+                          return Effect.fromResult(Result.map(result, (command) => {
+                            admitted = { command, confirm }
+                            return admitted
+                          }))
+                        })
+                      }),
+                    (reservation) =>
+                      Effect.sync(() => {
+                        if (reservation.state === "Reserved" || reservation.state === "Released") frames.length = 0
+                        target.epoch.outbound.cancel(reservation)
+                      })
+                  )
                 }).pipe(Effect.mapError((cause) =>
                   cause instanceof AMQPError.AMQPPublishError
                     ? cause
                     : publishError("NotSent", "Publish admission failed", cause)
                 ))
-              )
+              )).pipe(Effect.onInterrupt(() =>
+                Effect.sync(() => {
+                  if (admitted?.confirm !== undefined) {
+                    Deferred.doneUnsafe(
+                      admitted.confirm,
+                      Effect.fail(publishError("Unknown", "Publisher interrupted after admission"))
+                    )
+                  }
+                })
+              ))
             }
             const confirmation = admitted.confirm
             // Once admitted, the writer completes this publish even if its caller is interrupted. Neither
@@ -1736,7 +1914,10 @@ export const make = <R>(
             yield* restore(Deferred.await(admitted.command.done)).pipe(Effect.onInterrupt(() =>
               Effect.sync(() => {
                 if (confirmation !== undefined) {
-                  finish(confirmation, Effect.fail(publishError("Unknown", "Publisher interrupted after admission")))
+                  Deferred.doneUnsafe(
+                    confirmation,
+                    Effect.fail(publishError("Unknown", "Publisher interrupted after admission"))
+                  )
                 }
               })
             ))
@@ -1746,7 +1927,7 @@ export const make = <R>(
                 Effect.timeout(channelOptions.confirmTimeout ?? "30 seconds"),
                 Effect.onInterrupt(() =>
                   Effect.sync(() => {
-                    finish(
+                    Deferred.doneUnsafe(
                       confirmation,
                       Effect.fail(publishError("Unknown", "Publisher interrupted before confirmation"))
                     )
@@ -1755,7 +1936,7 @@ export const make = <R>(
                 Effect.catchTag("TimeoutError", () => {
                   const error = publishError("Unknown", "Timed out waiting for publisher confirmation")
                   // Keep the sequence slot until the broker replies, but do not leave shutdown draining an abandoned waiter.
-                  finish(confirmation, Effect.fail(error))
+                  Deferred.doneUnsafe(confirmation, Effect.fail(error))
                   return Effect.fail(error)
                 })
               )
@@ -1769,39 +1950,50 @@ export const make = <R>(
         routingKey: string | (() => string),
         content: Uint8Array,
         opts?: AMQPTypes.PublishOptions
-      ): Effect.Effect<void, Error> =>
-        Effect.suspend(() => {
-          if (logical.pendingOperations >= maxPending) {
-            return Effect.fail(publishError("NotSent", "Pending publish admission limit exceeded"))
-          }
-          logical.pendingOperations++
-          return publishImpl(exchange, routingKey, content, opts).pipe(
-            Effect.ensuring(Effect.sync(() => {
-              logical.pendingOperations--
-            }))
-          )
-        })
+      ): Effect.Effect<void, AMQPFailure> =>
+        // Automatic scheduler yields must not expose the increment before its finalizer is installed.
+        Effect.uninterruptibleMask((restore) =>
+          Effect.suspend(() => {
+            if (logical.pendingOperations >= maxPending) {
+              return Effect.fail(publishError("NotSent", "Pending publish admission limit exceeded"))
+            }
+            logical.pendingOperations++
+            return restore(publishImpl(exchange, routingKey, content, opts)).pipe(
+              Effect.ensuring(Effect.sync(() => {
+                logical.pendingOperations--
+              }))
+            )
+          })
+        )
 
       const settle = Effect.fnUntraced(
         function*(message: Message, method: Protocol.MethodDescriptor, multiple = false, requeue = false) {
           const capability = yield* Effect.fromResult(settlements.validate(logical, message))
+          if (logical.transactional && logical.transactionLost) {
+            return yield* new AMQPError.AMQPTransactionError({
+              outcome: "Unknown",
+              reason: "Previous transaction session was lost; roll back before settling deliveries"
+            })
+          }
           const origin = capability.origin
           const fields: Fields = { deliveryTag: capability.tag }
           if (method !== Protocol.BasicReject) fields.multiple = multiple
           if (method !== Protocol.BasicAck) fields.requeue = requeue
           const frame = yield* Codec.encodeMethod(origin.id, method, fields)
-          const command = yield* Effect.suspend((): Effect.Effect<Write, Error> => {
+          const command = yield* Effect.suspend((): Effect.Effect<WriteCommand, AMQPFailure> => {
             // Encoding may yield to another settler or retirement. Revalidate and commit in one turn.
             const valid = settlements.validate(logical, message)
             if (Result.isFailure(valid)) return Effect.fail(valid.failure)
-            const result = submit(
-              origin.epoch,
-              [frame],
-              false,
-              origin,
-              true,
-              () => settlements.commit(origin, capability.tag, multiple)
-            )
+            const result = submit({
+              epoch: origin.epoch,
+              frames: [frame],
+              physical: origin,
+              priority: true,
+              onAdmitted: () => {
+                settlements.commit(origin, capability.tag, multiple, logical.transactional)
+                if (logical.transactional) logical.transactionPending = true
+              }
+            })
             return Effect.fromResult(result)
           })
           yield* Deferred.await(command.done)
@@ -1811,17 +2003,32 @@ export const make = <R>(
       const settleAll = (method: Protocol.MethodDescriptor, requeue = false) =>
         operation(logical, (origin) =>
           Effect.gen(function*() {
+            if (logical.transactional && logical.transactionLost) {
+              return yield* new AMQPError.AMQPTransactionError({
+                outcome: "Unknown",
+                reason: "Previous transaction session was lost; roll back before settling deliveries"
+              })
+            }
             const frame = yield* Codec.encodeMethod(origin.id, method, {
               deliveryTag: BigInt(0),
               multiple: true,
               ...(method === Protocol.BasicNack ? { requeue } : {})
             })
-            const command = yield* Effect.suspend((): Effect.Effect<Write, Error> => {
+            const command = yield* Effect.suspend((): Effect.Effect<WriteCommand, AMQPFailure> => {
               if (origin.logical.closed || origin.closing || closing) {
                 return Effect.fail(channelError("Channel is closed"))
               }
               return Effect.fromResult(
-                submit(origin.epoch, [frame], false, origin, true, () => settlements.commit(origin, BigInt(0), true))
+                submit({
+                  epoch: origin.epoch,
+                  frames: [frame],
+                  physical: origin,
+                  priority: true,
+                  onAdmitted: () => {
+                    settlements.commit(origin, BigInt(0), true, logical.transactional)
+                    if (logical.transactional) logical.transactionPending = true
+                  }
+                })
               )
             })
             yield* Deferred.await(command.done)
@@ -1846,10 +2053,23 @@ export const make = <R>(
         reject: (message, requeue = true) => settle(message, Protocol.BasicReject, false, requeue),
         ackAll: () => settleAll(Protocol.BasicAck),
         nackAll: (requeue = true) => settleAll(Protocol.BasicNack, requeue),
+        txSelect: Effect.fn("AMQPChannel.txSelect")(() =>
+          operation(logical, (origin) => {
+            if (logical.options.confirm === true) {
+              return Effect.fail(channelError("Transactions conflict with publisher confirms"))
+            }
+            if (logical.transactional) return Effect.void
+            return rpc(origin.epoch, origin, Protocol.TxSelect, {}, connectionTimeout, undefined, () => {
+              logical.transactional = true
+            }).pipe(Effect.asVoid)
+          })
+        ),
+        txCommit: Effect.fn("AMQPChannel.txCommit")(() => transaction(logical, "Commit")),
+        txRollback: Effect.fn("AMQPChannel.txRollback")(() => transaction(logical, "Rollback")),
         assertQueue: (queue = "", opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              const remembered = yield* DesiredTopology.snapshotOptions(opts)
+              const remembered = yield* Normalize.queue(opts)
               const reply = yield* declareQueue(origin, queue, remembered)
               return topology.queueDeclared(logical, queue, remembered, reply)
             })),
@@ -1858,14 +2078,33 @@ export const make = <R>(
         deleteQueue: (queue, opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              const reply = yield* rpc(origin.epoch, origin, Protocol.QueueDelete, {
-                reserved1: 0,
-                queue: DesiredTopology.queueName(queue),
-                ifUnused: opts.ifUnused ?? false,
-                ifEmpty: opts.ifEmpty ?? false,
-                noWait: false
-              })
-              topology.queueDeleted(queue)
+              const normalized = yield* Configuration.queueDeletion(opts).pipe(Effect.mapError(protocolError))
+              const reply = yield* rpc(
+                origin.epoch,
+                origin,
+                Protocol.QueueDelete,
+                {
+                  reserved1: 0,
+                  queue: DesiredTopology.queueName(queue),
+                  ifUnused: normalized.ifUnused ?? false,
+                  ifEmpty: normalized.ifEmpty ?? false,
+                  noWait: false
+                },
+                connectionTimeout,
+                undefined,
+                () => {
+                  // Delete-ok is authoritative even if the transport fails before the RPC writer resumes.
+                  // Cancel every desired owner synchronously, without sending controls for a deleted queue.
+                  for (const consumer of topology.queueDeleted(queue)) {
+                    retireConsumerLocally(
+                      consumer,
+                      new AMQPError.AMQPChannelError({
+                        reason: "Broker cancelled consumer: queue was deleted"
+                      })
+                    )
+                  }
+                }
+              )
               return { messageCount: yield* Protocol.readNumber(reply.method, "messageCount") }
             })),
         purgeQueue: (queue) =>
@@ -1882,7 +2121,7 @@ export const make = <R>(
         assertExchange: (exchange, type, opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              const remembered = yield* DesiredTopology.snapshotOptions(opts)
+              const remembered = yield* Normalize.exchange(opts)
               const declaration: DesiredTopology.ExchangeDeclaration = { exchange, type, options: remembered }
               yield* declareExchange(origin, declaration)
               topology.exchangeDeclared(logical, declaration)
@@ -1903,10 +2142,11 @@ export const make = <R>(
         deleteExchange: (exchange, opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
+              const normalized = yield* Configuration.exchangeDeletion(opts).pipe(Effect.mapError(protocolError))
               yield* rpc(origin.epoch, origin, Protocol.ExchangeDelete, {
                 reserved1: 0,
                 exchange,
-                ifUnused: opts.ifUnused ?? false,
+                ifUnused: normalized.ifUnused ?? false,
                 noWait: false
               })
               topology.exchangeDeleted(exchange)
@@ -1922,12 +2162,26 @@ export const make = <R>(
         consume: (queue, opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              const prefetch = yield* integer("consumer prefetch", opts.prefetch ?? logical.prefetch, 1, 65535)
+              const normalized = yield* Normalize.consume(opts)
+              const prefetch = normalized.prefetch ?? logical.prefetch
+              const capacity = yield* integer(
+                "maxBufferedMessages",
+                normalized.maxBufferedMessages ?? (prefetch === 0 || normalized.noAck === true ? 256 : prefetch),
+                1,
+                0x7fffffff
+              )
+              if (DesiredTopology.queueName(queue) === "amq.rabbitmq.reply-to" && normalized.noAck !== true) {
+                return yield* channelError(
+                  "Direct Reply-To requires noAck: true and requests published on this channel"
+                )
+              }
               const consumer: Consumer = {
                 queue,
-                options: yield* DesiredTopology.snapshotOptions(opts),
-                mailbox: yield* Queue.make<Envelope<Message>, Error | Cause.Done>({
-                  capacity: prefetch,
+                logical,
+                cancelled: false,
+                options: Object.freeze({ ...normalized, prefetch, maxBufferedMessages: capacity }),
+                mailbox: yield* Queue.make<Envelope<Message>, AMQPFailure | Cause.Done>({
+                  capacity,
                   strategy: "dropping"
                 }),
                 tag: "",
@@ -1959,36 +2213,47 @@ export const make = <R>(
               ? rpc(origin.epoch, origin, Protocol.BasicCancel, { consumerTag: tag, noWait: false }).pipe(Effect.asVoid)
               : cancelConsumer(logical, consumer)
           }),
-        get: (queue) =>
+        get: (queue, opts = {}) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              if (settlements.count(origin) >= maxPending) {
+              const normalized = yield* decodeGetOptions(opts).pipe(Effect.mapError(protocolError))
+              if (normalized.noAck !== true && settlements.count(origin) >= maxPending) {
                 return yield* channelError("Unsettled delivery limit exceeded")
               }
               const reply = yield* rpc(origin.epoch, origin, Protocol.BasicGet, {
                 reserved1: 0,
                 queue: DesiredTopology.queueName(queue),
-                noAck: false
+                noAck: normalized.noAck ?? false
               })
               return reply.message === undefined ? Option.none() : Option.some(reply.message)
             })),
         prefetch: (count, global = false) =>
           operation(logical, (origin) =>
             Effect.gen(function*() {
-              yield* integer("prefetch", count, 1, 65535)
+              yield* integer("prefetch", count, 0, 65535)
               yield* rpc(origin.epoch, origin, Protocol.BasicQos, { prefetchSize: 0, prefetchCount: count, global })
               if (global) logical.globalPrefetch = count
               else logical.prefetch = count
             })),
-        recover: () =>
+        recover: (requeue = true) =>
           operation(logical, (origin) =>
-            rpc(origin.epoch, origin, Protocol.BasicRecover, { requeue: true }, connectionTimeout, () => {
+            rpc(origin.epoch, origin, Protocol.BasicRecover, { requeue }, connectionTimeout, () => {
               // Revoke atomically with admission, before the reader can receive any redelivery.
-              settlements.revokeAll(origin)
+              settlements.recover(origin)
               for (const consumer of topology.consumers(logical)) {
                 discard(consumer.mailbox)
               }
             }).pipe(Effect.asVoid)),
+        flow: Effect.fn("AMQPChannel.flow")((active: boolean) =>
+          operation(logical, (origin) =>
+            rpc(origin.epoch, origin, Protocol.ChannelFlow, { active }).pipe(
+              Effect.flatMap((reply) =>
+                Schema.decodeUnknownEffect(Schema.Boolean)(reply.method.fields.active).pipe(
+                  Effect.mapError(protocolError)
+                )
+              )
+            ))
+        ),
         returns: mailboxStream(logical.returned),
         close: closeLogical(logical)
       }
@@ -2039,7 +2304,7 @@ export const make = <R>(
     }).pipe(
       Effect.uninterruptible,
       Effect.ensuring(Effect.sync(() =>
-        finish(closeDone, Effect.void)
+        Deferred.doneUnsafe(closeDone, Effect.void)
       ))
     )
 

@@ -81,12 +81,33 @@ export class AMQPPublishError extends Schema.TaggedError<AMQPPublishError>()(
 ) {}
 
 /**
- * A delivery belongs to a retired channel, or has already been settled.
+ * A transaction command failed before admission, or its broker outcome is uncertain.
+ * Unknown transactions are not replayed after recovery.
+ * @since 1.0.0-beta.0
+ * @category errors
+ */
+export class AMQPTransactionError extends Schema.TaggedError<AMQPTransactionError>()(
+  "AMQPTransactionError",
+  {
+    reason: Schema.String,
+    outcome: Schema.Literals(["NotSent", "Unknown"]),
+    cause: Schema.optional(Schema.Defect())
+  }
+) {}
+
+/**
+ * A delivery is stale, already settled, or was automatically acknowledged by the broker.
+ * No protocol settlement is sent for any of these failures.
  * @since 0.8.0
+ * @category errors
  */
 export class AMQPSettlementError extends Schema.TaggedError<AMQPSettlementError>()(
   "AMQPSettlementError",
-  { reason: Schema.String, kind: Schema.Literals(["Stale", "AlreadySettled"]), cause: Schema.optional(Schema.Defect()) }
+  {
+    reason: Schema.String,
+    kind: Schema.Literals(["Stale", "AlreadySettled", "AutoAcknowledged"]),
+    cause: Schema.optional(Schema.Defect())
+  }
 ) {}
 
 /** @since 0.8.0 */
@@ -95,4 +116,5 @@ export type AMQPError =
   | AMQPChannelError
   | AMQPProtocolError
   | AMQPPublishError
+  | AMQPTransactionError
   | AMQPSettlementError

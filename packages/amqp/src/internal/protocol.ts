@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect"
+import * as Option from "effect/Option"
 import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 import type * as SchemaAST from "effect/SchemaAST"
@@ -62,9 +63,18 @@ export const ConnectionStartOk = define(
   10,
   11,
   "clientProperties:table mechanism:short response:bytes locale:short",
-  () => [ConnectionTune]
+  () => [ConnectionTune, ConnectionSecure]
 )
-// ConnectionSecure (10:20) remains unsupported, as in the original codec.
+/** @since 1.0.0-beta.0 */
+export const ConnectionSecure = define("ConnectionSecure", 10, 20, "challenge:bytes", () => [ConnectionSecureOk])
+/** @since 1.0.0-beta.0 */
+export const ConnectionSecureOk = define(
+  "ConnectionSecureOk",
+  10,
+  21,
+  "response:bytes",
+  () => [ConnectionTune, ConnectionSecure]
+)
 /** @since 0.8.0 */
 export const ConnectionTune = define("ConnectionTune", 10, 30, "channelMax:u16 frameMax:u32 heartbeat:u16")
 /** @since 0.8.0 */
@@ -277,11 +287,25 @@ export const BasicNack = define("BasicNack", 60, 120, "deliveryTag:u64 multiple:
 export const ConfirmSelect = define("ConfirmSelect", 85, 10, "noWait:bit", () => [ConfirmSelectOk])
 /** @since 0.8.0 */
 export const ConfirmSelectOk = define("ConfirmSelectOk", 85, 11)
+/** @since 1.0.0-beta.0 */
+export const TxSelect = define("TxSelect", 90, 10, "", () => [TxSelectOk])
+/** @since 1.0.0-beta.0 */
+export const TxSelectOk = define("TxSelectOk", 90, 11)
+/** @since 1.0.0-beta.0 */
+export const TxCommit = define("TxCommit", 90, 20, "", () => [TxCommitOk])
+/** @since 1.0.0-beta.0 */
+export const TxCommitOk = define("TxCommitOk", 90, 21)
+/** @since 1.0.0-beta.0 */
+export const TxRollback = define("TxRollback", 90, 30, "", () => [TxRollbackOk])
+/** @since 1.0.0-beta.0 */
+export const TxRollbackOk = define("TxRollbackOk", 90, 31)
 
 /** The complete supported method vocabulary. @since 0.8.0 */
 export const methods = Object.freeze({
   ConnectionStart,
   ConnectionStartOk,
+  ConnectionSecure,
+  ConnectionSecureOk,
   ConnectionTune,
   ConnectionTuneOk,
   ConnectionOpen,
@@ -335,7 +359,13 @@ export const methods = Object.freeze({
   BasicRecoverOk,
   BasicNack,
   ConfirmSelect,
-  ConfirmSelectOk
+  ConfirmSelectOk,
+  TxSelect,
+  TxSelectOk,
+  TxCommit,
+  TxCommitOk,
+  TxRollback,
+  TxRollbackOk
 })
 
 const byId = new Map(Object.values(methods).map((method) => [`${method.classId}:${method.methodId}`, method]))
@@ -418,7 +448,40 @@ const decimal = Schema.Struct({
   [AMQPTypes.DecimalTypeId]: Schema.UniqueSymbol(AMQPTypes.DecimalTypeId),
   _tag: Schema.Literal("Decimal"),
   scale: unsigned(255),
-  value: unsigned(0xffffffff)
+  value: Schema.Int.check(Schema.isBetween({ minimum: -0x80000000, maximum: 0xffffffff }))
+})
+const integerRange = (minimum: number, maximum: number) =>
+  Schema.Union([
+    Schema.Int.check(Schema.isBetween({ minimum, maximum })),
+    Schema.BigInt.check(Schema.isBetweenBigInt({ minimum: BigInt(minimum), maximum: BigInt(maximum) }))
+  ])
+const integerValues = {
+  int8: integerRange(-128, 127),
+  uint8: integerRange(0, 255),
+  int16: integerRange(-32768, 32767),
+  uint16: integerRange(0, 65535),
+  int32: integerRange(-0x80000000, 0x7fffffff),
+  uint32: integerRange(0, 0xffffffff),
+  int64: Schema.Union([
+    signed64,
+    Schema.Int.check(Schema.isBetween({
+      minimum: -Number.MAX_SAFE_INTEGER,
+      maximum: Number.MAX_SAFE_INTEGER
+    }))
+  ])
+}
+const fieldInteger = Schema.Union(
+  Object.entries(integerValues).map(([type, value]) =>
+    Schema.Struct({
+      [AMQPTypes.FieldIntegerTypeId]: Schema.UniqueSymbol(AMQPTypes.FieldIntegerTypeId),
+      type: Schema.Literal(type as AMQPTypes.FieldInteger["type"]),
+      value
+    })
+  )
+)
+const fieldTimestamp = Schema.Struct({
+  [AMQPTypes.FieldTimestampTypeId]: Schema.UniqueSymbol(AMQPTypes.FieldTimestampTypeId),
+  seconds: unsigned64
 })
 const fieldNumber = Schema.Struct({
   [AMQPTypes.FieldNumberTypeId]: Schema.UniqueSymbol(AMQPTypes.FieldNumberTypeId),
@@ -433,12 +496,292 @@ const timestamp = Schema.Date.check(
   Schema.makeFilter((value) => Number.isSafeInteger(value.getTime()) && value.getTime() >= 0)
 )
 
+const legacyIntegerKinds: Record<string, AMQPTypes.FieldInteger["type"]> = {
+  byte: "int8",
+  int8: "int8",
+  unsignedbyte: "uint8",
+  uint8: "uint8",
+  short: "int16",
+  int16: "int16",
+  unsignedshort: "uint16",
+  uint16: "uint16",
+  int: "int32",
+  int32: "int32",
+  unsignedint: "uint32",
+  uint32: "uint32",
+  long: "int64",
+  int64: "int64"
+}
+const decodeLegacy = Effect.fnUntraced(
+  function*(rawType: unknown, payload: unknown): Effect.fn.Return<AMQPTypes.FieldValue, SchemaIssue.Issue> {
+    const type = yield* SchemaParser.decodeUnknownEffect(short)(rawType)
+    if (type === "string") return yield* SchemaParser.decodeUnknownEffect(text)(payload)
+    if (type === "boolean") return yield* SchemaParser.decodeUnknownEffect(Schema.Boolean)(payload)
+    if (type === "number") return yield* SchemaParser.decodeUnknownEffect(Schema.Finite)(payload)
+    if (type === "object") {
+      return yield* SchemaParser.decodeUnknownEffect(Schema.Union([
+        Schema.Null,
+        Schema.Uint8Array,
+        fieldArray(Schema.suspend(() => fieldValue(1))),
+        Schema.suspend(() => table(0))
+      ]))(payload)
+    }
+    const integer = Object.hasOwn(legacyIntegerKinds, type) ? legacyIntegerKinds[type] : undefined
+    if (integer !== undefined) {
+      return AMQPTypes.fieldInteger(integer, yield* SchemaParser.decodeUnknownEffect(integerValues[integer])(payload))
+    }
+    if (type === "float" || type === "double" || type === "float64") {
+      const number = AMQPTypes.fieldNumber(
+        type === "float" ? "float" : "double",
+        yield* SchemaParser.decodeUnknownEffect(Schema.Finite)(payload)
+      )
+      return yield* SchemaParser.decodeUnknownEffect(fieldNumber)(number)
+    }
+    if (type === "timestamp") {
+      return AMQPTypes.fieldTimestamp(yield* SchemaParser.decodeUnknownEffect(unsigned64Input)(payload))
+    }
+    if (type === "decimal") {
+      const value = yield* SchemaParser.decodeUnknownEffect(
+        Schema.Struct({ places: unsigned(255), digits: decimal.fields.value })
+      )(payload)
+      return AMQPTypes.decimal(value.places, value.digits)
+    }
+    return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: `Unknown field type ${type}` }))
+  }
+)
+
 // Reflection and property access on caller-owned containers may invoke proxy traps or getters.
 const accessContainer = <A>(access: () => A, message: string): Effect.Effect<A, SchemaIssue.Issue> =>
   Effect.try({
     try: access,
     catch: (cause) => SchemaIssue.isIssue(cause) ? cause : new SchemaIssue.InvalidValue({ message, actual: cause })
   })
+
+const ordinaryTables = new WeakSet<object>()
+/** Wire F tables must remain tables even when they contain an ordinary own ! key. @since 1.0.0-beta.0 */
+export const markFieldTable = <A extends object>(table: A): A => {
+  ordinaryTables.add(table)
+  return table
+}
+
+/** @since 1.0.0-beta.0 */
+export interface SnapshotOptions {
+  readonly preserveUndefined?: boolean
+  readonly legacy?: "Normalize" | "Deferred" | "Decoded"
+}
+
+/**
+ * Guarded single-read snapshots, bounded by retained storage and expanded UTF-8 wire cost.
+ * Deferred legacy inputs are interpreted only after convenience overrides; Decoded inputs
+ * preserve complete wire fields without outgoing normalization. Schemas own semantic constraints.
+ * @since 1.0.0-beta.0
+ */
+export const snapshotInput = Effect.fnUntraced(
+  function*(input: unknown, options: SnapshotOptions = {}): Effect.fn.Return<unknown, SchemaIssue.Issue> {
+    const legacyMode = options.legacy ?? "Normalize"
+    const preserveUndefined = options.preserveUndefined ?? false
+    let remaining = MAX_VALUE_BYTES
+    const stringLengths = new Map<string, number>()
+    const copies = new WeakMap<object, unknown>()
+    const costs = new WeakMap<object, number>()
+    const active = new WeakSet<object>()
+    const retain = (source: object, result: unknown, start: number) => {
+      copies.set(source, result)
+      costs.set(source, start - remaining)
+      active.delete(source)
+      return result
+    }
+    const charge = (size: number) =>
+      Effect.suspend(() => {
+        if (size > remaining) {
+          return Effect.fail(new SchemaIssue.InvalidValue({ message: "Encoded value exceeds size limit" }))
+        }
+        remaining -= size
+        return Effect.void
+      })
+    const copy = Effect.fnUntraced(
+      function*(
+        value: unknown,
+        depth: number,
+        preserve = false,
+        container = false
+      ): Effect.fn.Return<unknown, SchemaIssue.Issue> {
+        const start = remaining
+        if (depth > 36) {
+          return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Field table nesting exceeds limit" }))
+        }
+        yield* charge(32)
+        if (typeof value === "string") {
+          let size = stringLengths.get(value)
+          if (size === undefined) {
+            size = utf8Length(value)
+            stringLengths.set(value, size)
+          }
+          if (size < 0) return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Invalid UTF-16 string" }))
+          yield* charge(size)
+          return value
+        }
+        if (!Predicate.isObjectOrArray(value)) return value
+        if (active.has(value)) {
+          return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Cyclic input value" }))
+        }
+        if (copies.has(value)) {
+          // Charge repeated subgraphs as wire traversals too, bounding DAG expansion before validation.
+          yield* charge(costs.get(value) ?? 0)
+          return copies.get(value)
+        }
+        active.add(value)
+        const array = yield* accessContainer(() => Array.isArray(value), "Invalid input array")
+        if (array) {
+          const length = yield* accessContainer(() => Reflect.get(value, "length"), "Invalid input array")
+          const count = yield* SchemaParser.decodeUnknownEffect(unsigned(MAX_VALUE_BYTES / 32))(length)
+          yield* charge(64 + count * 8)
+          const result: Array<unknown> = []
+          copies.set(value, result)
+          for (let i = 0; i < count; i++) {
+            result.push(
+              yield* copy(yield* accessContainer(() => Reflect.get(value, String(i)), "Invalid input array"), depth + 1)
+            )
+          }
+          return retain(value, result, start)
+        }
+        const bytes = yield* accessContainer(
+          () => value instanceof Uint8Array ? value : undefined,
+          "Invalid input bytes"
+        )
+        if (bytes !== undefined) {
+          const length = yield* accessContainer(() => Reflect.get(value, "byteLength"), "Invalid input bytes")
+          const count = yield* SchemaParser.decodeUnknownEffect(unsigned(MAX_VALUE_BYTES))(length)
+          yield* charge(256 + count)
+          // Intrinsics avoid user-overridden slice/iterator methods.
+          const result = new Uint8Array(count)
+          yield* accessContainer(() => Uint8Array.prototype.set.call(result, bytes), "Invalid input bytes")
+          return retain(value, result, start)
+        }
+        const date = yield* accessContainer(() => value instanceof Date, "Invalid input date")
+        if (date) {
+          const milliseconds = yield* accessContainer(() => Date.prototype.getTime.call(value), "Invalid input date")
+          const result = new Date(milliseconds)
+          return retain(value, result, start)
+        }
+        const legacy = yield* accessContainer(() => Object.getOwnPropertyDescriptor(value, "!"), "Invalid typed field")
+        if (legacyMode !== "Decoded" && legacy !== undefined && !container && !preserve && !ordinaryTables.has(value)) {
+          const type = yield* copy(
+            yield* accessContainer(() => Reflect.get(value, "!"), "Invalid typed field"),
+            depth + 1
+          )
+          const payload = yield* copy(
+            yield* accessContainer(() => Reflect.get(value, "value"), "Invalid typed field"),
+            depth + 1
+          )
+          yield* charge(352)
+          const result = legacyMode === "Deferred" ? { "!": type, value: payload } : yield* decodeLegacy(type, payload)
+          return retain(value, result, start)
+        }
+        if (legacyMode === "Decoded") {
+          const prototype = yield* accessContainer(() => Object.getPrototypeOf(value), "Invalid input prototype")
+          if (prototype !== null && prototype !== Object.prototype) {
+            return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Invalid input object prototype" }))
+          }
+        }
+        const scalar = yield* accessContainer(() =>
+          [
+            AMQPTypes.DecimalTypeId,
+            AMQPTypes.FieldNumberTypeId,
+            AMQPTypes.FieldIntegerTypeId,
+            AMQPTypes.FieldTimestampTypeId,
+            AMQPTypes.LongStringTypeId
+          ].some((id) => Object.hasOwn(value, id)), "Invalid scalar wrapper")
+        const keys = new Map<PropertyKey, boolean>()
+        const prototypes = new Set<object>()
+        let current: object | null = value
+        let levels = 0
+        while (current !== null) {
+          if (++levels > 36 || prototypes.has(current)) {
+            return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Input prototype chain exceeds limit" }))
+          }
+          prototypes.add(current)
+          const source: object = current
+          const ownKeys = yield* accessContainer(() => Reflect.ownKeys(source), "Invalid input keys")
+          yield* charge(ownKeys.length * 48)
+          for (const key of ownKeys) {
+            if (keys.has(key)) continue
+            const descriptor = yield* accessContainer(
+              () => Object.getOwnPropertyDescriptor(source, key),
+              "Invalid input property"
+            )
+            if (descriptor !== undefined && (source !== Object.prototype || descriptor.enumerable === true)) {
+              keys.set(
+                key,
+                descriptor.enumerable === true
+              )
+            }
+          }
+          current = yield* accessContainer<object | null>(
+            () => Object.getPrototypeOf(source),
+            "Invalid input prototype"
+          )
+        }
+        yield* charge(256)
+        const result: Record<PropertyKey, unknown> = Object.create(null)
+        markFieldTable(result)
+        copies.set(value, result)
+        for (const [key, enumerable] of keys) {
+          if (!enumerable && !preserve && !scalar && legacyMode !== "Decoded") continue
+          const entry = yield* accessContainer(() => Reflect.get(value, key), "Invalid input property")
+          if (entry === undefined && !preserve && legacyMode !== "Decoded") continue
+          Object.defineProperty(result, key, {
+            value: yield* copy(
+              entry,
+              depth + 1,
+              legacyMode === "Decoded" || key === "fields" || key === "properties",
+              depth <= 1 &&
+                (key === "arguments" || key === "headers" || key === "serverProperties" || key === "clientProperties")
+            ),
+            enumerable,
+            configurable: true,
+            writable: true
+          })
+        }
+        return retain(value, result, start)
+      }
+    )
+    return yield* copy(input, 0, preserveUndefined, true)
+  }
+)
+
+/** Guarded snapshot followed by the actual Schema decoder. @since 1.0.0-beta.0 */
+export const snapshotSchema = <A, E>(schema: Schema.Codec<A, E>, preserveUndefined = true): Schema.Codec<A, E> =>
+  Schema.declareConstructor<A, E>()([schema], ([codec]) => {
+    const decode = SchemaParser.decodeUnknownEffect(codec)
+    return Effect.fnUntraced(function*(input, _ast, options) {
+      return yield* decode(yield* snapshotInput(input, { preserveUndefined }), options)
+    })
+  })
+
+/** Ordinary named option lookup, including inherited/non-enumerable options, once per execution. @since 1.0.0-beta.0 */
+export const snapshotNamedInput = Effect.fnUntraced(
+  function*(input: unknown, names: ReadonlyArray<string>): Effect.fn.Return<unknown, SchemaIssue.Issue> {
+    if (!Predicate.isObjectOrArray(input)) {
+      return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Invalid AMQP options" }))
+    }
+    let current: object | null = input
+    const seen = new Set<object>()
+    while (current !== null) {
+      if (seen.size >= 36 || seen.has(current)) {
+        return yield* Effect.fail(new SchemaIssue.InvalidValue({ message: "Input prototype chain exceeds limit" }))
+      }
+      seen.add(current)
+      const source: object = current
+      current = yield* accessContainer<object | null>(() => Object.getPrototypeOf(source), "Invalid input prototype")
+    }
+    const values: Record<string, unknown> = Object.create(null)
+    for (const name of names) {
+      values[name] = yield* accessContainer(() => Reflect.get(input, name), "Invalid AMQP option")
+    }
+    return yield* snapshotInput(values, { preserveUndefined: true, legacy: "Deferred" })
+  }
+)
 
 // Validate containers in place. Parsing Record/Array would allocate an unbudgeted second graph.
 const fieldArray = <A>(value: Schema.Codec<A>): Schema.Codec<ReadonlyArray<A>> =>
@@ -461,7 +804,10 @@ const fieldRecord = <A>(value: Schema.Codec<A>): Schema.Codec<Readonly<Record<st
     const decodeKey = SchemaParser.decodeUnknownEffect(keyCodec)
     const decodeValue = SchemaParser.decodeUnknownEffect(valueCodec)
     return Effect.fnUntraced(function*(input: unknown, ast: SchemaAST.Declaration, options: SchemaAST.ParseOptions) {
-      if (!Predicate.isObject(input)) return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
+      if (!Predicate.isObjectOrArray(input)) return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
+      if (yield* accessContainer(() => Array.isArray(input), "Invalid field table")) {
+        return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
+      }
       const prototype = yield* accessContainer(() => Object.getPrototypeOf(input), "Invalid field table")
       if (prototype !== null && prototype !== Object.prototype) {
         return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
@@ -469,18 +815,23 @@ const fieldRecord = <A>(value: Schema.Codec<A>): Schema.Codec<Readonly<Record<st
       const isWrapper = yield* accessContainer(() =>
         Predicate.hasProperty(input, AMQPTypes.DecimalTypeId) ||
         Predicate.hasProperty(input, AMQPTypes.FieldNumberTypeId) ||
+        Predicate.hasProperty(input, AMQPTypes.FieldIntegerTypeId) ||
+        Predicate.hasProperty(input, AMQPTypes.FieldTimestampTypeId) ||
         Predicate.hasProperty(input, AMQPTypes.LongStringTypeId), "Invalid field table")
       if (isWrapper) return yield* Effect.fail(new SchemaIssue.InvalidType(ast, input, options))
       const keys = yield* accessContainer(() => Object.keys(input), "Invalid field table")
       for (const key of keys) {
         yield* decodeKey(key, options).pipe(Effect.mapError((issue) => new SchemaIssue.Pointer([key], issue)))
-        const entry = yield* accessContainer(() => input[key], "Invalid field table")
+        const entry = yield* accessContainer(() => Reflect.get(input, key), "Invalid field table")
         yield* decodeValue(entry, options).pipe(Effect.mapError((issue) => new SchemaIssue.Pointer([key], issue)))
       }
       // Every own entry has been validated without replacing its identity or prototype.
       return input as Readonly<Record<string, A>>
     })
   })
+
+/** Table shape before convenience aliases replace individual extension values. @since 1.0.0-beta.0 */
+export const fieldTableShape = fieldRecord(Schema.Unknown)
 
 // Depth counts field values, including scalar leaves, exactly as the wire codec does.
 const tables = new Map<number, Schema.Codec<AMQPTypes.FieldTable>>()
@@ -498,6 +849,8 @@ const fieldValue = (depth: number): Schema.Codec<AMQPTypes.FieldValue> => {
     timestamp,
     decimal,
     fieldNumber,
+    fieldInteger,
+    fieldTimestamp,
     longString,
     fieldArray(Schema.suspend(() => fieldValue(depth + 1))),
     Schema.suspend(() => table(depth))
@@ -519,6 +872,14 @@ const table = (depth: number): Schema.Codec<AMQPTypes.FieldTable> => {
 /** Identity-preserving validation for both wire directions, bounded to the parser's nesting limit. @since 1.0.0-beta.0 */
 export const fieldTable = table(0)
 
+/** Isolated validated field table for topology retention and outgoing encoding. @since 1.0.0-beta.0 */
+export const snapshotFieldTable = (
+  input: unknown
+): Effect.Effect<AMQPTypes.FieldTable, AMQPProtocolError> =>
+  Schema.decodeUnknownEffect(snapshotSchema(fieldTable, false))(input).pipe(
+    Effect.mapError((cause) => new AMQPProtocolError({ reason: "Invalid field table", cause }))
+  )
+
 /** Wire value constraints shared by encoding and decoding. @since 1.0.0-beta.0 */
 export const fieldSchemas = {
   u8: unsigned(255),
@@ -532,6 +893,69 @@ export const fieldSchemas = {
   bit: Schema.Boolean
 } satisfies Record<FieldKind, Schema.Codec<AMQPTypes.FieldValue>>
 
+const expirationInput = Schema.Union([short, Schema.Finite]).pipe(
+  Schema.decodeTo(
+    short,
+    SchemaTransformation.transform<string, string | number>({
+      decode: String,
+      encode: (value) => value
+    })
+  )
+)
+const deliveryModeInput = Schema.Union([fieldSchemas.u8, Schema.Boolean]).pipe(
+  Schema.decodeTo(
+    fieldSchemas.u8,
+    SchemaTransformation.transform({
+      decode: (value) => typeof value === "boolean" ? value ? 2 : 1 : value,
+      encode: (value) => value
+    })
+  )
+)
+/** Optional outgoing values normalize undefined to an absent key. @since 1.0.0-beta.0 */
+export const optionalInputProperty = <A, E>(schema: Schema.Codec<A, E>) =>
+  Schema.optional(schema).pipe(
+    Schema.decodeTo(
+      Schema.optionalKey(Schema.toType(schema)),
+      SchemaTransformation.transformOptional<A, A | undefined>({
+        decode: (value) => Option.filter(value, (value): value is A => value !== undefined),
+        encode: (value) => value
+      })
+    )
+  )
+
+/** Single source of property wire order, constraints and outgoing conversions. @since 1.0.0-beta.0 */
+export const messageProperties = [
+  ["contentType", "short", short],
+  ["contentEncoding", "short", short],
+  ["headers", "table", fieldTable],
+  ["deliveryMode", "u8", deliveryModeInput],
+  ["priority", "u8", fieldSchemas.u8],
+  ["correlationId", "short", short],
+  ["replyTo", "short", short],
+  ["expiration", "short", expirationInput],
+  ["messageId", "short", short],
+  ["timestamp", "u64", unsigned64Input],
+  ["type", "short", short],
+  ["userId", "short", short],
+  ["appId", "short", short],
+  ["clusterId", "short", short]
+] as const satisfies ReadonlyArray<
+  readonly [keyof AMQPTypes.MessageProperties, FieldKind, Schema.Codec<AMQPTypes.FieldValue, unknown>]
+>
+
+const propertyFields: Record<string, Schema.Codec<AMQPTypes.FieldValue | undefined, unknown>> = {}
+const inputPropertyFields: Record<string, Schema.Codec<AMQPTypes.FieldValue | undefined, unknown>> = {}
+for (const [name, kind, input] of messageProperties) {
+  propertyFields[name] = Schema.optionalKey(fieldSchemas[kind])
+  inputPropertyFields[name] = optionalInputProperty<AMQPTypes.FieldValue, unknown>(input)
+}
+/** Complete decoded properties; no incoming convenience conversions. @since 1.0.0-beta.0 */
+export const propertiesSchema: Schema.Codec<AMQPTypes.MessageProperties> = Schema.Struct(propertyFields)
+/** Guarded outgoing property normalization, including undefined optional values. @since 1.0.0-beta.0 */
+export const inputPropertiesSchema: Schema.Codec<AMQPTypes.MessageProperties, unknown> = snapshotSchema(
+  Schema.Struct(inputPropertyFields)
+)
+
 /** Decoded method fields validated from the descriptor's wire definition. @since 0.8.0 */
 export type Fields = Record<string, AMQPTypes.FieldValue>
 
@@ -542,11 +966,25 @@ const fieldDecoders = new WeakMap<
 
 const fieldContracts = new WeakMap<MethodDescriptor, Schema.Codec<Fields>>()
 const inputFieldContracts = new WeakMap<MethodDescriptor, Schema.Codec<Fields, unknown>>()
-const fieldObject = Schema.declare((value: unknown): value is Fields => {
-  if (!Predicate.isObject(value)) return false
-  const prototype = Object.getPrototypeOf(value)
-  return prototype === null || prototype === Object.prototype
-})
+const decodedFields = new WeakSet<object>()
+/** Reader-only ownership handoff; nested values must already be sealed. @since 1.0.0-beta.0 */
+export const markDecodedFields = (fields: Fields): Fields => {
+  Object.freeze(fields)
+  decodedFields.add(fields)
+  return fields
+}
+const fieldObject = Schema.declareConstructor<Fields>()([], () =>
+  Effect.fnUntraced(function*(value, ast, options) {
+    if (!Predicate.isObjectOrArray(value)) return yield* Effect.fail(new SchemaIssue.InvalidType(ast, value, options))
+    if (yield* accessContainer(() => Array.isArray(value), "Invalid method fields")) {
+      return yield* Effect.fail(new SchemaIssue.InvalidType(ast, value, options))
+    }
+    const prototype = yield* accessContainer(() => Object.getPrototypeOf(value), "Invalid method fields")
+    if (prototype !== null && prototype !== Object.prototype) {
+      return yield* Effect.fail(new SchemaIssue.InvalidType(ast, value, options))
+    }
+    return value as Fields
+  }))
 
 /** Complete wire fields; defaults must never conceal missing decoded data. @since 1.0.0-beta.0 */
 export const fieldsSchema = (descriptor: MethodDescriptor): Schema.Codec<Fields> => {
@@ -554,9 +992,18 @@ export const fieldsSchema = (descriptor: MethodDescriptor): Schema.Codec<Fields>
   if (cached !== undefined) return cached
   const fields: Record<string, Schema.Codec<AMQPTypes.FieldValue>> = {}
   for (const [name, kind] of descriptor.fields) fields[name] = fieldSchemas[kind]
-  const schema = fieldObject.pipe(Schema.decodeTo(
-    descriptor.fields.length === 0 ? Schema.Record(Schema.String, Schema.Never) : Schema.Struct(fields)
-  )).check(Schema.makeFilter(Schema.is(fieldObject)))
+  const shape = descriptor.fields.length === 0 ? Schema.Record(Schema.String, Schema.Never) : Schema.Struct(fields)
+  const schema = Schema.declareConstructor<Fields>()([shape], ([codec]) => {
+    const decode = SchemaParser.decodeUnknownEffect(codec)
+    const decodeObject = SchemaParser.decodeUnknownEffect(fieldObject)
+    return Effect.fnUntraced(function*(input, _ast, options) {
+      yield* decodeObject(input, options)
+      const owned = Predicate.isObjectOrArray(input) && decodedFields.has(input)
+      const snapshot = owned ? input : yield* snapshotInput(input, { preserveUndefined: true, legacy: "Decoded" })
+      const fields = yield* decode(snapshot, options)
+      return owned ? markDecodedFields(fields) : fields
+    })
+  })
   fieldContracts.set(descriptor, schema)
   return schema
 }
@@ -577,9 +1024,9 @@ export const inputFieldsSchema = (descriptor: MethodDescriptor): Schema.Codec<Fi
     )
     fields[name] = schema.pipe(Schema.withDecodingDefaultKey(fallback))
   }
-  const schema: Schema.Codec<Fields, unknown> = fieldObject.pipe(Schema.decodeTo(
+  const schema: Schema.Codec<Fields, unknown> = snapshotSchema(fieldObject.pipe(Schema.decodeTo(
     descriptor.fields.length === 0 ? Schema.Record(Schema.String, Schema.Never) : Schema.Struct(fields)
-  ))
+  )))
   inputFieldContracts.set(descriptor, schema)
   return schema
 }
@@ -607,14 +1054,18 @@ const numberDecoder = Schema.decodeUnknownEffect(Schema.Finite)
 const bigintDecoder = Schema.decodeUnknownEffect(unsigned64)
 const tableDecoder = Schema.decodeUnknownEffect(fieldTable)
 
-const readField = <A>(
+const readField = Effect.fnUntraced(function*<A>(
   decode: (input: unknown) => Effect.Effect<A, Schema.SchemaError>,
   method: Codec.Method,
   key: string
-): Effect.Effect<A, AMQPProtocolError> =>
-  decode(method.fields[key]).pipe(
+): Effect.fn.Return<A, AMQPProtocolError> {
+  const value = yield* accessContainer(() => method.fields[key], `Invalid ${key} field`).pipe(
     Effect.mapError((cause) => new AMQPProtocolError({ reason: `Invalid ${key} field`, cause }))
   )
+  return yield* decode(value).pipe(
+    Effect.mapError((cause) => new AMQPProtocolError({ reason: `Invalid ${key} field`, cause }))
+  )
+})
 
 /** @since 0.8.0 */
 export const readString = (method: Codec.Method, key: string): Effect.Effect<string, AMQPProtocolError> =>

@@ -1,5 +1,5 @@
 import * as Effect from "effect/Effect"
-import * as Option from "effect/Option"
+import * as Predicate from "effect/Predicate"
 import * as Schema from "effect/Schema"
 import * as SchemaIssue from "effect/SchemaIssue"
 import * as SchemaParser from "effect/SchemaParser"
@@ -35,11 +35,33 @@ const protocolError = (cause: Schema.SchemaError) => new AMQPProtocolError({ rea
 const wireCodec = <A>(
   model: Schema.Codec<A>,
   read: (bytes: Uint8Array) => Effect.Effect<A, SchemaIssue.Issue>,
-  write: (value: A) => Effect.Effect<Uint8Array, SchemaIssue.Issue>
-): Schema.Codec<A, Uint8Array> =>
-  Schema.Uint8Array.pipe(
-    Schema.decodeTo(model, SchemaTransformation.transformEffect<A, Uint8Array>({ decode: read, encode: write }))
+  write: (value: A) => Effect.Effect<Uint8Array, SchemaIssue.Issue>,
+  preserveUndefined = true
+): Schema.Codec<A, Uint8Array> => {
+  // Only freshly read roots may bypass copying. Consume the marker during validation;
+  // a decoded value subsequently supplied by a caller must be snapshotted again.
+  const decoded = new WeakSet<object>()
+  const guardedModel = Schema.declareConstructor<A>()([model], ([codec]) => {
+    const validate = SchemaParser.decodeUnknownEffect(codec)
+    return Effect.fnUntraced(function*(input, _ast, options) {
+      if (Predicate.isObjectOrArray(input) && decoded.delete(input)) return yield* validate(input, options)
+      return yield* validate(yield* Protocol.snapshotInput(input, { preserveUndefined }), options)
+    })
+  })
+  return Schema.Uint8Array.pipe(
+    Schema.decodeTo(
+      guardedModel,
+      SchemaTransformation.transformEffect<A, Uint8Array>({
+        decode: Effect.fnUntraced(function*(bytes) {
+          const value = yield* read(bytes)
+          if (Predicate.isObjectOrArray(value)) decoded.add(value)
+          return value
+        }),
+        encode: write
+      })
+    )
   )
+}
 const boundary = <A>(schema: Schema.Codec<A, Uint8Array>) => {
   const encode = Schema.encodeUnknownEffect(schema)
   const decode = Schema.decodeUnknownEffect(schema)
@@ -268,6 +290,31 @@ const writeField = Effect.fnUntraced(
       const number = value as AMQPTypes.FieldNumber
       yield* tag(number.type === "float" ? "f" : "d")
       yield* writer.float(number.value, number.type === "float" ? 4 : 8)
+    } else if (typeof value === "object" && AMQPTypes.FieldIntegerTypeId in value) {
+      const integer = value as AMQPTypes.FieldInteger
+      const kind = integer.type
+      yield* tag(
+        kind === "int8"
+          ? "b"
+          : kind === "uint8"
+          ? "B"
+          : kind === "int16"
+          ? "s"
+          : kind === "uint16"
+          ? "u"
+          : kind === "int32"
+          ? "I"
+          : kind === "uint32"
+          ? "i"
+          : "l"
+      )
+      if (kind === "uint8") yield* writer.u8(Number(integer.value))
+      else if (kind === "uint16") yield* writer.u16(Number(integer.value))
+      else if (kind === "uint32") yield* writer.u32(Number(integer.value))
+      else yield* writer.signed(integer.value, kind === "int8" ? 1 : kind === "int16" ? 2 : kind === "int32" ? 4 : 8)
+    } else if (typeof value === "object" && AMQPTypes.FieldTimestampTypeId in value) {
+      yield* tag("T")
+      yield* writer.u64((value as AMQPTypes.FieldTimestamp).seconds)
     } else if (typeof value === "object" && AMQPTypes.DecimalTypeId in value) {
       const decimal = value as AMQPTypes.Decimal
       yield* tag("D")
@@ -293,7 +340,7 @@ const readTable = Effect.fnUntraced(
       yield* reader.budget.charge(48)
       table[key] = yield* readField(nested, depth + 1)
     }
-    return table
+    return Protocol.markFieldTable(Object.freeze(table))
   }
 )
 const readField = Effect.fnUntraced(
@@ -311,17 +358,35 @@ const readField = Effect.fnUntraced(
       }
       case "b":
         return yield* reader.signed(1)
-      case "B":
-        return yield* reader.u8()
+      case "B": {
+        yield* reader.budget.charge(64)
+        return Object.freeze(AMQPTypes.fieldInteger("uint8", yield* reader.u8()))
+      }
       case "s":
-      case "U":
-        return yield* reader.signed(2)
-      case "u":
-        return yield* reader.u16()
-      case "I":
-        return yield* reader.signed(4)
-      case "i":
-        return yield* reader.u32()
+      case "U": {
+        const value = Number(yield* reader.signed(2))
+        if (value >= -128 && value <= 127) {
+          yield* reader.budget.charge(64)
+          return Object.freeze(AMQPTypes.fieldInteger("int16", value))
+        }
+        return value
+      }
+      case "u": {
+        yield* reader.budget.charge(64)
+        return Object.freeze(AMQPTypes.fieldInteger("uint16", yield* reader.u16()))
+      }
+      case "I": {
+        const value = Number(yield* reader.signed(4))
+        if (value >= -32768 && value <= 32767) {
+          yield* reader.budget.charge(64)
+          return Object.freeze(AMQPTypes.fieldInteger("int32", value))
+        }
+        return value
+      }
+      case "i": {
+        yield* reader.budget.charge(64)
+        return Object.freeze(AMQPTypes.fieldInteger("uint32", yield* reader.u32()))
+      }
       case "l":
       case "L":
         return yield* reader.signed(8)
@@ -329,11 +394,11 @@ const readField = Effect.fnUntraced(
       case "d": {
         const value = yield* reader.float(tag === 102 ? 4 : 8)
         yield* reader.budget.charge(64)
-        return AMQPTypes.fieldNumber(tag === 102 ? "float" : "double", value)
+        return Object.freeze(AMQPTypes.fieldNumber(tag === 102 ? "float" : "double", value))
       }
       case "D": {
         yield* reader.budget.charge(64)
-        return AMQPTypes.decimal(yield* reader.u8(), yield* reader.u32())
+        return Object.freeze(AMQPTypes.decimal(yield* reader.u8(), Number(yield* reader.signed(4))))
       }
       case "S": {
         const bytes = yield* reader.long()
@@ -343,20 +408,20 @@ const readField = Effect.fnUntraced(
           catch: () => new SchemaIssue.InvalidValue({ message: "Opaque long string" })
         }).pipe(Effect.catch(() =>
           reader.budget.charge(64).pipe(
-            Effect.map(() => AMQPTypes.longString(bytes.slice()))
+            Effect.map(() => Object.freeze(AMQPTypes.longString(Object.preventExtensions(bytes.slice()))))
           )
         ))
       }
       case "x": {
         const bytes = yield* reader.long()
         yield* reader.budget.charge(256 + bytes.length)
-        return bytes.slice()
+        return Object.preventExtensions(bytes.slice())
       }
       case "T": {
         const seconds = yield* reader.u64()
-        if (seconds > BigInt("8640000000000")) return yield* invalid("Timestamp exceeds Date range")
         yield* reader.budget.charge(64)
-        return new Date(Number(seconds) * 1000)
+        if (seconds > BigInt("8640000000000")) return Object.freeze(AMQPTypes.fieldTimestamp(seconds))
+        return Object.freeze(new Date(Number(seconds) * 1000))
       }
       case "F":
         return yield* readTable(reader, depth)
@@ -365,7 +430,7 @@ const readField = Effect.fnUntraced(
         yield* reader.budget.charge(64)
         const values: Array<AMQPTypes.FieldValue> = []
         while (nested.offset < nested.bytes.length) values.push(yield* readField(nested, depth + 1))
-        return values
+        return Object.freeze(values)
       }
       default:
         return yield* invalid(`Unknown field type ${tag}`)
@@ -386,7 +451,8 @@ export const FieldTableCodec = wireCodec(
     const writer = new Writer()
     yield* writeTable(writer, table, 0)
     return yield* writer.finish()
-  })
+  }),
+  false
 )
 /** @since 0.8.0 */
 export const encodeFieldTable = boundary(FieldTableCodec).encode
@@ -463,7 +529,7 @@ export const MethodCodec = wireCodec<Method>(
         if (kind === "bytes") {
           const bytes = yield* reader.long()
           yield* reader.budget.charge(256 + bytes.length)
-          fields[name] = bytes.slice()
+          fields[name] = Object.preventExtensions(bytes.slice())
         } else {
           fields[name] = kind === "short" ? yield* reader.short() : kind === "text" ?
             yield* reader.text(yield* reader.long()) :
@@ -475,7 +541,7 @@ export const MethodCodec = wireCodec<Method>(
     }
     yield* finishBits()
     yield* reader.done()
-    return { classId, methodId, fields }
+    return { classId, methodId, fields: Protocol.markDecodedFields(fields) }
   }),
   Effect.fnUntraced(function*({ classId, methodId, fields }) {
     const descriptor = yield* methodDescriptor(classId, methodId)
@@ -553,74 +619,8 @@ export const encodeMethod: {
   return yield* encodeFrame(1, channel, payload)
 })
 
-const properties: ReadonlyArray<readonly [keyof AMQPTypes.MessageProperties, Protocol.FieldKind]> = [
-  ["contentType", "short"],
-  ["contentEncoding", "short"],
-  ["headers", "table"],
-  ["deliveryMode", "u8"],
-  ["priority", "u8"],
-  ["correlationId", "short"],
-  ["replyTo", "short"],
-  ["expiration", "short"],
-  ["messageId", "short"],
-  ["timestamp", "u64"],
-  ["type", "short"],
-  ["userId", "short"],
-  ["appId", "short"],
-  ["clusterId", "short"]
-]
-const propertyFields = {
-  contentType: Schema.optionalKey(Protocol.short),
-  contentEncoding: Schema.optionalKey(Protocol.short),
-  headers: Schema.optionalKey(Protocol.fieldTable),
-  deliveryMode: Schema.optionalKey(Protocol.fieldSchemas.u8),
-  priority: Schema.optionalKey(Protocol.fieldSchemas.u8),
-  correlationId: Schema.optionalKey(Protocol.short),
-  replyTo: Schema.optionalKey(Protocol.short),
-  expiration: Schema.optionalKey(Protocol.short),
-  messageId: Schema.optionalKey(Protocol.short),
-  timestamp: Schema.optionalKey(Protocol.unsigned64),
-  type: Schema.optionalKey(Protocol.short),
-  userId: Schema.optionalKey(Protocol.short),
-  appId: Schema.optionalKey(Protocol.short),
-  clusterId: Schema.optionalKey(Protocol.short)
-}
-const propertiesSchema = Schema.Struct(propertyFields)
-const expirationInput = Schema.Union([Protocol.short, Schema.Finite]).pipe(
-  Schema.decodeTo(
-    Protocol.short,
-    SchemaTransformation.transform<string, string | number>({
-      decode: String,
-      encode: (value) => value
-    })
-  )
-)
-const optionalInputProperty = <A, E>(schema: Schema.Codec<A, E>) =>
-  Schema.optional(schema).pipe(
-    Schema.decodeTo(
-      Schema.optionalKey(Schema.toType(schema)),
-      SchemaTransformation.transformOptional<A, A | undefined>({
-        decode: (value) => Option.filter(value, (value): value is A => value !== undefined),
-        encode: (value) => value
-      })
-    )
-  )
-const decodeInputProperties = Schema.decodeUnknownEffect(Schema.Struct({
-  contentType: optionalInputProperty(Protocol.short),
-  contentEncoding: optionalInputProperty(Protocol.short),
-  headers: optionalInputProperty(Protocol.fieldTable),
-  deliveryMode: optionalInputProperty(Protocol.fieldSchemas.u8),
-  priority: optionalInputProperty(Protocol.fieldSchemas.u8),
-  correlationId: optionalInputProperty(Protocol.short),
-  replyTo: optionalInputProperty(Protocol.short),
-  expiration: optionalInputProperty(expirationInput),
-  messageId: optionalInputProperty(Protocol.short),
-  timestamp: optionalInputProperty(Protocol.unsigned64Input),
-  type: optionalInputProperty(Protocol.short),
-  userId: optionalInputProperty(Protocol.short),
-  appId: optionalInputProperty(Protocol.short),
-  clusterId: optionalInputProperty(Protocol.short)
-}))
+const properties = Protocol.messageProperties
+const decodeInputProperties = Schema.decodeUnknownEffect(Protocol.inputPropertiesSchema)
 
 /** Header memory is charged before constructing decoded values. @since 0.8.0 */
 export interface ContentHeaderDecodeOptions {
@@ -634,7 +634,7 @@ export interface DecodedContentHeader {
 }
 const contentHeaderShape = Schema.Struct({
   bodySize: Protocol.unsigned64,
-  properties: propertiesSchema,
+  properties: Protocol.propertiesSchema,
   decodedCost: Protocol.unsigned(Number.MAX_SAFE_INTEGER)
 })
 const decodeBudgetSize = SchemaParser.decodeUnknownEffect(Protocol.unsigned(Number.MAX_SAFE_INTEGER))

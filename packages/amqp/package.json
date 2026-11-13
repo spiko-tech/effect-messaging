@@ -33,6 +33,7 @@
     "dist/**/*.js.map",
     "dist/**/*.d.ts",
     "dist/**/*.d.ts.map",
+    "PARITY.md",
     "AGENTS.md",
     "CLAUDE.md"
   ],
@@ -49,7 +50,7 @@
     "@effect/platform-node": "4.1.0",
     "@effect/vitest": "4.1.0",
     "@types/node": "^26.6.6",
-    "amqplib": "^2.2.0",
+    "amqplib": "2.2.0",
     "effect": "4.1.0"
   },
   "peerDependencies": {
@@ -58,8 +59,12 @@
     "effect": "^4.1.0"
   },
   "peerDependenciesMeta": {
-    "@effect-messaging/core": { "optional": true },
-    "@effect/platform-node": { "optional": true }
+    "@effect-messaging/core": {
+      "optional": true
+    },
+    "@effect/platform-node": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public",

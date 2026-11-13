@@ -28,6 +28,7 @@ export interface AMQPChannelOptions {
   readonly confirmTimeout?: Duration.Input
   readonly waitChannelTimeout?: Duration.Input
   readonly maxUnconfirmed?: number
+  /** Per-consumer broker credit, default 50. Zero means unlimited wire credit, not unlimited local buffering. */
   readonly prefetch?: number
 }
 
@@ -35,6 +36,10 @@ export interface AMQPChannelOptions {
 export interface AMQPChannel {
   readonly [TypeId]: typeof TypeId
   readonly connection: AMQPConnection.AMQPConnection
+  /** Registers a consumer and returns its single-reader stream. Overflow retires it with a visible typed error.
+   * Auto-ack deliveries cannot be settled and may be lost on cancellation, overflow or connection loss.
+   * Direct Reply-To requires noAck and requests published on this same channel.
+   */
   readonly consume: (
     queue: AMQPTopology.QueueName,
     options?: AMQPTypes.ConsumeOptions
@@ -113,11 +118,42 @@ export interface AMQPChannel {
     args?: AMQPTypes.FieldTable
   ) => Effect.Effect<void, AMQPError.AMQPError>
   readonly cancel: (consumerTag: string) => Effect.Effect<void, AMQPError.AMQPError>
+  /** Pull one delivery. noAck defaults to false; automatically acknowledged deliveries have no settlement authority. */
   readonly get: (
-    queue: AMQPTopology.QueueName
+    queue: AMQPTopology.QueueName,
+    options?: AMQPTypes.GetOptions
   ) => Effect.Effect<Option.Option<AMQPConsumeMessage.AMQPConsumeMessage>, AMQPError.AMQPError>
+  /** Set future-consumer broker credit; zero removes the wire limit. Existing consumer/mailbox credit stays fixed. */
   readonly prefetch: (count: number, global?: boolean) => Effect.Effect<void, AMQPError.AMQPError>
-  readonly recover: () => Effect.Effect<void, AMQPError.AMQPError>
+  /** Request broker recovery of unstaged, unacknowledged receipts. requeue defaults to true.
+   * Staged transactional settlements survive recovery and can still be rolled back.
+   * The optional argument is available since 1.0.0-beta.0. RabbitMQ rejects false with a connection-closing
+   * NOT_IMPLEMENTED (540); the broker error remains visible rather than being treated as successful recovery.
+   * @category consumers
+   */
+  readonly recover: (requeue?: boolean) => Effect.Effect<void, AMQPError.AMQPError>
+  /** Request peer channel flow and return the active value in flow-ok.
+   * RabbitMQ accepts true but rejects false with connection-closing NOT_IMPLEMENTED (540).
+   * @since 1.0.0-beta.0
+   * @category flow control
+   */
+  readonly flow: (active: boolean) => Effect.Effect<boolean, AMQPError.AMQPError>
+  /** Select transactions (incompatible with confirmations). Mode survives recovery; pending work does not.
+   * @since 1.0.0-beta.0
+   * @category transactions
+   */
+  readonly txSelect: () => Effect.Effect<void, AMQPError.AMQPError>
+  /** Completes on commit-ok. A lost reply has an Unknown outcome and must not be blindly retried.
+   * @since 1.0.0-beta.0
+   * @category transactions
+   */
+  readonly txCommit: () => Effect.Effect<void, AMQPError.AMQPError>
+  /** Discard this session's pending transaction. Completes on rollback-ok.
+   * After recovery, clears the lost-work fence; cannot undo an uncertain commit in an old session.
+   * @since 1.0.0-beta.0
+   * @category transactions
+   */
+  readonly txRollback: () => Effect.Effect<void, AMQPError.AMQPError>
   readonly returns: Stream.Stream<AMQPTypes.ReturnedMessage, AMQPError.AMQPError>
   readonly close: Effect.Effect<void>
 }

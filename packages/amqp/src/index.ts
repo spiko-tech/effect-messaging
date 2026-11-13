@@ -2,7 +2,12 @@
  * @since 0.1.0
  */
 
-// @barrel({AMQPChannel,AMQPConnection,AMQPConsumeMessage,AMQPError,AMQPTopology,AMQPTypes}.ts)
+// @barrel({AMQPAuthentication,AMQPChannel,AMQPConnection,AMQPConsumeMessage,AMQPError,AMQPTopology,AMQPTypes}.ts)
+
+/**
+ * @since 1.0.0-beta.0
+ */
+export * as AMQPAuthentication from "./AMQPAuthentication.ts"
 
 /**
  * @since 0.1.0

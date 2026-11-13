@@ -6,6 +6,7 @@
 import * as NodeSocket from "@effect/platform-node/NodeSocket"
 import * as Effect from "effect/Effect"
 import * as Layer from "effect/Layer"
+import * as Predicate from "effect/Predicate"
 import * as Redacted from "effect/Redacted"
 import * as Schema from "effect/Schema"
 import * as SchemaIssue from "effect/SchemaIssue"
@@ -14,6 +15,7 @@ import type * as Scope from "effect/Scope"
 import type * as Tls from "node:tls"
 import * as AMQPConnection from "./AMQPConnection.ts"
 import * as AMQPError from "./AMQPError.ts"
+import * as Configuration from "./internal/configuration.ts"
 
 /** @since 0.8.0 */
 export interface ConnectionOptions extends AMQPConnection.AMQPConnectionOptions {
@@ -55,12 +57,28 @@ const UriComponent = Schema.String.pipe(Schema.decodeTo(
 const decodeUri = Schema.decodeUnknownEffect(ConnectionUri)
 const decodeComponent = Schema.decodeUnknownEffect(UriComponent)
 const decodeNumber = Schema.decodeUnknownEffect(UrlNumber)
+const nodeSchema = Schema.Struct({
+  ...Configuration.connectionFields,
+  hostname: Schema.optionalKey(Schema.String),
+  port: Schema.optionalKey(Schema.Number),
+  tls: Schema.optionalKey(Schema.Union([
+    Schema.Boolean,
+    Schema.declare<Tls.ConnectionOptions>((value): value is Tls.ConnectionOptions => Predicate.isObject(value))
+  ]))
+})
+const decodeNodeOptions = Schema.decodeUnknownEffect(Configuration.snapshot(nodeSchema, Object.keys(nodeSchema.fields)))
 const normalize = Effect.fnUntraced(function*(
   input: ConnectionUrl,
   overrides: AMQPConnection.AMQPConnectionOptions
 ): Effect.fn.Return<ConnectionOptions, Schema.SchemaError> {
-  if (typeof input !== "string" && !Redacted.isRedacted(input)) return { ...input, ...overrides }
-  const text = Redacted.isRedacted(input) ? Redacted.value(input) : input
+  const captured = yield* Configuration.connection(overrides)
+  const text = yield* Effect.try({
+    try: () => typeof input === "string" ? input : Redacted.isRedacted(input) ? Redacted.value(input) : undefined,
+    catch: () => new Schema.SchemaError(new SchemaIssue.InvalidValue({ message: "Invalid connection input" }))
+  })
+  if (text === undefined) {
+    return { ...yield* decodeNodeOptions(input), ...captured }
+  }
   const url = yield* decodeUri(text)
   const numeric = (name: string) => {
     const value = url.searchParams.get(name)
@@ -84,42 +102,48 @@ const normalize = Effect.fnUntraced(function*(
     ...(heartbeat === undefined ? {} : { heartbeat }),
     ...(frameMax === undefined ? {} : { frameMax }),
     ...(channelMax === undefined ? {} : { channelMax }),
-    ...overrides
+    ...captured
   }
 })
 
 /** @since 0.8.0 */
-export const make = (
+export const make = Effect.fn("AMQPNodeConnection.make")(function*(
   input: ConnectionUrl,
   options: AMQPConnection.AMQPConnectionOptions = {}
-): Effect.Effect<AMQPConnection.AMQPConnection, AMQPError.AMQPError, Scope.Scope> =>
-  Effect.gen(function*() {
-    const config = yield* normalize(input, options).pipe(Effect.mapError(
-      // URL/parser errors may retain the original URL, including its credentials.
-      () => new AMQPError.AMQPConnectionError({ reason: "Invalid connection URL", permanent: true })
-    ))
-    const endpoint = yield* Schema.decodeUnknownEffect(Endpoint)({
-      hostname: config.hostname ?? "localhost",
-      port: config.port ?? (config.tls ? 5671 : 5672)
-    }).pipe(Effect.mapError((cause) =>
+): Effect.fn.Return<AMQPConnection.AMQPConnection, AMQPError.AMQPError, Scope.Scope> {
+  const config = yield* normalize(input, options).pipe(Effect.mapError(
+    // URL/parser errors may retain the original URL, including its credentials.
+    () => new AMQPError.AMQPConnectionError({ reason: "Invalid connection URL", permanent: true })
+  ))
+  const endpoint = yield* Schema.decodeUnknownEffect(Endpoint)({
+    hostname: config.hostname ?? "localhost",
+    port: config.port ?? (config.tls ? 5671 : 5672)
+  }).pipe(
+    Effect.mapError((cause) =>
       new AMQPError.AMQPConnectionError({ reason: "Invalid connection endpoint", cause, permanent: true })
-    ))
-    const transportOptions = {
-      host: endpoint.hostname,
-      port: endpoint.port,
-      // Method, header and body frames must not wait for a delayed TCP ACK between small writes.
-      noDelay: true,
-      openTimeout: config.connectionTimeout ?? "10 seconds"
-    }
-    const socket = config.tls
-      ? NodeSocket.makeTls({
-        ...transportOptions,
-        servername: endpoint.hostname,
-        ...(typeof config.tls === "object" ? config.tls : {})
-      })
-      : NodeSocket.makeNet(transportOptions)
-    return yield* AMQPConnection.make(socket, config)
-  })
+    )
+  )
+  const transportOptions = {
+    host: endpoint.hostname,
+    port: endpoint.port,
+    // Method, header and body frames must not wait for a delayed TCP ACK between small writes.
+    noDelay: true,
+    openTimeout: config.connectionTimeout ?? "10 seconds"
+  }
+  const tlsOptions = typeof config.tls === "object"
+    ? yield* Configuration.record(config.tls).pipe(
+      Effect.mapError(() => new AMQPError.AMQPConnectionError({ reason: "Invalid TLS options", permanent: true }))
+    )
+    : {}
+  const socket = config.tls
+    ? NodeSocket.makeTls({
+      ...transportOptions,
+      servername: endpoint.hostname,
+      ...tlsOptions
+    })
+    : NodeSocket.makeNet(transportOptions)
+  return yield* AMQPConnection.make(socket, config)
+})
 
 /** @since 0.8.0 */
 export const layer = (

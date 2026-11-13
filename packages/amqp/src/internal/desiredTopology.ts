@@ -1,5 +1,4 @@
 import * as Effect from "effect/Effect"
-import * as Schema from "effect/Schema"
 import { AMQPProtocolError } from "../AMQPError.ts"
 import * as AMQPTopology from "../AMQPTopology.ts"
 import * as AMQPTypes from "../AMQPTypes.ts"
@@ -46,36 +45,17 @@ export interface Restorer<Consumer, E> {
 
 export const queueName = (queue: AMQPTopology.QueueName): string => typeof queue === "string" ? queue : queue.queue
 
-const snapshotField = (value: AMQPTypes.FieldValue): AMQPTypes.FieldValue => {
-  if (value === null || typeof value !== "object") return value
-  if (value instanceof Uint8Array) return new Uint8Array(value)
-  if (value instanceof Date) return new Date(value.getTime())
-  if (AMQPTypes.LongStringTypeId in value) {
-    const longString = value as AMQPTypes.LongString
-    return { ...longString, bytes: new Uint8Array(longString.bytes) }
-  }
-  if (AMQPTypes.DecimalTypeId in value) return { ...value }
-  if (AMQPTypes.FieldNumberTypeId in value) return { ...value }
-  if (Array.isArray(value)) return value.map(snapshotField)
-  return Object.fromEntries(Object.entries(value).map(([key, field]) => [key, snapshotField(field)]))
-}
-
 /** Snapshot before the network wait so caller mutation cannot change the desired declaration. */
-const decodeSnapshotTable = Schema.decodeUnknownEffect(Protocol.fieldTable)
-export const snapshotTable = Effect.fnUntraced(function*(table: AMQPTypes.FieldTable) {
-  const value = yield* decodeSnapshotTable(table).pipe(
-    Effect.mapError((cause) => new AMQPProtocolError({ reason: cause.message, cause }))
-  )
-  return Object.fromEntries(Object.entries(value).map(([key, field]) => [key, snapshotField(field)]))
-})
+export const snapshotTable = Protocol.snapshotFieldTable
 
 export const snapshotOptions = Effect.fnUntraced(function*<A extends { readonly arguments?: AMQPTypes.FieldTable }>(
   options: A
 ): Effect.fn.Return<A, AMQPProtocolError> {
-  return {
-    ...options,
-    ...(options.arguments === undefined ? {} : { arguments: yield* snapshotTable(options.arguments) })
-  }
+  const copied = yield* Effect.try({
+    try: () => ({ ...options }),
+    catch: (cause) => new AMQPProtocolError({ reason: "Cannot snapshot topology options", cause })
+  })
+  return copied.arguments === undefined ? copied : { ...copied, arguments: yield* snapshotTable(copied.arguments) }
 })
 
 const canonicalField = (value: AMQPTypes.FieldValue): AMQPTypes.FieldValue => {
@@ -112,9 +92,10 @@ const removeWhere = <A>(values: Array<A>, predicate: (value: A) => boolean): voi
  * Mutations are recorded only after successful broker replies. Removing an owner does not
  * delete broker resources or desired declarations held by other owners.
  */
-export const make = <Owner extends object, Consumer>() => {
+export const make = <Owner extends object, Consumer>(consumerQueue: (consumer: Consumer) => AMQPTopology.QueueName) => {
   const channels = new Map<Owner, Channel<Consumer>>()
   const argumentsKeys = new WeakMap<Binding, Uint8Array>()
+  const inherited = new WeakSet<object>()
   const channel = (owner: Owner): Channel<Consumer> => {
     let state = channels.get(owner)
     if (state === undefined) {
@@ -122,6 +103,78 @@ export const make = <Owner extends object, Consumer>() => {
       channels.set(owner, state)
     }
     return state
+  }
+
+  // Closed channels are never retained. Their configuration is assigned to live dependants,
+  // but is not a new ownership root: the last dependency disappearing prunes it.
+  const reconcile = (removed?: Channel<Consumer>): void => {
+    const states = [...channels.values(), ...(removed === undefined ? [] : [removed])]
+    if (removed !== undefined) {
+      for (const node of [...removed.queues, ...removed.exchanges.values(), ...removed.bindings]) inherited.add(node)
+    }
+    const queues = states.flatMap((state) => state.queues)
+    const exchanges = states.flatMap((state) => [...state.exchanges.values()])
+    const bindings = states.flatMap((state) => state.bindings)
+    const assigned = new Set<object>()
+    const allocations = new Map<Channel<Consumer>, Set<object>>()
+    for (const state of channels.values()) {
+      const needed = new Set<object>()
+      const names = new Set<string>()
+      const queueDependencies = new Set<AMQPTopology.QueueName>(Array.from(state.consumers, consumerQueue))
+      for (const node of [...state.queues, ...state.exchanges.values(), ...state.bindings]) {
+        if (!inherited.has(node)) needed.add(node)
+      }
+      let changed = true
+      while (changed) {
+        const size = needed.size + names.size + queueDependencies.size
+        for (const queue of queues) {
+          if (
+            Array.from(queueDependencies).some((name) =>
+              name === queue.reference || queueName(name) === queue.current.queue
+            )
+          ) {
+            needed.add(queue)
+          }
+          if (needed.has(queue)) queueDependencies.add(queue.reference)
+        }
+        for (const declaration of exchanges) {
+          if (names.has(declaration.exchange)) needed.add(declaration)
+          if (needed.has(declaration)) names.add(declaration.exchange)
+        }
+        for (const binding of bindings) {
+          const destinationQueue = binding.queue
+          // Retain upstream routing owned by a closed channel as well as explicit live bindings.
+          if (
+            inherited.has(binding) && (
+              destinationQueue !== undefined
+                ? Array.from(queueDependencies).some((queue) => queueName(queue) === queueName(destinationQueue))
+                : binding.destination !== undefined && names.has(binding.destination)
+            )
+          ) needed.add(binding)
+          if (needed.has(binding)) {
+            names.add(binding.source)
+            if (binding.destination !== undefined) names.add(binding.destination)
+            if (binding.queue !== undefined) queueDependencies.add(binding.queue)
+          }
+        }
+        changed = needed.size + names.size + queueDependencies.size !== size
+      }
+      allocations.set(state, new Set([...needed].filter((node) => inherited.has(node) && !assigned.has(node))))
+      for (const node of needed) assigned.add(node)
+    }
+    for (const state of channels.values()) {
+      removeWhere(state.queues, (node) => inherited.has(node))
+      removeWhere(state.bindings, (node) => inherited.has(node))
+      for (const [name, node] of state.exchanges) if (inherited.has(node)) state.exchanges.delete(name)
+      const allocation = allocations.get(state)
+      for (const queue of queues) if (allocation?.has(queue)) state.queues.push(queue)
+      for (const declaration of exchanges) {
+        if (allocation?.has(declaration) && !state.exchanges.has(declaration.exchange)) {
+          state.exchanges.set(declaration.exchange, declaration)
+        }
+      }
+      for (const binding of bindings) if (allocation?.has(binding)) state.bindings.push(binding)
+    }
   }
 
   const queueDeclared = (
@@ -133,6 +186,7 @@ export const make = <Owner extends object, Consumer>() => {
     const state = channel(owner)
     const previous = requested === "" ? undefined : state.queues.find((item) => item.requested === requested)
     if (previous !== undefined) {
+      inherited.delete(previous)
       previous.current = reply
       previous.options = options
       return previous.reference
@@ -164,6 +218,8 @@ export const make = <Owner extends object, Consumer>() => {
     return declaration.reference
   }
 
+  // Run preparation before the RPC. Commit only after its successful reply; it uses only
+  // prepared values and performs the complete desired-state mutation synchronously.
   const prepareBinding = Effect.fnUntraced(function*(owner: Owner, binding: Binding, remove: boolean) {
     const snapshot = yield* snapshotTable(binding.arguments)
     const argumentsKey = yield* Codec.encodeFieldTable(canonicalTable(snapshot))
@@ -180,12 +236,14 @@ export const make = <Owner extends object, Consumer>() => {
       }
       if (remove) {
         for (const state of channels.values()) removeWhere(state.bindings, sameBinding)
+        reconcile()
       } else {
         const state = channel(owner)
-        if (!state.bindings.some(sameBinding)) {
+        const previous = state.bindings.find(sameBinding)
+        if (previous === undefined) {
           argumentsKeys.set(remembered, argumentsKey)
           state.bindings.push(remembered)
-        }
+        } else inherited.delete(previous)
       }
     }
     return { binding: remembered, commit }
@@ -228,18 +286,30 @@ export const make = <Owner extends object, Consumer>() => {
       channel(owner).exchanges.set(declaration.exchange, declaration)
     },
     prepareBinding,
-    queueDeleted: (queue: AMQPTopology.QueueName): void => {
+    // After DeleteOk, retire the returned registrations locally; the broker queue is
+    // already gone, so neither consumer cleanup nor recovery should issue basic.cancel.
+    queueDeleted: (queue: AMQPTopology.QueueName): ReadonlyArray<Consumer> => {
       const name = queueName(queue)
+      const cancelled = new Set<Consumer>()
       for (const state of channels.values()) {
+        for (const consumer of state.consumers) {
+          if (queueName(consumerQueue(consumer)) === name) {
+            state.consumers.delete(consumer)
+            cancelled.add(consumer)
+          }
+        }
         removeWhere(state.queues, (item) => item.current.queue === name)
         removeWhere(state.bindings, (item) => item.queue !== undefined && queueName(item.queue) === name)
       }
+      reconcile()
+      return [...cancelled]
     },
     exchangeDeleted: (exchange: string): void => {
       for (const state of channels.values()) {
         state.exchanges.delete(exchange)
         removeWhere(state.bindings, (item) => item.source === exchange || item.destination === exchange)
       }
+      reconcile()
     },
     consumers: (owner: Owner): ReadonlySet<Consumer> => channel(owner).consumers,
     addConsumer: (owner: Owner, consumer: Consumer): void => {
@@ -247,12 +317,13 @@ export const make = <Owner extends object, Consumer>() => {
     },
     removeConsumer: (owner: Owner, consumer: Consumer): void => {
       channels.get(owner)?.consumers.delete(consumer)
+      reconcile()
     },
-    hasEphemeralQueues: (owner: Owner, consumerQueue?: (consumer: Consumer) => AMQPTopology.QueueName): boolean => {
+    hasEphemeralQueues: (owner: Owner): boolean => {
       const state = channels.get(owner)
       if (state === undefined) return false
       const dependencies = [
-        ...(consumerQueue === undefined ? [] : Array.from(state.consumers, consumerQueue)),
+        ...Array.from(state.consumers, consumerQueue),
         ...state.bindings.flatMap((binding) => binding.queue === undefined ? [] : [binding.queue])
       ]
       for (const candidate of channels.values()) {
@@ -266,7 +337,9 @@ export const make = <Owner extends object, Consumer>() => {
       return false
     },
     remove: (owner: Owner): void => {
+      const state = channels.get(owner)
       channels.delete(owner)
+      reconcile(state)
     },
     restore
   }

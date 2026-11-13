@@ -21,7 +21,14 @@ export type TypeId = typeof TypeId
  */
 export class AMQPConnectionError extends Schema.TaggedError<AMQPConnectionError>()(
   "AMQPConnectionError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
+  {
+    reason: Schema.String,
+    cause: Schema.optional(Schema.Defect()),
+    replyCode: Schema.optional(Schema.Number),
+    classId: Schema.optional(Schema.Number),
+    methodId: Schema.optional(Schema.Number),
+    permanent: Schema.optional(Schema.Boolean)
+  }
 ) {
   /**
    * @since  0.1.0
@@ -37,10 +44,77 @@ export class AMQPConnectionError extends Schema.TaggedError<AMQPConnectionError>
  */
 export class AMQPChannelError extends Schema.TaggedError<AMQPChannelError>()(
   "AMQPChannelError",
-  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
+  {
+    reason: Schema.String,
+    cause: Schema.optional(Schema.Defect()),
+    replyCode: Schema.optional(Schema.Number),
+    classId: Schema.optional(Schema.Number),
+    methodId: Schema.optional(Schema.Number)
+  }
 ) {
   /**
    * @since  0.1.0
    */
   readonly [TypeId] = TypeId
 }
+
+/**
+ * Malformed or unsupported AMQP wire data.
+ * @since 0.8.0
+ */
+export class AMQPProtocolError extends Schema.TaggedError<AMQPProtocolError>()(
+  "AMQPProtocolError",
+  { reason: Schema.String, cause: Schema.optional(Schema.Defect()) }
+) {}
+
+/**
+ * An Unknown outcome must not be automatically retried unless duplicates are acceptable.
+ * @since 0.8.0
+ */
+export class AMQPPublishError extends Schema.TaggedError<AMQPPublishError>()(
+  "AMQPPublishError",
+  {
+    reason: Schema.String,
+    outcome: Schema.Literals(["NotSent", "Unknown", "Nacked"]),
+    cause: Schema.optional(Schema.Defect())
+  }
+) {}
+
+/**
+ * A transaction command failed before admission, or its broker outcome is uncertain.
+ * Unknown transactions are not replayed after recovery.
+ * @since 1.0.0-beta.0
+ * @category errors
+ */
+export class AMQPTransactionError extends Schema.TaggedError<AMQPTransactionError>()(
+  "AMQPTransactionError",
+  {
+    reason: Schema.String,
+    outcome: Schema.Literals(["NotSent", "Unknown"]),
+    cause: Schema.optional(Schema.Defect())
+  }
+) {}
+
+/**
+ * A delivery is stale, already settled, or was automatically acknowledged by the broker.
+ * No protocol settlement is sent for any of these failures.
+ * @since 0.8.0
+ * @category errors
+ */
+export class AMQPSettlementError extends Schema.TaggedError<AMQPSettlementError>()(
+  "AMQPSettlementError",
+  {
+    reason: Schema.String,
+    kind: Schema.Literals(["Stale", "AlreadySettled", "AutoAcknowledged"]),
+    cause: Schema.optional(Schema.Defect())
+  }
+) {}
+
+/** @since 0.8.0 */
+export type AMQPError =
+  | AMQPConnectionError
+  | AMQPChannelError
+  | AMQPProtocolError
+  | AMQPPublishError
+  | AMQPTransactionError
+  | AMQPSettlementError

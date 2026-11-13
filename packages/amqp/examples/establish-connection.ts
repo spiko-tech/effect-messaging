@@ -1,4 +1,5 @@
 import { AMQPConnection } from "@effect-messaging/amqp"
+import * as AMQPNodeConnection from "@effect-messaging/amqp/AMQPNodeConnection"
 import { Effect } from "effect"
 
 const program = Effect.gen(function*() {
@@ -6,12 +7,12 @@ const program = Effect.gen(function*() {
   const connection = yield* AMQPConnection.AMQPConnection
   const props = yield* connection.serverProperties
 
-  yield* Effect.logInfo(`connected to ${props.hostname}:${props.port}`)
+  yield* Effect.logInfo(`connected to ${props.product} ${props.version}`)
 })
 
 const runnable = program.pipe(
   // provide the AMQP Connection dependency
-  Effect.provide(AMQPConnection.layer({
+  Effect.provide(AMQPNodeConnection.layer({
     hostname: "localhost",
     port: 5672,
     username: "guest",

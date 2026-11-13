@@ -2,7 +2,12 @@
  * @since 0.1.0
  */
 
-// @barrel: Auto-generated exports. Do not edit manually.
+// @barrel({AMQPAuthentication,AMQPChannel,AMQPConnection,AMQPConsumeMessage,AMQPError,AMQPTopology,AMQPTypes}.ts)
+
+/**
+ * @since 1.0.0-beta.0
+ */
+export * as AMQPAuthentication from "./AMQPAuthentication.ts"
 
 /**
  * @since 0.1.0
@@ -25,16 +30,11 @@ export * as AMQPConsumeMessage from "./AMQPConsumeMessage.ts"
 export * as AMQPError from "./AMQPError.ts"
 
 /**
- * @since 0.3.0
+ * @since 0.8.0
  */
-export * as AMQPPublisher from "./AMQPPublisher.ts"
+export * as AMQPTopology from "./AMQPTopology.ts"
 
 /**
- * @since 0.3.0
+ * @since 0.8.0
  */
-export * as AMQPSubscriber from "./AMQPSubscriber.ts"
-
-/**
- * @since 0.5.0
- */
-export * as AMQPSubscriberResponse from "./AMQPSubscriberResponse.ts"
+export * as AMQPTypes from "./AMQPTypes.ts"

@@ -73,9 +73,41 @@ jobs:
         uses: ./.github/actions/setup
       - name: Build
         run: pnpm build
+      - name: Lint
+        run: pnpm lint
       - name: Check package entry points
         run: pnpm check-packages
       - name: Test
-        run: pnpm vitest
+        run: pnpm vitest --exclude '**/AMQPConsumerScenarioParity.test.ts' --exclude '**/AMQPBrokerParity.test.ts'
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+      # These independent stress workloads share one broker and must not compete for runner capacity.
+      - name: Test consumer stress scenarios
+        run: pnpm vitest packages/amqp/test/AMQPConsumerScenarioParity.test.ts
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+      - name: Test publisher stress scenarios
+        run: pnpm vitest packages/amqp/test/AMQPBrokerParity.test.ts
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+
+  amqp-broker-qualification:
+    name: AMQP isolated broker qualification
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        uses: ./.github/actions/setup
+      - name: Build
+        run: pnpm build
+      - name: Lint
+        run: pnpm lint
+      - name: Pull pinned qualification broker
+        run: docker pull rabbitmq:4.3.6-management
+      - name: Test owned RabbitMQ restart, quorum partition, security and alarms
+        run: pnpm vitest run --config test/fixtures/review-broker/vitest.config.ts
         env:
           NODE_OPTIONS: --max_old_space_size=8192

@@ -229,6 +229,9 @@ importers:
       '@effect-messaging/core':
         specifier: workspace:^
         version: link:../core
+      '@effect/platform-node':
+        specifier: 4.1.0
+        version: 4.1.0(effect@4.1.0)(redis@6.3.0)
       '@effect/vitest':
         specifier: 4.1.0
         version: 4.1.0(effect@4.1.0)(vitest@5.0.5)
@@ -236,7 +239,7 @@ importers:
         specifier: ^26.6.6
         version: 26.6.6
       amqplib:
-        specifier: ^2.2.0
+        specifier: 2.2.0
         version: 2.2.0
       effect:
         specifier: 4.1.0

@@ -15,7 +15,8 @@ import { join } from "node:path"
 
 const allPackages = ["amqp", "core", "nats"]
 const requestedPackages = process.argv.length > 2 ? process.argv.slice(2) : allPackages
-// `amqp` and `nats` depend on `core`, so always pack `core` alongside them.
+// Adapter entry points use `core` (an optional peer for AMQP), so include it in
+// the all-entry-points fixture. The native-only fixture below omits it.
 const packages = requestedPackages.includes("core") ? requestedPackages : ["core", ...requestedPackages]
 const temporaryDirectory = await mkdtemp(join(tmpdir(), "effect-messaging-packages-"))
 const specifiers = []
@@ -91,6 +92,12 @@ try {
   for (const name of requestedPackages) {
     const directory = new URL(`./node_modules/@effect-messaging/${name}/`, `file://${temporaryDirectory}/`)
     const manifest = JSON.parse(await readFile(new URL("package.json", directory), "utf8"))
+    if (name === "amqp") {
+      const evidence = await readFile(new URL("PARITY.md", directory), "utf8")
+      if (!evidence.includes("AMQP 0-9-1 capability evidence")) {
+        throw new Error("Missing AMQP capability evidence from package archive")
+      }
+    }
 
     // The package root (`"."` -> `./dist/index.js`).
     specifiers.push(manifest.name)
@@ -156,6 +163,74 @@ try {
     cwd: new URL("..", import.meta.url),
     stdio: "inherit"
   })
+
+  // The native AMQP entry point must work without optional core or Node adapters.
+  if (requestedPackages.includes("amqp")) {
+    const protocolDirectory = await mkdtemp(join(tmpdir(), "effect-messaging-amqp-protocol-"))
+    try {
+      await writeFile(
+        join(protocolDirectory, "package.json"),
+        JSON.stringify({
+          private: true,
+          type: "module",
+          dependencies: {
+            "@effect-messaging/amqp": dependencies["@effect-messaging/amqp"],
+            effect: rootManifest.devDependencies.effect
+          }
+        })
+      )
+      execFileSync("pnpm", [
+        "install",
+        "--dir",
+        protocolDirectory,
+        "--ignore-scripts",
+        "--no-frozen-lockfile",
+        "--config.auto-install-peers=false"
+      ], { stdio: "ignore" })
+      execFileSync(process.execPath, [
+        "--input-type=module",
+        "--eval",
+        `
+        for (const optional of ["@effect-messaging/core", "@effect/platform-node", "amqplib"]) {
+          let present = false
+          try { import.meta.resolve(optional); present = true } catch {}
+          if (present) throw new Error("Unexpected optional dependency: " + optional)
+        }
+        const client = await import("@effect-messaging/amqp")
+        if (!client.AMQPConnection || !client.AMQPChannel || !client.AMQPAuthentication) {
+          throw new Error("Missing native exports")
+        }
+      `
+      ], { cwd: protocolDirectory, stdio: "inherit" })
+      await writeFile(
+        join(protocolDirectory, "index.ts"),
+        "import { AMQPAuthentication, AMQPConnection, AMQPChannel, AMQPTypes } from \"@effect-messaging/amqp\"\n" +
+          "export { AMQPAuthentication, AMQPConnection, AMQPChannel, AMQPTypes }\n"
+      )
+      await writeFile(
+        join(protocolDirectory, "tsconfig.json"),
+        JSON.stringify({
+          compilerOptions: {
+            strict: true,
+            noEmit: true,
+            target: "ES2022",
+            module: "NodeNext",
+            moduleResolution: "NodeNext",
+            skipLibCheck: false,
+            lib: ["ESNext", "DOM", "DOM.Iterable"],
+            types: []
+          },
+          files: ["index.ts"]
+        })
+      )
+      execFileSync("pnpm", ["exec", "tsc", "-p", join(protocolDirectory, "tsconfig.json")], {
+        cwd: new URL("..", import.meta.url),
+        stdio: "inherit"
+      })
+    } finally {
+      await rm(protocolDirectory, { force: true, recursive: true })
+    }
+  }
 } finally {
   await rm(temporaryDirectory, { force: true, recursive: true })
 }

@@ -1,15 +1,19 @@
-import { AMQPChannel, AMQPConnection, AMQPPublisher } from "@effect-messaging/amqp"
+import { AMQPChannel } from "@effect-messaging/amqp"
+import * as AMQPNodeConnection from "@effect-messaging/amqp/AMQPNodeConnection"
+import * as AMQPPublisher from "@effect-messaging/amqp/AMQPPublisher"
 import { Context, Effect, Layer } from "effect"
 
 class MyPublisher extends Context.Service<MyPublisher, AMQPPublisher.AMQPPublisher>()("MyPublisher") {}
 
 const program = Effect.gen(function*() {
+  const channel = yield* AMQPChannel.AMQPChannel
+  yield* channel.assertExchange("my-exchange", "direct", { durable: true })
   const publisher = yield* MyPublisher
 
   yield* publisher.publish({
     exchange: "my-exchange",
     routingKey: "my-routing-key",
-    content: Buffer.from("{ \"hello\": \"world\" }"),
+    content: new TextEncoder().encode("{ \"hello\": \"world\" }"),
     options: {
       persistent: true,
       contentType: "application/json",
@@ -22,7 +26,7 @@ const program = Effect.gen(function*() {
 })
 
 const PublisherLive = Layer.effect(MyPublisher, AMQPPublisher.make())
-const ConnectionLive = AMQPConnection.layer({
+const ConnectionLive = AMQPNodeConnection.layer({
   hostname: "localhost",
   port: 5672,
   username: "guest",
@@ -30,7 +34,7 @@ const ConnectionLive = AMQPConnection.layer({
   heartbeat: 10
 })
 const MainLive = PublisherLive.pipe(
-  Layer.provide(AMQPChannel.layer()),
+  Layer.provideMerge(AMQPChannel.layer({ confirm: true })),
   Layer.provide(ConnectionLive)
 )
 

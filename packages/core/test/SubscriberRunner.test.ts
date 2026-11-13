@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "@effect/vitest"
 import { Cause, Data, Deferred, Effect, Exit, Fiber, Stream, Tracer } from "effect"
 import type * as Duration from "effect/Duration"
 import * as TestClock from "effect/testing/TestClock"
-import type { StreamConfig } from "../src/internal/SubscriberRunner.ts"
+import type { StreamConfig } from "../src/SubscriberRunner.ts"
 import * as SubscriberRunner from "../src/SubscriberRunner.ts"
 
 /** Minimal StreamConfig factory for unit-testing `runStream`. */
@@ -29,6 +29,87 @@ const makeConfig = <A, E = never>(opts: {
 
 describe("SubscriberRunner", { concurrent: false }, () => {
   describe("consumption lifecycle", () => {
+    it.effect("cancels a source waiting for admission before draining the admitted handler", () =>
+      Effect.gen(function*() {
+        const started = yield* Deferred.make<void>()
+        const pulled = yield* Deferred.make<void>()
+        const finish = yield* Deferred.make<void>()
+        const stopped = yield* Deferred.make<void>()
+        const handled: Array<string> = []
+        const source = Stream.unwrap(Effect.acquireRelease(
+          Effect.succeed(
+            Stream.make("held", "waiting").pipe(
+              Stream.tap((message) => message === "waiting" ? Deferred.succeed(pulled, undefined) : Effect.void),
+              Stream.concat(Stream.never)
+            )
+          ),
+          () => Deferred.succeed(stopped, undefined)
+        ))
+        const config = {
+          ...makeConfig({
+            handler: Effect.fnUntraced(function*(message: string) {
+              handled.push(message)
+              yield* Deferred.succeed(started, undefined)
+              yield* Deferred.await(finish)
+            })
+          }),
+          concurrency: 1
+        }
+        const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(source, config))
+        yield* Deferred.await(started)
+        yield* Deferred.await(pulled)
+        yield* Effect.sync(() => fiber.interruptUnsafe())
+        const cleanup = yield* Effect.forkChild(Deferred.await(stopped).pipe(Effect.timeout("1 second"), Effect.exit))
+        yield* TestClock.adjust("1 second")
+        const cleanupExit = yield* Fiber.join(cleanup)
+        const pending = fiber.pollUnsafe() === undefined
+        yield* Deferred.succeed(finish, undefined)
+        const exit = yield* Fiber.await(fiber)
+        expect(cleanupExit).toEqual(Exit.succeed(undefined))
+        expect(pending).toBe(true)
+        expect(handled).toEqual(["held"])
+        expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true)
+      }))
+
+    it.effect("rechecks delivery activity after bounded admission and drains the admitted handler", () =>
+      Effect.gen(function*() {
+        const started = yield* Deferred.make<void>()
+        const pulled = yield* Deferred.make<void>()
+        const finish = yield* Deferred.make<void>()
+        const handled: Array<string> = []
+        const checks: Array<string> = []
+        let active = true
+        const config = {
+          ...makeConfig({
+            handler: Effect.fnUntraced(function*(message: string) {
+              handled.push(message)
+              if (message === "held") {
+                yield* Deferred.succeed(started, undefined)
+                yield* Deferred.await(finish)
+              }
+            })
+          }),
+          concurrency: 1,
+          isActive: (message: string) => {
+            checks.push(message)
+            return message === "held" || active
+          }
+        }
+        const source = Stream.make("held", "retired").pipe(
+          Stream.tap((message) => message === "retired" ? Deferred.succeed(pulled, undefined) : Effect.void)
+        )
+        const fiber = yield* Effect.forkChild(SubscriberRunner.runStream(source, config))
+        yield* Deferred.await(started)
+        yield* Deferred.await(pulled)
+        active = false
+        const pending = fiber.pollUnsafe() === undefined
+        yield* Deferred.succeed(finish, undefined)
+        yield* Fiber.join(fiber)
+        expect(pending).toBe(true)
+        expect(handled).toEqual(["held"])
+        expect(checks).toEqual(["held", "retired"])
+      }))
+
     it.effect.each(["interrupt", "fail"] as const)(
       "finalizes consumption before draining handlers on %s",
       (mode) =>

@@ -92,6 +92,12 @@ try {
   for (const name of requestedPackages) {
     const directory = new URL(`./node_modules/@effect-messaging/${name}/`, `file://${temporaryDirectory}/`)
     const manifest = JSON.parse(await readFile(new URL("package.json", directory), "utf8"))
+    if (name === "amqp") {
+      const evidence = await readFile(new URL("PARITY.md", directory), "utf8")
+      if (!evidence.includes("AMQP 0-9-1 capability evidence")) {
+        throw new Error("Missing AMQP capability evidence from package archive")
+      }
+    }
 
     // The package root (`"."` -> `./dist/index.js`).
     specifiers.push(manifest.name)
@@ -191,13 +197,15 @@ try {
           if (present) throw new Error("Unexpected optional dependency: " + optional)
         }
         const client = await import("@effect-messaging/amqp")
-        if (!client.AMQPConnection || !client.AMQPChannel) throw new Error("Missing native exports")
+        if (!client.AMQPConnection || !client.AMQPChannel || !client.AMQPAuthentication) {
+          throw new Error("Missing native exports")
+        }
       `
       ], { cwd: protocolDirectory, stdio: "inherit" })
       await writeFile(
         join(protocolDirectory, "index.ts"),
-        "import { AMQPConnection, AMQPChannel, AMQPTypes } from \"@effect-messaging/amqp\"\n" +
-          "export { AMQPConnection, AMQPChannel, AMQPTypes }\n"
+        "import { AMQPAuthentication, AMQPConnection, AMQPChannel, AMQPTypes } from \"@effect-messaging/amqp\"\n" +
+          "export { AMQPAuthentication, AMQPConnection, AMQPChannel, AMQPTypes }\n"
       )
       await writeFile(
         join(protocolDirectory, "tsconfig.json"),

@@ -9,6 +9,8 @@ A message broker toolkit for Effect.
 - 🧘 Seamless consumption continuation after reconnection
 - 🗺️ Queue, exchange, and binding recovery, including server-named queues
 - 📬 Opt-in publisher confirms and backpressured publishing
+- 🧾 Transactions, manual/automatic acknowledgement and Direct Reply-To
+- 🔐 PLAIN, AMQPLAIN, EXTERNAL and custom SASL over TCP/TLS
 - 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
 ### NATS / JetStream features
@@ -18,13 +20,14 @@ A message broker toolkit for Effect.
 - 🔭 Distributed tracing support (spans propagate from publishers to subscribers)
 
 > [!WARNING]
-> This branch targets Effect 4.0.2. The stable `0.x` releases use Effect 3.
+> This branch targets Effect 4.1.0. The stable `0.x` releases use Effect 3.
 
 ## Quickstart Guide
 
 ### AMQP with `@effect-messaging/amqp`
 
-See the [package guide](./packages/amqp/README.md) for migration notes, delivery guarantees and broker test setup.
+See the [package guide](./packages/amqp/README.md) for migration notes, delivery guarantees and broker test setup,
+and the [capability matrix](./packages/amqp/PARITY.md) for source-backed verification evidence and limits.
 
 #### 1. Establish a Connection
 
